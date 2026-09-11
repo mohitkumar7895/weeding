@@ -19,6 +19,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<ThemeMode>('system');
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  React.useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated && data.user) {
+          setUser(data.user);
+        }
+      })
+      .catch((err) => console.error('Session restore error:', err));
+  }, []);
+
   return (
     <AppContext.Provider
       value={{

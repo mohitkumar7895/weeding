@@ -6,7 +6,10 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role?: 'user' | 'admin' | 'guest';
+  role?: 'SUPER_ADMIN' | 'ADMIN' | 'VENDOR' | 'CUSTOMER' | 'user' | 'admin' | 'guest';
+  phone?: string;
+  profile_id?: string;
+  vendor_id?: string;
   createdAt?: string;
   updatedAt?: string;
 }

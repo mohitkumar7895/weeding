@@ -15,14 +15,16 @@ export default function Footer() {
                 <svg width="48" height="36" viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <defs>
                     <linearGradient id="footerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#ff4d79" />
-                      <stop offset="50%" stopColor="#ff7a3d" />
-                      <stop offset="100%" stopColor="#ff0055" />
+                      <stop offset="0%" stopColor="#ff2a73" />
+                      <stop offset="100%" stopColor="#e6005c" />
                     </linearGradient>
                     <linearGradient id="footerHeart" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#ffc107" />
-                      <stop offset="100%" stopColor="#ff4081" />
+                      <stop offset="0%" stopColor="#ff528c" />
+                      <stop offset="100%" stopColor="#d8004f" />
                     </linearGradient>
+                    <filter id="footerGlow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#ff2a73" floodOpacity="0.35" />
+                    </filter>
                   </defs>
                   <path
                     d="M4 10L11 32L17 14L22 30L26 12"
@@ -30,6 +32,7 @@ export default function Footer() {
                     strokeWidth="4.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    filter="url(#footerGlow)"
                   />
                   <path
                     d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z"
@@ -41,12 +44,13 @@ export default function Footer() {
                     strokeWidth="4.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    filter="url(#footerGlow)"
                   />
                 </svg>
               </div>
 
               <div className="brand-text-block">
-                <h3 className="brand-name">WedWithMe</h3>
+                <h3 className="brand-name brand-name-text">WedWithMe</h3>
                 <p className="brand-motto">From Match to Marriage</p>
               </div>
             </div>
@@ -56,11 +60,11 @@ export default function Footer() {
           <div className="footer-links-col">
             <h4 className="col-heading">Quick Links</h4>
             <ul className="footer-link-list">
-              <li><Link href="#" className="footer-link">Home</Link></li>
-              <li><Link href="#vendors" className="footer-link">Vendors</Link></li>
-              <li><Link href="#matches" className="footer-link">Matches</Link></li>
-              <li><Link href="#bookings" className="footer-link">Bookings</Link></li>
-              <li><Link href="#about" className="footer-link">About Us</Link></li>
+              <li><Link href="/" className="footer-link">Home</Link></li>
+              <li><Link href="/vendors" className="footer-link">Vendors</Link></li>
+              <li><Link href="/matches" className="footer-link">Matches</Link></li>
+              <li><Link href="/bookings" className="footer-link">Bookings</Link></li>
+              <li><Link href="/about" className="footer-link">About Us</Link></li>
             </ul>
           </div>
 
@@ -152,8 +156,9 @@ export default function Footer() {
 
       <style jsx>{`
         .footer-wrapper {
-          background-color: #02110c;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          background-color: #031710;
+          background-image: radial-gradient(circle at 50% 50%, rgba(6, 42, 28, 0.6) 0%, rgba(3, 23, 16, 0.98) 100%);
+          border-top: 1px solid rgba(229, 193, 88, 0.2);
           color: #ffffff;
           padding: 56px 0 28px;
         }
@@ -175,21 +180,23 @@ export default function Footer() {
           font-family: var(--font-serif);
           font-size: 22px;
           font-weight: 700;
-          color: #ffffff;
+          color: #e5c158;
           margin-bottom: 3px;
         }
 
         .brand-motto {
           font-size: 12.5px;
-          color: #8da397;
+          color: #e5c158;
+          font-weight: 600;
         }
 
         .col-heading {
           font-size: 14px;
           font-weight: 700;
-          color: #ffffff;
+          color: #e5c158;
           margin-bottom: 18px;
-          letter-spacing: 0.2px;
+          letter-spacing: 0.3px;
+          text-transform: uppercase;
         }
 
         .footer-link-list {
@@ -201,14 +208,14 @@ export default function Footer() {
 
         .footer-link {
           font-size: 13.5px;
-          color: #8fa599;
+          color: #9cb1a6;
           transition: color 0.2s ease, transform 0.2s ease;
           display: inline-block;
         }
 
         .footer-link:hover {
           color: #ffffff;
-          transform: translateX(2px);
+          transform: translateX(3px);
         }
 
         .social-icons-row {
@@ -221,20 +228,21 @@ export default function Footer() {
           width: 36px;
           height: 36px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(229, 193, 88, 0.08);
+          border: 1px solid rgba(229, 193, 88, 0.25);
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #c9d8d0;
+          color: #e5c158;
           transition: all 0.2s ease;
         }
 
         .social-btn:hover {
-          background: #e6005c;
-          border-color: #e6005c;
-          color: #ffffff;
+          background: #e5c158;
+          border-color: #e5c158;
+          color: #031710;
           transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(229, 193, 88, 0.3);
         }
 
         .app-badges {
@@ -247,8 +255,8 @@ export default function Footer() {
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          background: #000000;
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          background: rgba(3, 23, 16, 0.9);
+          border: 1px solid rgba(229, 193, 88, 0.25);
           border-radius: 9px;
           padding: 7px 16px;
           width: fit-content;
@@ -256,7 +264,7 @@ export default function Footer() {
         }
 
         .app-badge-btn:hover {
-          border-color: #ffffff;
+          border-color: #e5c158;
           transform: translateY(-1px);
         }
 
@@ -267,7 +275,7 @@ export default function Footer() {
 
         .badge-sub {
           font-size: 9px;
-          color: #a0b2a8;
+          color: #9cb1a6;
           line-height: 1;
         }
 
@@ -279,17 +287,17 @@ export default function Footer() {
         }
 
         .footer-bottom-bar {
-          border-top: 1px solid rgba(255, 255, 255, 0.07);
+          border-top: 1px solid rgba(229, 193, 88, 0.12);
           padding-top: 24px;
           display: flex;
           align-items: center;
           justify-content: space-between;
           font-size: 12.5px;
-          color: #7b9185;
+          color: #9cb1a6;
         }
 
         .market-tag {
-          color: #a4baaf;
+          color: #e5c158;
           font-weight: 500;
         }
 

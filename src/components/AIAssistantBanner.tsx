@@ -222,21 +222,21 @@ export default function AIAssistantBanner({ onOpenSagun }: AIAssistantBannerProp
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          background: linear-gradient(135deg, #f5d475 0%, #e5c158 100%);
-          color: #042116;
+          background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%);
+          color: #ffffff;
           font-size: 13.5px;
           font-weight: 700;
           padding: 9px 24px;
           border-radius: 9999px;
           width: fit-content;
-          box-shadow: 0 4px 14px rgba(229, 193, 88, 0.35);
+          box-shadow: 0 4px 14px rgba(230, 0, 92, 0.38);
           transition: all 0.2s ease;
         }
 
         .btn-try-sagun:hover {
           transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(229, 193, 88, 0.5);
-          filter: brightness(1.06);
+          box-shadow: 0 6px 20px rgba(230, 0, 92, 0.55);
+          filter: brightness(1.08);
         }
 
         /* Speech Bubble */

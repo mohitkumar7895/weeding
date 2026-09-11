@@ -61,24 +61,82 @@ export default function MobileAppView({ onOpenLoginModal }: MobileAppViewProps) 
     },
   ];
 
+  const [liveMatches, setLiveMatches] = useState<any[]>(matchesData);
+  const [liveVendors, setLiveVendors] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    // Fetch live matches
+    fetch('/api/matrimonial/matches')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data && d.data.length > 0) {
+          const mapped = d.data.map((m: any, idx: number) => ({
+            id: idx + 1,
+            name: m.name,
+            age: m.age,
+            height: `${Math.floor(m.height_cm / 30.48)}'${Math.round((m.height_cm % 30.48) / 2.54)}"`,
+            city: m.city,
+            matchScore: `${m.match_score}% Match`,
+            profession: m.profession,
+            religion: m.religion,
+            education: m.education,
+            image: m.photo_url || '/images/priya.jpg',
+          }));
+          setLiveMatches(mapped);
+        }
+      })
+      .catch(() => {});
+
+    // Fetch live vendors
+    fetch('/api/vendors')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data) {
+          setLiveVendors(d.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const activeMatchesList = liveMatches.length > 0 ? liveMatches : matchesData;
+
   const handleLikeMatch = (id: number) => {
     setLikedProfiles((prev) => [...prev, id]);
-    setActiveMatchIndex((prev) => (prev + 1) % matchesData.length);
+    setActiveMatchIndex((prev) => (prev + 1) % activeMatchesList.length);
   };
 
   const handlePassMatch = () => {
-    setActiveMatchIndex((prev) => (prev + 1) % matchesData.length);
+    setActiveMatchIndex((prev) => (prev + 1) % activeMatchesList.length);
   };
 
-  const handleSendChat = (e: React.FormEvent) => {
+  const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
 
-    setChatMessages((prev) => [...prev, { sender: 'user', text: chatInput }]);
     const query = chatInput;
+    setChatMessages((prev) => [...prev, { sender: 'user', text: query }]);
     setChatInput('');
 
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: query }),
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        let reply = data.data.reply;
+        if (data.data.structuredData?.items?.length) {
+          const names = data.data.structuredData.items
+            .map((i: any) => `• ${i.business_name || i.name} (${i.city || ''})`)
+            .join('\n');
+          reply += `\n\n${names}`;
+        }
+        setChatMessages((prev) => [...prev, { sender: 'sagun', text: reply }]);
+      } else {
+        throw new Error();
+      }
+    } catch {
       setChatMessages((prev) => [
         ...prev,
         {
@@ -86,10 +144,10 @@ export default function MobileAppView({ onOpenLoginModal }: MobileAppViewProps) 
           text: `मैंने "${query}" के लिए बेस्ट वेडिंग वेंडर्स और ऑफर्स खोज निकाले हैं! आप इन्हें डायरेक्ट बुक कर सकते हैं।`,
         },
       ]);
-    }, 700);
+    }
   };
 
-  const currentMatch = matchesData[activeMatchIndex] || matchesData[0];
+  const currentMatch = activeMatchesList[activeMatchIndex] || activeMatchesList[0];
 
   return (
     <div className="mobile-app-root">

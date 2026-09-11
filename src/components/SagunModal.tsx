@@ -24,16 +24,17 @@ export default function SagunModal({ isOpen, onClose }: SagunModalProps) {
   const [inputVal, setInputVal] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
-  if (!isOpen) return null;
-
-  const quickPrompts = [
-    'Delhi NCR me best heritage venues?',
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [prompts, setPrompts] = useState<string[]>([
+    'Delhi NCR me best venues?',
     '300 guests catering budget kitna hoga?',
     'Top candid wedding photographers?',
-    'Mandap floral decoration trending ideas?',
-  ];
+    'Plan a 20 Lakh Indian wedding budget',
+  ]);
 
-  const handleSendMessage = (text: string) => {
+  if (!isOpen) return null;
+
+  const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
 
     const userMsg: Message = {
@@ -46,27 +47,57 @@ export default function SagunModal({ isOpen, onClose }: SagunModalProps) {
     setInputVal('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      let reply = 'ज़रूर! WedWithMe पर हमारे पास 10,000+ वेरीफाइड वेंडर्स और AI कंपेटिबिलिटी टूल्स हैं। आपकी पसंद के हिसाब से हमने टॉप 5 ऑप्शंस शॉर्टलिस्ट कर लिए हैं!';
-      
-      if (text.toLowerCase().includes('venue') || text.includes('वेन्यू')) {
-        reply = 'दिल्ली NCR और राजस्थान में हेरिटेज वेन्यूज के लिए The Leela Palace, ITC Grand Bharat और Neemrana Fort Palace बेहतरीन विकल्प हैं। क्या आप अवेलेबिलिटी चेक करना चाहेंगे?';
-      } else if (text.toLowerCase().includes('budget') || text.toLowerCase().includes('catering') || text.includes('केटरिंग')) {
-        reply = '300 गेस्ट्स के लिए प्रीमियम 3-कोर्स रॉयल बुफे का एस्टिमेट ₹2,200 - ₹3,500 प्रति प्लेट है। इसमें लाइव चाट काउंटर और सिग्नेचर डेज़र्ट्स शामिल हैं।';
-      } else if (text.toLowerCase().includes('photo') || text.includes('फोटोग्राफर')) {
-        reply = 'हमारे टॉप रेटेड फोटोग्राफर्स ₹15,000 से शुरू होते हैं जिनमें सिनेमैटिक प्री-वेडिंग शूट, ड्रोन कवरेज और 4K टीज़र वीडियो शामिल है!';
-      }
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          conversation_id: conversationId,
+        }),
+      });
 
+      const data = await res.json();
+      if (data.success && data.data) {
+        setConversationId(data.data.conversationId);
+        if (data.data.suggestedPrompts && data.data.suggestedPrompts.length > 0) {
+          setPrompts(data.data.suggestedPrompts);
+        }
+
+        let replyText = data.data.reply;
+        if (data.data.structuredData && data.data.structuredData.items) {
+          if (data.data.structuredData.type === 'VENDORS') {
+            const vNames = data.data.structuredData.items.map((v: any) => `• ${v.business_name} (${v.city}) - Starting ₹${parseFloat(v.starting_price).toLocaleString('en-IN')}`).join('\n');
+            replyText += `\n\n${vNames}`;
+          } else if (data.data.structuredData.type === 'BUDGET_BREAKDOWN') {
+            const bItems = data.data.structuredData.items.map((b: any) => `• ${b.category}: ₹${b.amount.toLocaleString('en-IN')} (${b.percentage}%)`).join('\n');
+            replyText += `\n\n${bItems}`;
+          }
+        }
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: 'sagun',
+            text: replyText,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
+      } else {
+        throw new Error(data.message || 'Error communicating with Sagun AI');
+      }
+    } catch (err: any) {
       setMessages((prev) => [
         ...prev,
         {
           sender: 'sagun',
-          text: reply,
+          text: 'माफ़ कीजियेगा, नेटवर्क में समस्या आ रही है। WedWithMe पर आप सीधे वेंडर्स एक्सप्लोर कर सकते हैं या थोड़ी देर में पुनः प्रयास करें।',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
+    } finally {
       setIsTyping(false);
-    }, 900);
+    }
   };
 
   return (
@@ -119,7 +150,7 @@ export default function SagunModal({ isOpen, onClose }: SagunModalProps) {
 
         {/* Quick Suggestion Chips */}
         <div className="chips-container">
-          {quickPrompts.map((q, i) => (
+          {prompts.map((q, i) => (
             <button key={i} className="chip-btn" onClick={() => handleSendMessage(q)}>
               {q}
             </button>
@@ -316,8 +347,9 @@ export default function SagunModal({ isOpen, onClose }: SagunModalProps) {
         }
 
         .user-msg .bubble-text {
-          background: linear-gradient(135deg, #f72585 0%, #e6005c 100%);
+          background: linear-gradient(135deg, #032115 0%, #063121 100%);
           color: #ffffff;
+          border: 1px solid rgba(229, 193, 88, 0.35);
           border-top-right-radius: 4px;
         }
 
@@ -408,12 +440,12 @@ export default function SagunModal({ isOpen, onClose }: SagunModalProps) {
           width: 42px;
           height: 42px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #f72585 0%, #e6005c 100%);
-          color: #ffffff;
+          background: linear-gradient(135deg, #f5d475 0%, #d4a937 100%);
+          color: #031710;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 12px rgba(230, 0, 92, 0.3);
+          box-shadow: 0 4px 12px rgba(229, 193, 88, 0.4);
           transition: transform 0.2s ease;
         }
 

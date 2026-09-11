@@ -21,30 +21,68 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
   const [role, setRole] = useState<'couple' | 'vendor' | 'guest'>('couple');
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
-    setTimeout(() => {
+    try {
+      if (mode === 'register') {
+        const mappedRole = role === 'vendor' ? 'VENDOR' : 'CUSTOMER';
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+            phone: phone || undefined,
+            role: mappedRole,
+            business_name: role === 'vendor' ? name + ' Studio' : undefined,
+            category_id: role === 'vendor' ? 'cat_photographers' : undefined,
+            city: 'Delhi'
+          })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.message || 'Registration failed');
+        }
+
+        setUser(data.data.user);
+        setNotification(`Welcome to WedWithMe, ${data.data.user.name}!`);
+        setTimeout(() => {
+          setNotification(null);
+          onClose();
+        }, 1000);
+      } else {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.message || 'Invalid email or password');
+        }
+
+        setUser(data.data.user);
+        setNotification(`Welcome back, ${data.data.user.name}!`);
+        setTimeout(() => {
+          setNotification(null);
+          onClose();
+        }, 1000);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Authentication error');
+    } finally {
       setLoading(false);
-      const displayName = mode === 'register' ? (name || 'Mohit Kumar') : (email.split('@')[0] || 'Mohit Kumar');
-      
-      setUser({
-        id: 'usr_' + Date.now(),
-        name: displayName,
-        email: email || 'user@wedwithme.com',
-        role: role === 'vendor' ? 'admin' : 'user',
-      });
-
-      setNotification(`Welcome to WedWithMe, ${displayName}!`);
-      setTimeout(() => {
-        setNotification(null);
-        onClose();
-      }, 1000);
-    }, 800);
+    }
   };
 
   const handleSocialAuth = (provider: string) => {
@@ -55,7 +93,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         id: 'usr_social_' + Date.now(),
         name: 'Mohit Kumar',
         email: 'mohit@example.com',
-        role: 'user',
+        role: 'CUSTOMER',
       });
       setNotification(`Signed in with ${provider}!`);
       setTimeout(() => {
@@ -79,13 +117,13 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
             <svg width="46" height="34" viewBox="0 0 54 40" fill="none">
               <defs>
                 <linearGradient id="modalLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ff4d79" />
-                  <stop offset="50%" stopColor="#ff7a3d" />
-                  <stop offset="100%" stopColor="#ff0055" />
+                  <stop offset="0%" stopColor="#f5d475" />
+                  <stop offset="50%" stopColor="#e5c158" />
+                  <stop offset="100%" stopColor="#d4a937" />
                 </linearGradient>
                 <linearGradient id="modalLogoHeart" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ffc107" />
-                  <stop offset="100%" stopColor="#ff4081" />
+                  <stop offset="0%" stopColor="#f5d475" />
+                  <stop offset="100%" stopColor="#e5c158" />
                 </linearGradient>
               </defs>
               <path d="M4 10L11 32L17 14L22 30L26 12" stroke="url(#modalLogoGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -124,6 +162,14 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           <div className="notification-toast">
             <span className="toast-icon">✓</span>
             <span>{notification}</span>
+          </div>
+        )}
+
+        {/* Error alert */}
+        {error && (
+          <div style={{ background: 'rgba(230,0,92,0.15)', border: '1px solid #e6005c', color: '#ffb3c6', padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>⚠️</span>
+            <span>{error}</span>
           </div>
         )}
 
@@ -449,7 +495,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
 
         .forgot-link {
           font-size: 11.5px;
-          color: #e6005c;
+          color: #b8932f;
           font-weight: 600;
         }
 
@@ -464,19 +510,19 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         }
 
         .auth-input:focus {
-          border-color: #063121;
+          border-color: #e5c158;
           background: #ffffff;
         }
 
         .btn-submit-auth {
           margin-top: 6px;
-          background: linear-gradient(135deg, #f72585 0%, #e6005c 100%);
-          color: #ffffff;
+          background: linear-gradient(135deg, #f5d475 0%, #d4a937 100%);
+          color: #031710;
           font-size: 14.5px;
-          font-weight: 700;
+          font-weight: 800;
           padding: 12px;
           border-radius: 9999px;
-          box-shadow: 0 4px 14px rgba(230, 0, 92, 0.35);
+          box-shadow: 0 4px 14px rgba(229, 193, 88, 0.35);
           transition: transform 0.15s ease, filter 0.15s ease;
           display: flex;
           align-items: center;

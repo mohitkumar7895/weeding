@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAppContext } from '@/context';
 
 interface NavbarProps {
@@ -12,16 +13,21 @@ interface NavbarProps {
 export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [activeLink, setActiveLink] = useState('Home');
+  const pathname = usePathname() || '/';
   const { user, setUser } = useAppContext();
 
   const navLinks = [
-    { name: 'Home', href: '#' },
-    { name: 'Vendors', href: '#vendors' },
-    { name: 'Matches', href: '#matches' },
-    { name: 'Bookings', href: '#bookings' },
-    { name: 'About Us', href: '#about' },
+    { name: 'Home', href: '/' },
+    { name: 'Vendors', href: '/vendors' },
+    { name: 'Matches', href: '/matches' },
+    { name: 'Bookings', href: '/bookings' },
+    { name: 'About Us', href: '/about' },
   ];
+
+  const isLinkActive = (href: string) => {
+    if (href === '/') return pathname === '/';
+    return pathname.startsWith(href);
+  };
 
   return (
     <header className="navbar-wrapper">
@@ -29,59 +35,71 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
         {/* Brand Logo */}
         <Link href="/" className="brand-logo" aria-label="WedWithMe Home">
           <div className="logo-icon-svg">
-            <svg width="46" height="34" viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="44" height="34" viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <linearGradient id="wwmGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ff4d79" />
-                  <stop offset="50%" stopColor="#ff7a3d" />
-                  <stop offset="100%" stopColor="#ff0055" />
+                <linearGradient id="wwmPinkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ff2a73" />
+                  <stop offset="100%" stopColor="#e6005c" />
                 </linearGradient>
-                <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ffc107" />
-                  <stop offset="100%" stopColor="#ff4081" />
+                <linearGradient id="heartPinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ff528c" />
+                  <stop offset="100%" stopColor="#d8004f" />
                 </linearGradient>
+                <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#ff2a73" floodOpacity="0.4" />
+                </filter>
               </defs>
-              {/* Left W */}
+              {/* Left W (Vibrant Celebratory Pink) */}
               <path
                 d="M4 10L11 32L17 14L22 30L26 12"
-                stroke="url(#wwmGradient)"
+                stroke="url(#wwmPinkGradient)"
                 strokeWidth="4.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                filter="url(#logoGlow)"
               />
-              {/* Central Heart */}
+              {/* Central Entwined Heart (Pink) */}
               <path
                 d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z"
-                fill="url(#heartGrad)"
+                fill="url(#heartPinkGrad)"
               />
-              {/* Right W */}
+              {/* Right W (Vibrant Celebratory Pink) */}
               <path
                 d="M28 12L32 30L37 14L43 32L50 10"
-                stroke="url(#wwmGradient)"
+                stroke="url(#wwmPinkGradient)"
                 strokeWidth="4.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                filter="url(#logoGlow)"
               />
             </svg>
           </div>
+          <div className="brand-text-block">
+            <span className="brand-name-text">WedWithMe</span>
+            <span className="brand-tagline-text">From Match to Marriage</span>
+          </div>
         </Link>
 
-        {/* Desktop Nav Links */}
+        {/* Desktop Nav Links (ALL PINK BUTTONS AS USER COMMANDED) */}
         <nav className="desktop-nav" aria-label="Primary Navigation">
           {navLinks.map((item) => (
-            <a
+            <Link
               key={item.name}
               href={item.href}
-              onClick={() => setActiveLink(item.name)}
-              className={`nav-item ${activeLink === item.name ? 'nav-item-active' : ''}`}
+              className={`nav-item ${isLinkActive(item.href) ? 'nav-item-active' : ''}`}
             >
-              {item.name}
-            </a>
+              <span>{item.name}</span>
+            </Link>
           ))}
         </nav>
 
         {/* Action Buttons */}
         <div className="navbar-actions">
+          {/* Mobile Location Badge (Matching App Screenshot) */}
+          <div className="mobile-location-badge">
+            <span>📍 Delhi NCR</span>
+          </div>
+
           {/* Search Trigger */}
           <button
             className="icon-btn search-trigger"
@@ -94,17 +112,41 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
             </svg>
           </button>
 
+          {/* Mobile Notification Bell (Matching App Screenshot) */}
+          <button
+            className="icon-btn notification-btn"
+            aria-label="Notifications"
+            onClick={() => alert('No new notifications')}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <span className="bell-badge" />
+          </button>
+
           {/* If user is logged in, show user badge */}
           {user ? (
             <div className="user-profile-badge">
-              <div className="user-avatar-circle">
-                {user.name.charAt(0).toUpperCase()}
-              </div>
-              <span className="user-display-name">{user.name}</span>
+              <Link
+                href={user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : user.role === 'VENDOR' ? '/vendor' : '/dashboard'}
+                style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}
+              >
+                <div className="user-avatar-circle">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="user-display-name">{user.name}</span>
+                <span style={{ fontSize: '10px', background: 'rgba(255,42,115,0.2)', color: '#ff80ab', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                  {user.role}
+                </span>
+              </Link>
               <button
                 className="btn-logout"
                 title="Sign out"
-                onClick={() => setUser(null)}
+                onClick={async () => {
+                  await fetch('/api/auth/logout', { method: 'POST' });
+                  setUser(null);
+                }}
               >
                 Logout
               </button>
@@ -164,17 +206,14 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
         <div className="mobile-drawer">
           <div className="mobile-nav-links">
             {navLinks.map((item) => (
-              <a
+              <Link
                 key={item.name}
                 href={item.href}
-                onClick={() => {
-                  setActiveLink(item.name);
-                  setMobileMenuOpen(false);
-                }}
-                className={`mobile-nav-item ${activeLink === item.name ? 'active' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`mobile-nav-item ${isLinkActive(item.href) ? 'active' : ''}`}
               >
                 {item.name}
-              </a>
+              </Link>
             ))}
             <div className="mobile-auth-actions">
               {user ? (
@@ -216,64 +255,119 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           position: sticky;
           top: 0;
           z-index: 1000;
-          background-color: #061a12;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          background-color: #031710;
+          background-image: radial-gradient(circle at 50% 50%, rgba(6, 42, 28, 0.85) 0%, rgba(3, 23, 16, 0.98) 100%);
+          border-bottom: 1px solid rgba(229, 193, 88, 0.22);
           width: 100%;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
         }
 
         .navbar-container {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          height: 70px;
+          height: 72px;
         }
 
         .brand-logo {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
           text-decoration: none;
+        }
+
+        .brand-text-block {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .brand-name-text {
+          font-size: 21px;
+          font-weight: 800;
+          color: #e5c158 !important; /* Yellow text strictly as user demanded */
+          letter-spacing: -0.3px;
+          line-height: 1.1;
+          text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .brand-tagline-text {
+          font-size: 10px;
+          font-weight: 600;
+          color: #fae8a4;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
         }
 
         .logo-icon-svg {
           display: flex;
           align-items: center;
           transition: transform 0.25s ease;
+          filter: drop-shadow(0 2px 8px rgba(230, 0, 92, 0.45));
         }
 
         .brand-logo:hover .logo-icon-svg {
-          transform: scale(1.05);
+          transform: scale(1.06);
+          filter: drop-shadow(0 3px 12px rgba(230, 0, 92, 0.65));
         }
 
+        /* Desktop Nav: ALL BUTTONS PINK AS REQUESTED */
         .desktop-nav {
           display: flex;
           align-items: center;
-          gap: 34px;
+          gap: 10px;
         }
 
-        .nav-item {
-          color: #d1ded8;
-          font-size: 14px;
-          font-weight: 500;
+        .desktop-nav :global(a),
+        .desktop-nav :global(.nav-item) {
+          color: #ffffff !important;
+          font-size: 13.5px !important;
+          font-weight: 600 !important;
           letter-spacing: 0.2px;
-          transition: color 0.2s ease;
+          transition: all 0.2s ease;
           position: relative;
-          padding: 4px 0;
+          padding: 7px 18px !important;
+          border-radius: 9999px !important;
+          text-decoration: none !important;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(230, 0, 92, 0.16) !important;
+          border: 1px solid rgba(255, 42, 115, 0.35) !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
 
-        .nav-item:hover {
-          color: #ffffff;
+        .desktop-nav :global(a:hover),
+        .desktop-nav :global(.nav-item:hover) {
+          color: #ffffff !important;
+          background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%) !important;
+          border-color: #ff2a73 !important;
+          box-shadow: 0 4px 14px rgba(230, 0, 92, 0.45) !important;
+          transform: translateY(-1px);
         }
 
-        .nav-item-active {
-          color: #ffffff;
-          font-weight: 600;
+        .desktop-nav :global(.nav-item-active) {
+          color: #ffffff !important;
+          font-weight: 700 !important;
+          background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%) !important;
+          border: 1px solid #ff2a73 !important;
+          box-shadow: 0 4px 16px rgba(230, 0, 92, 0.55) !important;
         }
 
         .navbar-actions {
           display: flex;
           align-items: center;
-          gap: 14px;
+          gap: 12px;
+        }
+
+        .mobile-location-badge {
+          display: none;
+          font-size: 12px;
+          color: #e5c158;
+          font-weight: 600;
+          background: rgba(229, 193, 88, 0.12);
+          border: 1px solid rgba(229, 193, 88, 0.25);
+          padding: 3px 8px;
+          border-radius: 9999px;
         }
 
         .icon-btn {
@@ -285,11 +379,23 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           height: 36px;
           border-radius: 50%;
           transition: all 0.2s ease;
+          position: relative;
         }
 
         .icon-btn:hover {
           color: #ffffff;
           background: rgba(255, 255, 255, 0.08);
+        }
+
+        .bell-badge {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #ff2a73;
+          box-shadow: 0 0 6px #ff2a73;
         }
 
         .btn-login {
@@ -298,31 +404,34 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           font-weight: 600;
           padding: 7px 22px;
           border-radius: 9999px;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 42, 115, 0.5);
+          background: rgba(230, 0, 92, 0.18);
           transition: all 0.2s ease;
         }
 
         .btn-login:hover {
-          background: rgba(255, 255, 255, 0.12);
-          border-color: rgba(255, 255, 255, 0.6);
+          background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%);
+          border-color: #ff2a73;
+          color: #ffffff;
+          box-shadow: 0 4px 14px rgba(230, 0, 92, 0.4);
         }
 
         .btn-register {
           color: #ffffff;
           font-size: 13.5px;
-          font-weight: 600;
+          font-weight: 700;
           padding: 7px 24px;
           border-radius: 9999px;
-          background: linear-gradient(135deg, #f72585 0%, #e6005c 100%);
-          box-shadow: 0 4px 14px rgba(230, 0, 92, 0.35);
+          background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%);
+          box-shadow: 0 4px 14px rgba(230, 0, 92, 0.38);
+          border: none;
           transition: all 0.2s ease;
         }
 
         .btn-register:hover {
           transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(230, 0, 92, 0.5);
-          filter: brightness(1.05);
+          box-shadow: 0 6px 20px rgba(230, 0, 92, 0.55);
+          filter: brightness(1.08);
         }
 
         .user-profile-badge {
@@ -339,8 +448,8 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           width: 28px;
           height: 28px;
           border-radius: 50%;
-          background: #e5c158;
-          color: #061a12;
+          background: linear-gradient(135deg, #ff2a73, #e6005c);
+          color: #ffffff;
           font-weight: 700;
           font-size: 13px;
           display: flex;
@@ -355,10 +464,11 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
         }
 
         .btn-logout {
-          color: #ff4d79;
+          color: #ff80ab;
           font-size: 11.5px;
           font-weight: 600;
           margin-left: 4px;
+          cursor: pointer;
         }
 
         .mobile-toggle {
@@ -428,32 +538,45 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           .mobile-toggle {
             display: flex;
           }
+          .mobile-location-badge {
+            display: inline-block;
+          }
           .mobile-drawer {
             display: block;
-            background: #041b13;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            background-color: #031710;
+            background-image: radial-gradient(circle at 50% 50%, rgba(6, 42, 28, 0.95) 0%, rgba(3, 23, 16, 0.99) 100%);
+            border-bottom: 1px solid rgba(229, 193, 88, 0.22);
             padding: 20px 24px;
           }
           .mobile-nav-links {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 10px;
           }
-          .mobile-nav-item {
-            color: #d1ded8;
-            font-size: 16px;
-            font-weight: 500;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          .mobile-nav-links :global(a),
+          .mobile-nav-links :global(.mobile-nav-item) {
+            color: #ffffff !important;
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            padding: 11px 16px !important;
+            border-radius: 12px !important;
+            text-decoration: none !important;
+            display: block !important;
+            text-align: center !important;
+            background: rgba(230, 0, 92, 0.18) !important;
+            border: 1px solid rgba(255, 42, 115, 0.35) !important;
           }
-          .mobile-nav-item.active {
-            color: #e5c158;
-            font-weight: 600;
+          .mobile-nav-links :global(.active) {
+            color: #ffffff !important;
+            background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%) !important;
+            border-color: #ff2a73 !important;
+            box-shadow: 0 4px 14px rgba(230, 0, 92, 0.45) !important;
+            font-weight: 700 !important;
           }
           .mobile-auth-actions {
             display: flex;
             gap: 12px;
-            margin-top: 12px;
+            margin-top: 14px;
           }
           .full-w {
             flex: 1;

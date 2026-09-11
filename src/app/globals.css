@@ -1,14 +1,15 @@
 :root {
   --bg-primary: #ffffff;
   --bg-secondary: #f8faf8;
-  --bg-dark-forest: #031a12;
-  --bg-dark-emerald: #06281c;
+  --bg-dark-forest: #031710;
+  --bg-dark-emerald: #062a1c;
   --bg-dark-deep: #02120b;
   --bg-dark-card: #083424;
 
   --primary-pink: #e6005c;
   --primary-pink-hover: #cc0052;
   --primary-pink-gradient: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%);
+  --pink-shadow: 0 4px 16px rgba(230, 0, 92, 0.38);
 
   --gold-accent: #e5c158;
   --gold-light: #fae8a4;
@@ -17,12 +18,12 @@
 
   --text-dark: #121c17;
   --text-muted: #5f6e66;
-  --text-light: #f3f7f4;
-  --text-light-muted: #95a89e;
+  --text-light: #ffffff;
+  --text-light-muted: #9cb1a6;
 
   --border-light: #e6eae7;
   --border-dark: rgba(255, 255, 255, 0.12);
-  --border-gold: rgba(229, 193, 88, 0.4);
+  --border-gold: rgba(229, 193, 88, 0.25);
 
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.06);
@@ -116,3 +117,177 @@ input, select {
     padding: 0 16px;
   }
 }
+
+/* =========================================================
+   NAVBAR & FOOTER ROYAL EMERALD + GOLD THEME (From StatsBar)
+   ========================================================= */
+.navbar-wrapper {
+  background-color: #031710 !important;
+  background-image: radial-gradient(circle at 50% 50%, rgba(6, 42, 28, 0.85) 0%, rgba(3, 23, 16, 0.98) 100%) !important;
+  border-bottom: 1px solid rgba(229, 193, 88, 0.22) !important;
+  color: #ffffff !important;
+}
+
+.brand-name-text {
+  font-size: 21px !important;
+  font-weight: 800 !important;
+  color: #e5c158 !important;
+  letter-spacing: -0.3px !important;
+  display: block !important;
+  line-height: 1.1 !important;
+  text-shadow: 0 2px 10px rgba(229, 193, 88, 0.25) !important;
+}
+
+.brand-tagline-text {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: #fae8a4 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  display: block !important;
+}
+
+/* Nav Links as Pink Buttons per user requirement */
+.desktop-nav a,
+.desktop-nav .nav-item,
+a.nav-item {
+  color: #ffffff !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  padding: 8px 18px !important;
+  border-radius: 9999px !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(230, 0, 92, 0.2) !important;
+  border: 1px solid rgba(255, 42, 115, 0.45) !important;
+  box-shadow: 0 2px 8px rgba(230, 0, 92, 0.22) !important;
+  transition: all 0.2s ease !important;
+}
+
+.desktop-nav a:hover,
+.desktop-nav .nav-item:hover,
+a.nav-item:hover {
+  background: rgba(230, 0, 92, 0.4) !important;
+  border-color: #ff2a73 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(230, 0, 92, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+.desktop-nav a.nav-item-active,
+.desktop-nav .nav-item-active,
+a.nav-item-active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%) !important;
+  border-color: #ff2a73 !important;
+  box-shadow: 0 4px 16px rgba(230, 0, 92, 0.5) !important;
+  font-weight: 800 !important;
+}
+
+.mobile-nav-links a,
+.mobile-nav-links .mobile-nav-item,
+a.mobile-nav-item {
+  color: #ffffff !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  display: block !important;
+  padding: 12px 18px !important;
+  margin-bottom: 8px !important;
+  background: rgba(230, 0, 92, 0.2) !important;
+  border: 1px solid rgba(255, 42, 115, 0.45) !important;
+  border-radius: 9999px !important;
+  text-decoration: none !important;
+  text-align: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.mobile-nav-links a:hover,
+.mobile-nav-links a.active,
+a.mobile-nav-item.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%) !important;
+  border-color: #ff2a73 !important;
+  box-shadow: 0 4px 16px rgba(230, 0, 92, 0.5) !important;
+  font-weight: 800 !important;
+}
+
+/* Mobile viewport bottom spacing for bottom app bar */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 74px !important;
+  }
+}
+
+.footer-wrapper {
+  background-color: #031710 !important;
+  background-image: radial-gradient(circle at 50% 50%, rgba(6, 42, 28, 0.6) 0%, rgba(3, 23, 16, 0.98) 100%) !important;
+  border-top: 1px solid rgba(229, 193, 88, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.footer-link {
+  color: #9cb1a6 !important;
+}
+
+.footer-link:hover {
+  color: #ffffff !important;
+}
+
+.col-heading {
+  color: #e5c158 !important;
+}
+
+/* =========================================================
+   ALL BUTTONS PINK THEME (Per User Request)
+   ========================================================= */
+.btn-register,
+.btn-search-primary,
+.pill-search-btn,
+.btn-try-sagun,
+.btn-confirm-inquiry,
+.btn-send-interest,
+.btn-ask-sagun,
+.btn-action-primary,
+.btn-login-cta,
+.btn-explore-vendors,
+.btn-submit-contact,
+.btn-submit-auth,
+.btn-submit-gold,
+.btn-pink,
+.btn-primary,
+.button-primary,
+.send-btn,
+.search-sub-btn,
+.btn-view-book,
+.step-number-pill {
+  background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(230, 0, 92, 0.38) !important;
+  border: none !important;
+}
+
+.btn-register:hover,
+.btn-search-primary:hover,
+.pill-search-btn:hover,
+.btn-try-sagun:hover,
+.btn-confirm-inquiry:hover,
+.btn-send-interest:hover,
+.btn-ask-sagun:hover,
+.btn-action-primary:hover,
+.btn-login-cta:hover,
+.btn-explore-vendors:hover,
+.btn-submit-contact:hover,
+.btn-submit-auth:hover,
+.btn-submit-gold:hover,
+.btn-pink:hover,
+.btn-primary:hover,
+.button-primary:hover,
+.send-btn:hover,
+.btn-view-book:hover {
+  filter: brightness(1.08) !important;
+  box-shadow: 0 6px 22px rgba(230, 0, 92, 0.55) !important;
+  transform: translateY(-1px) !important;
+}
+

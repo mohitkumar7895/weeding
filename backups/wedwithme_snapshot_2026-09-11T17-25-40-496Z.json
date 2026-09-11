@@ -1,0 +1,1118 @@
+{
+  "metadata": {
+    "database": "wedwithme",
+    "host": "127.0.0.1",
+    "created_at": "2026-09-11T17:25:40.511Z",
+    "version": "WedWithMe Part 2 v1.0"
+  },
+  "tables": {
+    "ai_conversations": {
+      "create_statement": "CREATE TABLE `ai_conversations` (\n  `id` varchar(36) NOT NULL,\n  `user_id` varchar(36) DEFAULT NULL,\n  `session_token` varchar(100) DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `user_id` (`user_id`),\n  CONSTRAINT `ai_conversations_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 2,
+      "rows": [
+        {
+          "id": "2ee003e9-ed44-4cd1-9e54-217842d95943",
+          "user_id": null,
+          "session_token": "2fc507ab-0a96-4038-9aef-4694209375eb",
+          "created_at": "2026-09-11T14:36:16.000Z"
+        },
+        {
+          "id": "5409fa0d-25eb-4185-89bc-1bb851e6fe7d",
+          "user_id": null,
+          "session_token": "591f67cb-9823-4178-8912-912f0561cef5",
+          "created_at": "2026-09-11T14:44:19.000Z"
+        }
+      ]
+    },
+    "ai_messages": {
+      "create_statement": "CREATE TABLE `ai_messages` (\n  `id` varchar(36) NOT NULL,\n  `conversation_id` varchar(36) NOT NULL,\n  `sender` enum('USER','SAGUN') NOT NULL,\n  `content` text NOT NULL,\n  `structured_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`structured_data`)),\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `conversation_id` (`conversation_id`),\n  CONSTRAINT `ai_messages_ibfk_1` FOREIGN KEY (`conversation_id`) REFERENCES `ai_conversations` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 4,
+      "rows": [
+        {
+          "id": "07d1c6d1-39e7-4bbb-84ec-f93ef7fdeb63",
+          "conversation_id": "2ee003e9-ed44-4cd1-9e54-217842d95943",
+          "sender": "SAGUN",
+          "content": "Namaste! Based on your criteria, I have handpicked top-rated verified wedding vendors for you in Delhi. All these vendors offer verified transparent pricing and escrow-backed booking security through WedWithMe.",
+          "structured_data": "{\"type\":\"VENDORS\",\"items\":[{\"id\":\"ven_royal_clicks\",\"business_name\":\"Royal Clicks Photography\",\"city\":\"Delhi NCR\",\"rating\":4.8,\"review_count\":1240,\"starting_price\":15000,\"cover_image\":\"/images/photographer.jpg\",\"category_name\":\"Photographers\"}]}",
+          "created_at": "2026-09-11T14:36:16.000Z"
+        },
+        {
+          "id": "1411be47-a97b-4294-973b-1af69dae72a7",
+          "conversation_id": "5409fa0d-25eb-4185-89bc-1bb851e6fe7d",
+          "sender": "SAGUN",
+          "content": "Namaste! Based on your criteria, I have handpicked top-rated verified wedding vendors for you. All these vendors offer verified transparent pricing and escrow-backed booking security through WedWithMe.",
+          "structured_data": "{\"type\":\"VENDORS\",\"items\":[{\"id\":\"ven_zaika_caterers\",\"business_name\":\"Zaika Caterers\",\"city\":\"Agra\",\"rating\":4.7,\"review_count\":980,\"starting_price\":20000,\"cover_image\":\"/images/caterer.jpg\",\"category_name\":\"Caterers\"}]}",
+          "created_at": "2026-09-11T14:44:19.000Z"
+        },
+        {
+          "id": "885d6783-b445-467b-9275-6f9ef69dc0b1",
+          "conversation_id": "2ee003e9-ed44-4cd1-9e54-217842d95943",
+          "sender": "USER",
+          "content": "Find photographer in Delhi",
+          "structured_data": null,
+          "created_at": "2026-09-11T14:36:16.000Z"
+        },
+        {
+          "id": "9c21a175-cb9e-4dff-937e-34546ab12b80",
+          "conversation_id": "5409fa0d-25eb-4185-89bc-1bb851e6fe7d",
+          "sender": "USER",
+          "content": "What is the budget for catering for 300 guests?",
+          "structured_data": null,
+          "created_at": "2026-09-11T14:44:19.000Z"
+        }
+      ]
+    },
+    "analytics_events": {
+      "create_statement": "CREATE TABLE `analytics_events` (\n  `id` varchar(36) NOT NULL,\n  `user_id` varchar(36) DEFAULT NULL,\n  `session_id` varchar(100) DEFAULT NULL,\n  `event_name` varchar(100) NOT NULL,\n  `entity_type` varchar(50) DEFAULT NULL,\n  `entity_id` varchar(36) DEFAULT NULL,\n  `properties_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`properties_json`)),\n  `ip_address` varchar(45) DEFAULT NULL,\n  `user_agent` text DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `idx_event_name` (`event_name`,`created_at`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "audit_logs": {
+      "create_statement": "CREATE TABLE `audit_logs` (\n  `id` varchar(36) NOT NULL,\n  `user_id` varchar(36) DEFAULT NULL,\n  `role` varchar(50) DEFAULT NULL,\n  `action` varchar(100) NOT NULL,\n  `entity_type` varchar(50) NOT NULL,\n  `entity_id` varchar(50) NOT NULL,\n  `old_values` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`old_values`)),\n  `new_values` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`new_values`)),\n  `ip_address` varchar(50) DEFAULT NULL,\n  `user_agent` text DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `idx_audit_action` (`action`,`entity_type`),\n  KEY `idx_audit_user` (`user_id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 6,
+      "rows": [
+        {
+          "id": "aud_1789137164639_ad2cx",
+          "user_id": "usr_cust_gopal",
+          "role": "CUSTOMER",
+          "action": "USER_LOGIN",
+          "entity_type": "User",
+          "entity_id": "usr_cust_gopal",
+          "old_values": null,
+          "new_values": null,
+          "ip_address": null,
+          "user_agent": null,
+          "created_at": "2026-09-11T14:32:44.000Z"
+        },
+        {
+          "id": "aud_1789137242869_41xok",
+          "user_id": "usr_cust_gopal",
+          "role": "CUSTOMER",
+          "action": "USER_LOGIN",
+          "entity_type": "User",
+          "entity_id": "usr_cust_gopal",
+          "old_values": null,
+          "new_values": null,
+          "ip_address": null,
+          "user_agent": null,
+          "created_at": "2026-09-11T14:34:02.000Z"
+        },
+        {
+          "id": "aud_1789137265474_s8nbf",
+          "user_id": "usr_cust_gopal",
+          "role": "CUSTOMER",
+          "action": "USER_LOGIN",
+          "entity_type": "User",
+          "entity_id": "usr_cust_gopal",
+          "old_values": null,
+          "new_values": null,
+          "ip_address": null,
+          "user_agent": null,
+          "created_at": "2026-09-11T14:34:25.000Z"
+        },
+        {
+          "id": "aud_1789137273712_uhroi",
+          "user_id": "usr_cust_gopal",
+          "role": "CUSTOMER",
+          "action": "USER_LOGIN",
+          "entity_type": "User",
+          "entity_id": "usr_cust_gopal",
+          "old_values": null,
+          "new_values": null,
+          "ip_address": null,
+          "user_agent": null,
+          "created_at": "2026-09-11T14:34:33.000Z"
+        },
+        {
+          "id": "aud_1789137319399_5qa95",
+          "user_id": "usr_cust_gopal",
+          "role": "CUSTOMER",
+          "action": "USER_LOGIN",
+          "entity_type": "User",
+          "entity_id": "usr_cust_gopal",
+          "old_values": null,
+          "new_values": null,
+          "ip_address": null,
+          "user_agent": null,
+          "created_at": "2026-09-11T14:35:19.000Z"
+        },
+        {
+          "id": "aud_1789137319606_pckuj",
+          "user_id": "usr_super_admin_01",
+          "role": "SUPER_ADMIN",
+          "action": "USER_LOGIN",
+          "entity_type": "User",
+          "entity_id": "usr_super_admin_01",
+          "old_values": null,
+          "new_values": null,
+          "ip_address": null,
+          "user_agent": null,
+          "created_at": "2026-09-11T14:35:19.000Z"
+        }
+      ]
+    },
+    "booking_status_history": {
+      "create_statement": "CREATE TABLE `booking_status_history` (\n  `id` varchar(36) NOT NULL,\n  `booking_id` varchar(36) NOT NULL,\n  `from_status` varchar(50) NOT NULL,\n  `to_status` varchar(50) NOT NULL,\n  `changed_by` varchar(36) NOT NULL,\n  `reason` text DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `idx_booking_hist` (`booking_id`),\n  CONSTRAINT `booking_status_history_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "bookings": {
+      "create_statement": "CREATE TABLE `bookings` (\n  `id` varchar(36) NOT NULL,\n  `booking_number` varchar(50) NOT NULL,\n  `customer_id` varchar(36) NOT NULL,\n  `vendor_id` varchar(36) NOT NULL,\n  `service_id` varchar(36) DEFAULT NULL,\n  `package_id` varchar(36) DEFAULT NULL,\n  `event_date` date NOT NULL,\n  `guest_count` int(11) DEFAULT 200,\n  `total_amount` decimal(12,2) NOT NULL,\n  `commission_rate` decimal(5,2) DEFAULT 10.00,\n  `commission_amount` decimal(12,2) NOT NULL,\n  `vendor_payout_amount` decimal(12,2) NOT NULL,\n  `status` enum('REQUESTED','PENDING_VENDOR','ACCEPTED','REJECTED','PAYMENT_PENDING','CONFIRMED','IN_PROGRESS','COMPLETED','CANCELLED','REFUND_PENDING','REFUNDED','DISPUTED') DEFAULT 'REQUESTED',\n  `cancellation_reason` text DEFAULT NULL,\n  `notes` text DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `booking_number` (`booking_number`),\n  KEY `customer_id` (`customer_id`),\n  KEY `vendor_id` (`vendor_id`),\n  KEY `idx_bookings_status` (`status`),\n  KEY `idx_bookings_date` (`event_date`),\n  CONSTRAINT `bookings_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customer_profiles` (`id`),\n  CONSTRAINT `bookings_ibfk_2` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 2,
+      "rows": [
+        {
+          "id": "5d217fcd-de04-45aa-a77b-fde1833ad5de",
+          "booking_number": "WWM-2026-764999",
+          "customer_id": "prof_usr_cust_gopal",
+          "vendor_id": "ven_dream_decor",
+          "service_id": null,
+          "package_id": null,
+          "event_date": "2026-11-19T18:30:00.000Z",
+          "guest_count": 350,
+          "total_amount": "25000.00",
+          "commission_rate": "10.00",
+          "commission_amount": "2500.00",
+          "vendor_payout_amount": "22500.00",
+          "status": "CONFIRMED",
+          "cancellation_reason": null,
+          "notes": "Need full wedding coverage with drone photography",
+          "created_at": "2026-09-11T14:34:25.000Z",
+          "updated_at": "2026-09-11T14:35:23.000Z"
+        },
+        {
+          "id": "book_demo_01",
+          "booking_number": "WWM-2026-8941",
+          "customer_id": "prof_usr_cust_gopal",
+          "vendor_id": "ven_royal_palace",
+          "service_id": null,
+          "package_id": null,
+          "event_date": "2026-11-11T18:30:00.000Z",
+          "guest_count": 200,
+          "total_amount": "150000.00",
+          "commission_rate": "10.00",
+          "commission_amount": "15000.00",
+          "vendor_payout_amount": "135000.00",
+          "status": "CONFIRMED",
+          "cancellation_reason": null,
+          "notes": "Royal Palace Venue Wedding Sangeet",
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        }
+      ]
+    },
+    "categories": {
+      "create_statement": "CREATE TABLE `categories` (\n  `id` varchar(36) NOT NULL,\n  `slug` varchar(50) NOT NULL,\n  `name` varchar(100) NOT NULL,\n  `description` text DEFAULT NULL,\n  `icon_svg` text DEFAULT NULL,\n  `is_active` tinyint(1) DEFAULT 1,\n  `display_order` int(11) DEFAULT 0,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `slug` (`slug`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 7,
+      "rows": [
+        {
+          "id": "cat_caterers",
+          "slug": "caterers",
+          "name": "Caterers",
+          "description": "Delicious Food for Every Moment",
+          "icon_svg": null,
+          "is_active": 1,
+          "display_order": 2,
+          "created_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "cat_decorators",
+          "slug": "decorators",
+          "name": "Decorators",
+          "description": "Turn Dreams into Reality",
+          "icon_svg": null,
+          "is_active": 1,
+          "display_order": 3,
+          "created_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "cat_dj",
+          "slug": "dj-music",
+          "name": "DJ & Music",
+          "description": "Energetic Sound & Entertainment",
+          "icon_svg": null,
+          "is_active": 1,
+          "display_order": 7,
+          "created_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "cat_makeup",
+          "slug": "makeup",
+          "name": "Bridal Makeup",
+          "description": "Flawless Beauty for Your Big Day",
+          "icon_svg": null,
+          "is_active": 1,
+          "display_order": 5,
+          "created_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "cat_mehendi",
+          "slug": "mehendi",
+          "name": "Mehendi Artists",
+          "description": "Intricate & Traditional Henna Designs",
+          "icon_svg": null,
+          "is_active": 1,
+          "display_order": 6,
+          "created_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "cat_photographers",
+          "slug": "photographers",
+          "name": "Photographers",
+          "description": "Capture Your Special Moments",
+          "icon_svg": null,
+          "is_active": 1,
+          "display_order": 1,
+          "created_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "cat_venues",
+          "slug": "venues",
+          "name": "Venues",
+          "description": "Stunning Spaces for Your Big Day",
+          "icon_svg": null,
+          "is_active": 1,
+          "display_order": 4,
+          "created_at": "2026-09-11T14:23:10.000Z"
+        }
+      ]
+    },
+    "commission_records": {
+      "create_statement": "CREATE TABLE `commission_records` (\n  `id` varchar(36) NOT NULL,\n  `booking_id` varchar(36) NOT NULL,\n  `percentage` decimal(5,2) NOT NULL,\n  `commission_amount` decimal(12,2) NOT NULL,\n  `is_settled` tinyint(1) DEFAULT 0,\n  `settled_at` datetime DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `booking_id` (`booking_id`),\n  CONSTRAINT `commission_records_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 1,
+      "rows": [
+        {
+          "id": "ad0c6b3d-c7a3-47fd-8ccc-3fc54a7182a2",
+          "booking_id": "5d217fcd-de04-45aa-a77b-fde1833ad5de",
+          "percentage": "10.00",
+          "commission_amount": "2500.00",
+          "is_settled": 0,
+          "settled_at": null,
+          "created_at": "2026-09-11T14:34:25.000Z"
+        }
+      ]
+    },
+    "commission_rules": {
+      "create_statement": "CREATE TABLE `commission_rules` (\n  `id` varchar(36) NOT NULL,\n  `rule_name` varchar(100) NOT NULL,\n  `category_id` varchar(36) DEFAULT NULL,\n  `vendor_id` varchar(36) DEFAULT NULL,\n  `commission_type` enum('PERCENTAGE','FIXED') DEFAULT 'PERCENTAGE',\n  `commission_value` decimal(8,2) NOT NULL DEFAULT 10.00,\n  `min_fee` decimal(10,2) DEFAULT 500.00,\n  `max_fee` decimal(10,2) DEFAULT NULL,\n  `effective_from` date NOT NULL,\n  `is_active` tinyint(1) DEFAULT 1,\n  `version` int(11) DEFAULT 1,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `category_id` (`category_id`),\n  KEY `vendor_id` (`vendor_id`),\n  CONSTRAINT `commission_rules_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `commission_rules_ibfk_2` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 1,
+      "rows": [
+        {
+          "id": "rule_default_10",
+          "rule_name": "Standard Marketplace 10% Commission",
+          "category_id": null,
+          "vendor_id": null,
+          "commission_type": "PERCENTAGE",
+          "commission_value": "10.00",
+          "min_fee": "500.00",
+          "max_fee": null,
+          "effective_from": "2025-12-31T18:30:00.000Z",
+          "is_active": 1,
+          "version": 1,
+          "created_at": "2026-09-11T14:49:08.000Z"
+        }
+      ]
+    },
+    "conversation_messages": {
+      "create_statement": "CREATE TABLE `conversation_messages` (\n  `id` varchar(36) NOT NULL,\n  `conversation_id` varchar(36) NOT NULL,\n  `sender_id` varchar(36) NOT NULL,\n  `message` text NOT NULL,\n  `is_read` tinyint(1) DEFAULT 0,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `conversation_id` (`conversation_id`),\n  CONSTRAINT `conversation_messages_ibfk_1` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "conversations": {
+      "create_statement": "CREATE TABLE `conversations` (\n  `id` varchar(36) NOT NULL,\n  `booking_id` varchar(36) DEFAULT NULL,\n  `customer_id` varchar(36) NOT NULL,\n  `vendor_id` varchar(36) NOT NULL,\n  `status` enum('ACTIVE','ARCHIVED','BLOCKED') DEFAULT 'ACTIVE',\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `customer_id` (`customer_id`),\n  KEY `vendor_id` (`vendor_id`),\n  CONSTRAINT `conversations_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customer_profiles` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `conversations_ibfk_2` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "customer_profiles": {
+      "create_statement": "CREATE TABLE `customer_profiles` (\n  `id` varchar(36) NOT NULL,\n  `user_id` varchar(36) NOT NULL,\n  `gender` enum('MALE','FEMALE','OTHER') NOT NULL,\n  `date_of_birth` date NOT NULL,\n  `height_cm` int(11) NOT NULL,\n  `marital_status` varchar(50) DEFAULT 'NEVER_MARRIED',\n  `religion` varchar(50) NOT NULL,\n  `caste` varchar(50) DEFAULT NULL,\n  `sub_caste` varchar(50) DEFAULT NULL,\n  `education` varchar(100) NOT NULL,\n  `profession` varchar(100) NOT NULL,\n  `annual_income` decimal(12,2) NOT NULL,\n  `country` varchar(50) DEFAULT 'India',\n  `state` varchar(50) NOT NULL,\n  `city` varchar(50) NOT NULL,\n  `about_me` text DEFAULT NULL,\n  `family_details` text DEFAULT NULL,\n  `hobbies` text DEFAULT NULL,\n  `verification_status` enum('UNVERIFIED','PENDING','VERIFIED','REJECTED') DEFAULT 'UNVERIFIED',\n  `profile_visibility` enum('PUBLIC','REGISTERED_ONLY','PRIVATE') DEFAULT 'PUBLIC',\n  `hide_phone` tinyint(1) DEFAULT 1,\n  `hide_photos` tinyint(1) DEFAULT 0,\n  `hide_income` tinyint(1) DEFAULT 0,\n  `profile_score` int(11) DEFAULT 85,\n  `created_at` datetime DEFAULT current_timestamp(),\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `user_id` (`user_id`),\n  KEY `idx_profiles_filter` (`gender`,`marital_status`,`religion`,`city`),\n  CONSTRAINT `customer_profiles_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 2,
+      "rows": [
+        {
+          "id": "prof_usr_cust_gopal",
+          "user_id": "usr_cust_gopal",
+          "gender": "MALE",
+          "date_of_birth": "1998-08-19T18:30:00.000Z",
+          "height_cm": 178,
+          "marital_status": "NEVER_MARRIED",
+          "religion": "Hindu",
+          "caste": "Yadav",
+          "sub_caste": null,
+          "education": "MBA & B.Tech",
+          "profession": "Product Manager",
+          "annual_income": "2400000.00",
+          "country": "India",
+          "state": "Uttar Pradesh",
+          "city": "Agra",
+          "about_me": "Tech enthusiast, cricket lover, family-oriented. Looking for a partner who believes in mutual respect and growth.",
+          "family_details": null,
+          "hobbies": null,
+          "verification_status": "VERIFIED",
+          "profile_visibility": "PUBLIC",
+          "hide_phone": 1,
+          "hide_photos": 0,
+          "hide_income": 0,
+          "profile_score": 85,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "prof_usr_cust_priya",
+          "user_id": "usr_cust_priya",
+          "gender": "FEMALE",
+          "date_of_birth": "2000-05-13T18:30:00.000Z",
+          "height_cm": 163,
+          "marital_status": "NEVER_MARRIED",
+          "religion": "Hindu",
+          "caste": "Brahmin",
+          "sub_caste": null,
+          "education": "B.Tech in Computer Science",
+          "profession": "Senior Software Engineer",
+          "annual_income": "1800000.00",
+          "country": "India",
+          "state": "Uttar Pradesh",
+          "city": "Lucknow",
+          "about_me": "I value family, career, and mindful living. Love reading, Indian classical music, and weekend trekking.",
+          "family_details": null,
+          "hobbies": null,
+          "verification_status": "VERIFIED",
+          "profile_visibility": "PUBLIC",
+          "hide_phone": 1,
+          "hide_photos": 0,
+          "hide_income": 0,
+          "profile_score": 85,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        }
+      ]
+    },
+    "data_export_requests": {
+      "create_statement": "CREATE TABLE `data_export_requests` (\n  `id` varchar(36) NOT NULL,\n  `user_id` varchar(36) NOT NULL,\n  `status` enum('PENDING','PROCESSING','READY','EXPIRED') DEFAULT 'PENDING',\n  `download_url` varchar(255) DEFAULT NULL,\n  `expires_at` datetime DEFAULT NULL,\n  `requested_at` datetime DEFAULT current_timestamp(),\n  `completed_at` datetime DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  KEY `user_id` (`user_id`),\n  CONSTRAINT `data_export_requests_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "data_retention_policies": {
+      "create_statement": "CREATE TABLE `data_retention_policies` (\n  `id` varchar(36) NOT NULL,\n  `entity_name` varchar(100) NOT NULL,\n  `retention_days` int(11) NOT NULL,\n  `action_on_expiry` enum('ANONYMIZE','SOFT_DELETE','HARD_DELETE','ARCHIVE') DEFAULT 'ARCHIVE',\n  `is_active` tinyint(1) DEFAULT 1,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `entity_name` (`entity_name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 3,
+      "rows": [
+        {
+          "id": "ret_ai",
+          "entity_name": "ai_messages",
+          "retention_days": 180,
+          "action_on_expiry": "SOFT_DELETE",
+          "is_active": 1,
+          "created_at": "2026-09-11T14:49:08.000Z"
+        },
+        {
+          "id": "ret_analytics",
+          "entity_name": "analytics_events",
+          "retention_days": 365,
+          "action_on_expiry": "ANONYMIZE",
+          "is_active": 1,
+          "created_at": "2026-09-11T14:49:08.000Z"
+        },
+        {
+          "id": "ret_logs",
+          "entity_name": "audit_logs",
+          "retention_days": 730,
+          "action_on_expiry": "ARCHIVE",
+          "is_active": 1,
+          "created_at": "2026-09-11T14:49:08.000Z"
+        }
+      ]
+    },
+    "dispute_evidence": {
+      "create_statement": "CREATE TABLE `dispute_evidence` (\n  `id` varchar(36) NOT NULL,\n  `dispute_id` varchar(36) NOT NULL,\n  `uploaded_by` varchar(36) NOT NULL,\n  `file_url` varchar(255) NOT NULL,\n  `file_type` varchar(50) DEFAULT 'image/jpeg',\n  `description` text DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `dispute_id` (`dispute_id`),\n  CONSTRAINT `dispute_evidence_ibfk_1` FOREIGN KEY (`dispute_id`) REFERENCES `disputes` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "dispute_messages": {
+      "create_statement": "CREATE TABLE `dispute_messages` (\n  `id` varchar(36) NOT NULL,\n  `dispute_id` varchar(36) NOT NULL,\n  `sender_id` varchar(36) NOT NULL,\n  `sender_role` enum('CUSTOMER','VENDOR','ADMIN') NOT NULL,\n  `message` text NOT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `dispute_id` (`dispute_id`),\n  CONSTRAINT `dispute_messages_ibfk_1` FOREIGN KEY (`dispute_id`) REFERENCES `disputes` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "disputes": {
+      "create_statement": "CREATE TABLE `disputes` (\n  `id` varchar(36) NOT NULL,\n  `booking_id` varchar(36) NOT NULL,\n  `raised_by_user_id` varchar(36) NOT NULL,\n  `reason` text NOT NULL,\n  `status` enum('OPEN','UNDER_REVIEW','RESOLVED','CLOSED') DEFAULT 'OPEN',\n  `resolution` text DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `booking_id` (`booking_id`),\n  CONSTRAINT `disputes_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "fraud_flags": {
+      "create_statement": "CREATE TABLE `fraud_flags` (\n  `id` varchar(36) NOT NULL,\n  `entity_type` enum('USER','PROFILE','VENDOR','BOOKING','PAYMENT','REVIEW') NOT NULL,\n  `entity_id` varchar(36) NOT NULL,\n  `risk_score` int(11) DEFAULT 50,\n  `flag_reason` text NOT NULL,\n  `severity` enum('LOW','MEDIUM','HIGH','CRITICAL') DEFAULT 'MEDIUM',\n  `status` enum('OPEN','REVIEWED','DISMISSED','ACTIONED') DEFAULT 'OPEN',\n  `reviewed_by` varchar(36) DEFAULT NULL,\n  `action_taken` text DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `idx_fraud_status` (`status`,`severity`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "funnel_events": {
+      "create_statement": "CREATE TABLE `funnel_events` (\n  `id` varchar(36) NOT NULL,\n  `user_id` varchar(36) DEFAULT NULL,\n  `funnel_type` enum('CUSTOMER','VENDOR') NOT NULL,\n  `step_name` varchar(100) NOT NULL,\n  `step_number` int(11) NOT NULL,\n  `completed` tinyint(1) DEFAULT 1,\n  `metadata_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`metadata_json`)),\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `idx_funnel` (`funnel_type`,`step_number`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "match_factor_weights": {
+      "create_statement": "CREATE TABLE `match_factor_weights` (\n  `id` varchar(36) NOT NULL,\n  `factor_name` varchar(50) NOT NULL,\n  `weight_percent` decimal(5,2) NOT NULL,\n  `is_active` tinyint(1) DEFAULT 1,\n  `version` int(11) DEFAULT 1,\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `factor_name` (`factor_name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 9,
+      "rows": [
+        {
+          "id": "mf_age",
+          "factor_name": "Age Compatibility",
+          "weight_percent": "15.00",
+          "is_active": 1,
+          "version": 1,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "mf_education",
+          "factor_name": "Education Level Matching",
+          "weight_percent": "10.00",
+          "is_active": 1,
+          "version": 1,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "mf_height",
+          "factor_name": "Height Preference Match",
+          "weight_percent": "5.00",
+          "is_active": 1,
+          "version": 1,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "mf_income",
+          "factor_name": "Annual Income Expectation",
+          "weight_percent": "10.00",
+          "is_active": 1,
+          "version": 1,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "mf_location",
+          "factor_name": "Location & City Distance",
+          "weight_percent": "15.00",
+          "is_active": 1,
+          "version": 1,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "mf_marital",
+          "factor_name": "Marital Status Compatibility",
+          "weight_percent": "10.00",
+          "is_active": 1,
+          "version": 1,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "mf_profession",
+          "factor_name": "Profession & Career Field",
+          "weight_percent": "10.00",
+          "is_active": 1,
+          "version": 1,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "mf_profile",
+          "factor_name": "Profile Completeness & Verification",
+          "weight_percent": "10.00",
+          "is_active": 1,
+          "version": 1,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "mf_religion",
+          "factor_name": "Religion & Caste Preference",
+          "weight_percent": "15.00",
+          "is_active": 1,
+          "version": 1,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        }
+      ]
+    },
+    "match_scores": {
+      "create_statement": "CREATE TABLE `match_scores` (\n  `id` varchar(36) NOT NULL,\n  `source_profile_id` varchar(36) NOT NULL,\n  `target_profile_id` varchar(36) NOT NULL,\n  `score_percent` decimal(5,2) NOT NULL,\n  `breakdown_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`breakdown_json`)),\n  `calculated_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uq_source_target` (`source_profile_id`,`target_profile_id`),\n  KEY `target_profile_id` (`target_profile_id`),\n  KEY `idx_scores` (`source_profile_id`,`score_percent`),\n  CONSTRAINT `match_scores_ibfk_1` FOREIGN KEY (`source_profile_id`) REFERENCES `customer_profiles` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `match_scores_ibfk_2` FOREIGN KEY (`target_profile_id`) REFERENCES `customer_profiles` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "notification_preferences": {
+      "create_statement": "CREATE TABLE `notification_preferences` (\n  `id` varchar(36) NOT NULL,\n  `user_id` varchar(36) NOT NULL,\n  `email_enabled` tinyint(1) DEFAULT 1,\n  `sms_enabled` tinyint(1) DEFAULT 0,\n  `whatsapp_enabled` tinyint(1) DEFAULT 0,\n  `in_app_enabled` tinyint(1) DEFAULT 1,\n  `marketing_enabled` tinyint(1) DEFAULT 0,\n  `created_at` datetime DEFAULT current_timestamp(),\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `user_id` (`user_id`),\n  CONSTRAINT `notification_preferences_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "notifications": {
+      "create_statement": "CREATE TABLE `notifications` (\n  `id` varchar(36) NOT NULL,\n  `user_id` varchar(36) NOT NULL,\n  `title` varchar(191) NOT NULL,\n  `message` text NOT NULL,\n  `type` varchar(50) NOT NULL,\n  `link` varchar(255) DEFAULT NULL,\n  `is_read` tinyint(1) DEFAULT 0,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `idx_user_read` (`user_id`,`is_read`),\n  CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "partner_preferences": {
+      "create_statement": "CREATE TABLE `partner_preferences` (\n  `id` varchar(36) NOT NULL,\n  `profile_id` varchar(36) NOT NULL,\n  `min_age` int(11) DEFAULT 21,\n  `max_age` int(11) DEFAULT 32,\n  `min_height_cm` int(11) DEFAULT 150,\n  `max_height_cm` int(11) DEFAULT 190,\n  `accepted_marital_status` varchar(255) DEFAULT 'NEVER_MARRIED',\n  `preferred_religions` varchar(255) DEFAULT 'Hindu',\n  `preferred_castes` varchar(255) DEFAULT NULL,\n  `preferred_educations` varchar(255) DEFAULT NULL,\n  `preferred_professions` varchar(255) DEFAULT NULL,\n  `min_income` decimal(12,2) DEFAULT NULL,\n  `preferred_locations` varchar(255) DEFAULT NULL,\n  `deal_breakers` text DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `profile_id` (`profile_id`),\n  CONSTRAINT `partner_preferences_ibfk_1` FOREIGN KEY (`profile_id`) REFERENCES `customer_profiles` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 2,
+      "rows": [
+        {
+          "id": "pref_prof_usr_cust_gopal",
+          "profile_id": "prof_usr_cust_gopal",
+          "min_age": 22,
+          "max_age": 30,
+          "min_height_cm": 155,
+          "max_height_cm": 185,
+          "accepted_marital_status": "NEVER_MARRIED",
+          "preferred_religions": "Hindu",
+          "preferred_castes": null,
+          "preferred_educations": null,
+          "preferred_professions": null,
+          "min_income": "1000000.00",
+          "preferred_locations": "Delhi NCR, Lucknow, Agra, Jaipur",
+          "deal_breakers": null,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "pref_prof_usr_cust_priya",
+          "profile_id": "prof_usr_cust_priya",
+          "min_age": 22,
+          "max_age": 30,
+          "min_height_cm": 155,
+          "max_height_cm": 185,
+          "accepted_marital_status": "NEVER_MARRIED",
+          "preferred_religions": "Hindu",
+          "preferred_castes": null,
+          "preferred_educations": null,
+          "preferred_professions": null,
+          "min_income": "1000000.00",
+          "preferred_locations": "Delhi NCR, Lucknow, Agra, Jaipur",
+          "deal_breakers": null,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        }
+      ]
+    },
+    "payment_provider_events": {
+      "create_statement": "CREATE TABLE `payment_provider_events` (\n  `id` varchar(36) NOT NULL,\n  `provider` varchar(50) NOT NULL,\n  `event_id` varchar(100) NOT NULL,\n  `event_type` varchar(100) NOT NULL,\n  `payload_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`payload_json`)),\n  `status` enum('RECEIVED','PROCESSED','FAILED','IGNORED') DEFAULT 'RECEIVED',\n  `processed_at` datetime DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `event_id` (`event_id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "payment_transactions": {
+      "create_statement": "CREATE TABLE `payment_transactions` (\n  `id` varchar(36) NOT NULL,\n  `booking_id` varchar(36) NOT NULL,\n  `transaction_ref` varchar(100) NOT NULL,\n  `amount` decimal(12,2) NOT NULL,\n  `currency` varchar(10) DEFAULT 'INR',\n  `provider` varchar(50) DEFAULT 'razorpay',\n  `status` enum('PENDING','SUCCESS','FAILED','REFUNDED') DEFAULT 'PENDING',\n  `payment_details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`payment_details`)),\n  `created_at` datetime DEFAULT current_timestamp(),\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `transaction_ref` (`transaction_ref`),\n  KEY `booking_id` (`booking_id`),\n  CONSTRAINT `payment_transactions_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 1,
+      "rows": [
+        {
+          "id": "55eb824f-a4a2-4060-a054-021e3fbc43fe",
+          "booking_id": "5d217fcd-de04-45aa-a77b-fde1833ad5de",
+          "transaction_ref": "TXN_1789137323454_8668",
+          "amount": "25000.00",
+          "currency": "INR",
+          "provider": "razorpay",
+          "status": "SUCCESS",
+          "payment_details": "{\"gateway\":\"razorpay\",\"paid_at\":\"2026-09-11T14:35:23.455Z\",\"payer_user_id\":\"usr_cust_gopal\"}",
+          "created_at": "2026-09-11T14:35:23.000Z",
+          "updated_at": "2026-09-11T14:35:23.000Z"
+        }
+      ]
+    },
+    "payout_attempts": {
+      "create_statement": "CREATE TABLE `payout_attempts` (\n  `id` varchar(36) NOT NULL,\n  `payout_id` varchar(36) NOT NULL,\n  `attempt_number` int(11) NOT NULL,\n  `status` enum('PENDING','SUCCESS','FAILED') DEFAULT 'PENDING',\n  `response_payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`response_payload`)),\n  `error_message` text DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `payout_id` (`payout_id`),\n  CONSTRAINT `payout_attempts_ibfk_1` FOREIGN KEY (`payout_id`) REFERENCES `payouts` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "payouts": {
+      "create_statement": "CREATE TABLE `payouts` (\n  `id` varchar(36) NOT NULL,\n  `vendor_id` varchar(36) NOT NULL,\n  `booking_id` varchar(36) NOT NULL,\n  `amount` decimal(12,2) NOT NULL,\n  `status` enum('PENDING','PROCESSING','PAID','FAILED') DEFAULT 'PENDING',\n  `payout_date` datetime DEFAULT NULL,\n  `reference_id` varchar(100) DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `vendor_id` (`vendor_id`),\n  KEY `booking_id` (`booking_id`),\n  CONSTRAINT `payouts_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`),\n  CONSTRAINT `payouts_ibfk_2` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 1,
+      "rows": [
+        {
+          "id": "dfefb989-ebd4-4fd4-a8a2-79ce13b344c1",
+          "vendor_id": "ven_dream_decor",
+          "booking_id": "5d217fcd-de04-45aa-a77b-fde1833ad5de",
+          "amount": "22500.00",
+          "status": "PENDING",
+          "payout_date": null,
+          "reference_id": "PAYOUT_REF_1789137323461",
+          "created_at": "2026-09-11T14:35:23.000Z",
+          "updated_at": "2026-09-11T14:35:23.000Z"
+        }
+      ]
+    },
+    "permissions": {
+      "create_statement": "CREATE TABLE `permissions` (\n  `id` varchar(36) NOT NULL,\n  `name` varchar(100) NOT NULL,\n  `module` varchar(50) NOT NULL,\n  `action` varchar(50) NOT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "privacy_settings": {
+      "create_statement": "CREATE TABLE `privacy_settings` (\n  `id` varchar(36) NOT NULL,\n  `user_id` varchar(36) NOT NULL,\n  `phone_visibility` enum('PUBLIC','MATCHED_ONLY','PRIVATE','ADMIN_ONLY') DEFAULT 'MATCHED_ONLY',\n  `email_visibility` enum('PUBLIC','MATCHED_ONLY','PRIVATE','ADMIN_ONLY') DEFAULT 'PRIVATE',\n  `income_visibility` enum('PUBLIC','MATCHED_ONLY','PRIVATE','ADMIN_ONLY') DEFAULT 'MATCHED_ONLY',\n  `photos_visibility` enum('PUBLIC','MATCHED_ONLY','PRIVATE','ADMIN_ONLY') DEFAULT 'PUBLIC',\n  `family_visibility` enum('PUBLIC','MATCHED_ONLY','PRIVATE','ADMIN_ONLY') DEFAULT 'MATCHED_ONLY',\n  `created_at` datetime DEFAULT current_timestamp(),\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `user_id` (`user_id`),\n  CONSTRAINT `privacy_settings_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "profile_photos": {
+      "create_statement": "CREATE TABLE `profile_photos` (\n  `id` varchar(36) NOT NULL,\n  `profile_id` varchar(36) NOT NULL,\n  `url` varchar(255) NOT NULL,\n  `is_primary` tinyint(1) DEFAULT 0,\n  `is_approved` tinyint(1) DEFAULT 1,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `profile_id` (`profile_id`),\n  CONSTRAINT `profile_photos_ibfk_1` FOREIGN KEY (`profile_id`) REFERENCES `customer_profiles` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 2,
+      "rows": [
+        {
+          "id": "photo_prof_usr_cust_gopal",
+          "profile_id": "prof_usr_cust_gopal",
+          "url": "/images/gopal.jpg",
+          "is_primary": 1,
+          "is_approved": 1,
+          "created_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "photo_prof_usr_cust_priya",
+          "profile_id": "prof_usr_cust_priya",
+          "url": "/images/priya.jpg",
+          "is_primary": 1,
+          "is_approved": 1,
+          "created_at": "2026-09-11T14:23:10.000Z"
+        }
+      ]
+    },
+    "refunds": {
+      "create_statement": "CREATE TABLE `refunds` (\n  `id` varchar(36) NOT NULL,\n  `booking_id` varchar(36) NOT NULL,\n  `amount` decimal(12,2) NOT NULL,\n  `reason` text DEFAULT NULL,\n  `status` enum('REQUESTED','APPROVED','PROCESSED','REJECTED') DEFAULT 'REQUESTED',\n  `reference_id` varchar(100) DEFAULT NULL,\n  `processed_at` datetime DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `booking_id` (`booking_id`),\n  CONSTRAINT `refunds_ibfk_1` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "review_reports": {
+      "create_statement": "CREATE TABLE `review_reports` (\n  `id` varchar(36) NOT NULL,\n  `review_id` varchar(36) NOT NULL,\n  `reported_by` varchar(36) NOT NULL,\n  `reason` text NOT NULL,\n  `status` enum('PENDING','REVIEWED','DISMISSED','ACTIONED') DEFAULT 'PENDING',\n  `admin_resolution` text DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `review_id` (`review_id`),\n  CONSTRAINT `review_reports_ibfk_1` FOREIGN KEY (`review_id`) REFERENCES `reviews` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "reviews": {
+      "create_statement": "CREATE TABLE `reviews` (\n  `id` varchar(36) NOT NULL,\n  `vendor_id` varchar(36) NOT NULL,\n  `customer_id` varchar(36) NOT NULL,\n  `rating` int(11) NOT NULL,\n  `comment` text DEFAULT NULL,\n  `is_verified_booking` tinyint(1) DEFAULT 1,\n  `created_at` datetime DEFAULT current_timestamp(),\n  `moderation_status` enum('APPROVED','FLAGGED','REMOVED') DEFAULT 'APPROVED',\n  PRIMARY KEY (`id`),\n  KEY `vendor_id` (`vendor_id`),\n  KEY `customer_id` (`customer_id`),\n  CONSTRAINT `reviews_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `reviews_ibfk_2` FOREIGN KEY (`customer_id`) REFERENCES `customer_profiles` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "risk_events": {
+      "create_statement": "CREATE TABLE `risk_events` (\n  `id` varchar(36) NOT NULL,\n  `event_type` varchar(100) NOT NULL,\n  `entity_id` varchar(36) NOT NULL,\n  `details_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`details_json`)),\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "role_permissions": {
+      "create_statement": "CREATE TABLE `role_permissions` (\n  `role_id` varchar(36) NOT NULL,\n  `permission_id` varchar(36) NOT NULL,\n  PRIMARY KEY (`role_id`,`permission_id`),\n  KEY `permission_id` (`permission_id`),\n  CONSTRAINT `role_permissions_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `role_permissions_ibfk_2` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "roles": {
+      "create_statement": "CREATE TABLE `roles` (\n  `id` varchar(36) NOT NULL,\n  `name` varchar(50) NOT NULL,\n  `description` text DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `name` (`name`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 6,
+      "rows": [
+        {
+          "id": "role_admin",
+          "name": "ADMIN",
+          "description": "Operations and moderation",
+          "created_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "role_customer",
+          "name": "CUSTOMER",
+          "description": "End-user bride/groom/family",
+          "created_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "role_finance",
+          "name": "FINANCE",
+          "description": "Commissions, payouts, and refunds",
+          "created_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "role_super_admin",
+          "name": "SUPER_ADMIN",
+          "description": "Complete platform control",
+          "created_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "role_support",
+          "name": "SUPPORT",
+          "description": "Customer support and disputes",
+          "created_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "role_vendor",
+          "name": "VENDOR",
+          "description": "Wedding service provider",
+          "created_at": "2026-09-11T14:23:10.000Z"
+        }
+      ]
+    },
+    "shortlists": {
+      "create_statement": "CREATE TABLE `shortlists` (\n  `id` varchar(36) NOT NULL,\n  `customer_id` varchar(36) NOT NULL,\n  `target_profile_id` varchar(36) NOT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uq_shortlist` (`customer_id`,`target_profile_id`),\n  KEY `target_profile_id` (`target_profile_id`),\n  CONSTRAINT `shortlists_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customer_profiles` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `shortlists_ibfk_2` FOREIGN KEY (`target_profile_id`) REFERENCES `customer_profiles` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "system_settings": {
+      "create_statement": "CREATE TABLE `system_settings` (\n  `id` varchar(36) NOT NULL,\n  `key` varchar(100) NOT NULL,\n  `value` text NOT NULL,\n  `category` varchar(50) NOT NULL,\n  `description` text DEFAULT NULL,\n  `updated_by` varchar(36) DEFAULT NULL,\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `key` (`key`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 4,
+      "rows": [
+        {
+          "id": "set_enable_ai_concierge",
+          "key": "enable_ai_concierge",
+          "value": "true",
+          "category": "AI",
+          "description": "Enable Sagun AI assistant for public and authenticated users",
+          "updated_by": null,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "set_matching_algorithm_version",
+          "key": "matching_algorithm_version",
+          "value": "1.2.0",
+          "category": "MATCHING",
+          "description": "Active multi-factor matching engine model",
+          "updated_by": null,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "set_min_booking_deposit_percent",
+          "key": "min_booking_deposit_percent",
+          "value": "25.00",
+          "category": "FINANCE",
+          "description": "Minimum advance deposit required to confirm booking (%)",
+          "updated_by": null,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "set_platform_commission_rate",
+          "key": "platform_commission_rate",
+          "value": "10.00",
+          "category": "FINANCE",
+          "description": "Default platform commission on vendor bookings (%)",
+          "updated_by": null,
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        }
+      ]
+    },
+    "user_consents": {
+      "create_statement": "CREATE TABLE `user_consents` (\n  `id` varchar(36) NOT NULL,\n  `user_id` varchar(36) NOT NULL,\n  `consent_type` enum('PRIVACY_POLICY','TERMS_OF_SERVICE','MARKETING','AI_PROCESSING','WHATSAPP_COMMUNICATION') NOT NULL,\n  `consent_version` varchar(20) DEFAULT 'v1.0',\n  `is_granted` tinyint(1) DEFAULT 1,\n  `granted_at` datetime DEFAULT current_timestamp(),\n  `revoked_at` datetime DEFAULT NULL,\n  `ip_address` varchar(45) DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uq_user_consent` (`user_id`,`consent_type`,`consent_version`),\n  CONSTRAINT `user_consents_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "users": {
+      "create_statement": "CREATE TABLE `users` (\n  `id` varchar(36) NOT NULL,\n  `email` varchar(191) NOT NULL,\n  `phone` varchar(50) DEFAULT NULL,\n  `password_hash` varchar(255) NOT NULL,\n  `name` varchar(191) NOT NULL,\n  `role` enum('SUPER_ADMIN','ADMIN','SUPPORT','FINANCE','VENDOR','CUSTOMER') DEFAULT 'CUSTOMER',\n  `status` enum('ACTIVE','SUSPENDED','PENDING_VERIFICATION') DEFAULT 'ACTIVE',\n  `email_verified` tinyint(1) DEFAULT 0,\n  `phone_verified` tinyint(1) DEFAULT 0,\n  `created_at` datetime DEFAULT current_timestamp(),\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  `deleted_at` datetime DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `email` (`email`),\n  UNIQUE KEY `phone` (`phone`),\n  KEY `idx_users_role_status` (`role`,`status`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 7,
+      "rows": [
+        {
+          "id": "usr_cust_gopal",
+          "email": "gopal.yadav@example.com",
+          "phone": "+9198111000178",
+          "password_hash": "$2b$10$5COlD6r6mvmr2/BlAsU1..X97sZigC3rzEmXveM2LHlFmyTGUWAq2",
+          "name": "Gopal Yadav",
+          "role": "CUSTOMER",
+          "status": "ACTIVE",
+          "email_verified": 1,
+          "phone_verified": 1,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z",
+          "deleted_at": null
+        },
+        {
+          "id": "usr_cust_priya",
+          "email": "priya.sharma@example.com",
+          "phone": "+9198111000163",
+          "password_hash": "$2b$10$5COlD6r6mvmr2/BlAsU1..X97sZigC3rzEmXveM2LHlFmyTGUWAq2",
+          "name": "Priya Sharma",
+          "role": "CUSTOMER",
+          "status": "ACTIVE",
+          "email_verified": 1,
+          "phone_verified": 1,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z",
+          "deleted_at": null
+        },
+        {
+          "id": "usr_super_admin_01",
+          "email": "admin@wedwithme.com",
+          "phone": "+919999900001",
+          "password_hash": "$2b$10$RdS2z/9JADPTv6ai12.td.j7e7kkRaBzJ8/nTAeJUjOApYnDH0OQC",
+          "name": "Platform Administrator",
+          "role": "SUPER_ADMIN",
+          "status": "ACTIVE",
+          "email_verified": 1,
+          "phone_verified": 1,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z",
+          "deleted_at": null
+        },
+        {
+          "id": "usr_vendor_cater",
+          "email": "vendor.cater@wedwithme.com",
+          "phone": "+919876500020000",
+          "password_hash": "$2b$10$RdS2z/9JADPTv6ai12.td.j7e7kkRaBzJ8/nTAeJUjOApYnDH0OQC",
+          "name": "Chef Rajesh Mehra",
+          "role": "VENDOR",
+          "status": "ACTIVE",
+          "email_verified": 1,
+          "phone_verified": 1,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z",
+          "deleted_at": null
+        },
+        {
+          "id": "usr_vendor_decor",
+          "email": "vendor.decor@wedwithme.com",
+          "phone": "+919876500025000",
+          "password_hash": "$2b$10$RdS2z/9JADPTv6ai12.td.j7e7kkRaBzJ8/nTAeJUjOApYnDH0OQC",
+          "name": "Sunil Verma",
+          "role": "VENDOR",
+          "status": "ACTIVE",
+          "email_verified": 1,
+          "phone_verified": 1,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z",
+          "deleted_at": null
+        },
+        {
+          "id": "usr_vendor_photo",
+          "email": "vendor.photo@wedwithme.com",
+          "phone": "+919876500015000",
+          "password_hash": "$2b$10$RdS2z/9JADPTv6ai12.td.j7e7kkRaBzJ8/nTAeJUjOApYnDH0OQC",
+          "name": "Amit Sharma",
+          "role": "VENDOR",
+          "status": "ACTIVE",
+          "email_verified": 1,
+          "phone_verified": 1,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z",
+          "deleted_at": null
+        },
+        {
+          "id": "usr_vendor_venue",
+          "email": "vendor.venue@wedwithme.com",
+          "phone": "+919876500050000",
+          "password_hash": "$2b$10$RdS2z/9JADPTv6ai12.td.j7e7kkRaBzJ8/nTAeJUjOApYnDH0OQC",
+          "name": "Rana Pratap Singh",
+          "role": "VENDOR",
+          "status": "ACTIVE",
+          "email_verified": 1,
+          "phone_verified": 1,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z",
+          "deleted_at": null
+        }
+      ]
+    },
+    "vendor_availability": {
+      "create_statement": "CREATE TABLE `vendor_availability` (\n  `id` varchar(36) NOT NULL,\n  `vendor_id` varchar(36) NOT NULL,\n  `date` date NOT NULL,\n  `is_booked` tinyint(1) DEFAULT 0,\n  `notes` text DEFAULT NULL,\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `uq_vendor_date` (`vendor_id`,`date`),\n  CONSTRAINT `vendor_availability_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "vendor_documents": {
+      "create_statement": "CREATE TABLE `vendor_documents` (\n  `id` varchar(36) NOT NULL,\n  `vendor_id` varchar(36) NOT NULL,\n  `doc_type` enum('PAN','GST','BUSINESS_REG','BANK_PASSBOOK','ID_PROOF','OTHER') NOT NULL,\n  `document_number` varchar(100) DEFAULT NULL,\n  `file_url` varchar(255) NOT NULL,\n  `file_size` int(11) DEFAULT 0,\n  `mime_type` varchar(50) DEFAULT 'application/pdf',\n  `verification_status` enum('PENDING','VERIFIED','REJECTED') DEFAULT 'PENDING',\n  `rejection_reason` text DEFAULT NULL,\n  `verified_by` varchar(36) DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `idx_vendor_docs` (`vendor_id`,`doc_type`),\n  CONSTRAINT `vendor_documents_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "vendor_onboarding": {
+      "create_statement": "CREATE TABLE `vendor_onboarding` (\n  `id` varchar(36) NOT NULL,\n  `vendor_id` varchar(36) NOT NULL,\n  `status` enum('DRAFT','SUBMITTED','UNDER_REVIEW','DOCUMENTS_REQUIRED','VERIFICATION_PENDING','APPROVED','REJECTED','SUSPENDED') DEFAULT 'DRAFT',\n  `checklist_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`checklist_json`)),\n  `admin_reviewer_id` varchar(36) DEFAULT NULL,\n  `rejection_reason` text DEFAULT NULL,\n  `submitted_at` datetime DEFAULT NULL,\n  `approved_at` datetime DEFAULT NULL,\n  `created_at` datetime DEFAULT current_timestamp(),\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `vendor_id` (`vendor_id`),\n  CONSTRAINT `vendor_onboarding_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 4,
+      "rows": [
+        {
+          "id": "onb_dream_decor",
+          "vendor_id": "ven_dream_decor",
+          "status": "APPROVED",
+          "checklist_json": "{\"business_profile\": true, \"pan_verified\": true, \"bank_verified\": true, \"packages_added\": true}",
+          "admin_reviewer_id": null,
+          "rejection_reason": null,
+          "submitted_at": "2026-01-14T18:30:00.000Z",
+          "approved_at": "2026-01-15T18:30:00.000Z",
+          "created_at": "2026-09-11T14:49:08.000Z",
+          "updated_at": "2026-09-11T14:49:08.000Z"
+        },
+        {
+          "id": "onb_royal_clicks",
+          "vendor_id": "ven_royal_clicks",
+          "status": "APPROVED",
+          "checklist_json": "{\"business_profile\": true, \"pan_verified\": true, \"bank_verified\": true, \"packages_added\": true}",
+          "admin_reviewer_id": null,
+          "rejection_reason": null,
+          "submitted_at": "2026-01-09T18:30:00.000Z",
+          "approved_at": "2026-01-10T18:30:00.000Z",
+          "created_at": "2026-09-11T14:49:08.000Z",
+          "updated_at": "2026-09-11T14:49:08.000Z"
+        },
+        {
+          "id": "onb_royal_palace",
+          "vendor_id": "ven_royal_palace",
+          "status": "APPROVED",
+          "checklist_json": "{\"business_profile\": true, \"pan_verified\": true, \"bank_verified\": true, \"packages_added\": true}",
+          "admin_reviewer_id": null,
+          "rejection_reason": null,
+          "submitted_at": "2026-01-17T18:30:00.000Z",
+          "approved_at": "2026-01-18T18:30:00.000Z",
+          "created_at": "2026-09-11T14:49:08.000Z",
+          "updated_at": "2026-09-11T14:49:08.000Z"
+        },
+        {
+          "id": "onb_zaika",
+          "vendor_id": "ven_zaika_caterers",
+          "status": "APPROVED",
+          "checklist_json": "{\"business_profile\": true, \"pan_verified\": true, \"bank_verified\": true, \"packages_added\": true}",
+          "admin_reviewer_id": null,
+          "rejection_reason": null,
+          "submitted_at": "2026-01-11T18:30:00.000Z",
+          "approved_at": "2026-01-12T18:30:00.000Z",
+          "created_at": "2026-09-11T14:49:08.000Z",
+          "updated_at": "2026-09-11T14:49:08.000Z"
+        }
+      ]
+    },
+    "vendor_package_items": {
+      "create_statement": "CREATE TABLE `vendor_package_items` (\n  `id` varchar(36) NOT NULL,\n  `package_id` varchar(36) NOT NULL,\n  `title` varchar(191) NOT NULL,\n  `description` text DEFAULT NULL,\n  `is_optional` tinyint(1) DEFAULT 0,\n  `add_on_price` decimal(10,2) DEFAULT 0.00,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `package_id` (`package_id`),\n  CONSTRAINT `vendor_package_items_ibfk_1` FOREIGN KEY (`package_id`) REFERENCES `vendor_packages` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "vendor_packages": {
+      "create_statement": "CREATE TABLE `vendor_packages` (\n  `id` varchar(36) NOT NULL,\n  `vendor_id` varchar(36) NOT NULL,\n  `name` varchar(191) NOT NULL,\n  `description` text DEFAULT NULL,\n  `guest_capacity` int(11) DEFAULT 200,\n  `price` decimal(10,2) NOT NULL,\n  `included_items_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`included_items_json`)),\n  `created_at` datetime DEFAULT current_timestamp(),\n  `moderation_status` enum('PENDING_REVIEW','APPROVED','REJECTED') DEFAULT 'APPROVED',\n  `is_published` tinyint(1) DEFAULT 1,\n  PRIMARY KEY (`id`),\n  KEY `vendor_id` (`vendor_id`),\n  CONSTRAINT `vendor_packages_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 1,
+      "rows": [
+        {
+          "id": "pkg_royal_palace_premium",
+          "vendor_id": "ven_royal_palace",
+          "name": "Premium Royal Package",
+          "description": "Complete access to heritage banquet, lawn, bridal suites, and valet parking.",
+          "guest_capacity": 200,
+          "price": "150000.00",
+          "included_items_json": "[\"Banquet Hall\",\"Outdoor Lawn\",\"Valet Parking\",\"Bridal Suite\",\"Basic Ambient Lighting\"]",
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "moderation_status": "APPROVED",
+          "is_published": 1
+        }
+      ]
+    },
+    "vendor_portfolios": {
+      "create_statement": "CREATE TABLE `vendor_portfolios` (\n  `id` varchar(36) NOT NULL,\n  `vendor_id` varchar(36) NOT NULL,\n  `image_url` varchar(255) NOT NULL,\n  `caption` varchar(255) DEFAULT NULL,\n  `is_cover` tinyint(1) DEFAULT 0,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `vendor_id` (`vendor_id`),\n  CONSTRAINT `vendor_portfolios_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "vendor_reels": {
+      "create_statement": "CREATE TABLE `vendor_reels` (\n  `id` varchar(36) NOT NULL,\n  `vendor_id` varchar(36) NOT NULL,\n  `video_url` varchar(255) NOT NULL,\n  `thumbnail_url` varchar(255) NOT NULL,\n  `title` varchar(191) NOT NULL,\n  `description` text DEFAULT NULL,\n  `views_count` int(11) DEFAULT 0,\n  `likes_count` int(11) DEFAULT 0,\n  `is_approved` tinyint(1) DEFAULT 1,\n  `display_order` int(11) DEFAULT 0,\n  `created_at` datetime DEFAULT current_timestamp(),\n  PRIMARY KEY (`id`),\n  KEY `vendor_id` (`vendor_id`),\n  KEY `idx_reels_appr` (`is_approved`,`display_order`),\n  CONSTRAINT `vendor_reels_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 3,
+      "rows": [
+        {
+          "id": "reel_1",
+          "vendor_id": "ven_royal_clicks",
+          "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+          "thumbnail_url": "/images/photographer.jpg",
+          "title": "Cinematic Royal Palace Teaser",
+          "description": "4K Drone wedding shoot at Udaipur Palace",
+          "views_count": 12400,
+          "likes_count": 890,
+          "is_approved": 1,
+          "display_order": 1,
+          "created_at": "2026-09-11T14:49:08.000Z"
+        },
+        {
+          "id": "reel_2",
+          "vendor_id": "ven_zaika_caterers",
+          "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+          "thumbnail_url": "/images/caterer.jpg",
+          "title": "Live Royal Chaat Counter",
+          "description": "3-course imperial dining experience",
+          "views_count": 9800,
+          "likes_count": 620,
+          "is_approved": 1,
+          "display_order": 2,
+          "created_at": "2026-09-11T14:49:08.000Z"
+        },
+        {
+          "id": "reel_3",
+          "vendor_id": "ven_dream_decor",
+          "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+          "thumbnail_url": "/images/decorator.jpg",
+          "title": "Grand Floral Mandap Reveal",
+          "description": "10,000 fresh orchids and crystal chandeliers",
+          "views_count": 18500,
+          "likes_count": 1420,
+          "is_approved": 1,
+          "display_order": 3,
+          "created_at": "2026-09-11T14:49:08.000Z"
+        }
+      ]
+    },
+    "vendor_services": {
+      "create_statement": "CREATE TABLE `vendor_services` (\n  `id` varchar(36) NOT NULL,\n  `vendor_id` varchar(36) NOT NULL,\n  `title` varchar(191) NOT NULL,\n  `description` text DEFAULT NULL,\n  `starting_price` decimal(10,2) NOT NULL,\n  `is_active` tinyint(1) DEFAULT 1,\n  `created_at` datetime DEFAULT current_timestamp(),\n  `moderation_status` enum('PENDING_REVIEW','APPROVED','REJECTED') DEFAULT 'APPROVED',\n  PRIMARY KEY (`id`),\n  KEY `vendor_id` (`vendor_id`),\n  CONSTRAINT `vendor_services_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 0,
+      "rows": []
+    },
+    "vendors": {
+      "create_statement": "CREATE TABLE `vendors` (\n  `id` varchar(36) NOT NULL,\n  `user_id` varchar(36) NOT NULL,\n  `business_name` varchar(191) NOT NULL,\n  `category_id` varchar(36) NOT NULL,\n  `city` varchar(50) NOT NULL,\n  `address` text DEFAULT NULL,\n  `description` text DEFAULT NULL,\n  `rating` decimal(3,2) DEFAULT 4.80,\n  `review_count` int(11) DEFAULT 0,\n  `starting_price` decimal(10,2) DEFAULT 15000.00,\n  `cover_image` varchar(255) DEFAULT NULL,\n  `verification_status` enum('PENDING','VERIFIED','REJECTED','SUSPENDED') DEFAULT 'VERIFIED',\n  `pan_number` varchar(50) DEFAULT NULL,\n  `gst_number` varchar(50) DEFAULT NULL,\n  `bank_account_number` varchar(50) DEFAULT NULL,\n  `bank_ifsc` varchar(50) DEFAULT NULL,\n  `is_featured` tinyint(1) DEFAULT 0,\n  `is_sponsored` tinyint(1) DEFAULT 0,\n  `created_at` datetime DEFAULT current_timestamp(),\n  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),\n  PRIMARY KEY (`id`),\n  UNIQUE KEY `user_id` (`user_id`),\n  KEY `idx_vendors_cat_city` (`category_id`,`city`,`verification_status`),\n  CONSTRAINT `vendors_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `vendors_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+      "row_count": 4,
+      "rows": [
+        {
+          "id": "ven_dream_decor",
+          "user_id": "usr_vendor_decor",
+          "business_name": "Dream Decor",
+          "category_id": "cat_decorators",
+          "city": "Jaipur",
+          "address": null,
+          "description": "Grand floral mandaps, fairy light tunnels, royal crimson drapery, and thematic stage design.",
+          "rating": "4.90",
+          "review_count": 1520,
+          "starting_price": "25000.00",
+          "cover_image": "/images/decorator.jpg",
+          "verification_status": "VERIFIED",
+          "pan_number": null,
+          "gst_number": null,
+          "bank_account_number": null,
+          "bank_ifsc": null,
+          "is_featured": 1,
+          "is_sponsored": 0,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "ven_royal_clicks",
+          "user_id": "usr_vendor_photo",
+          "business_name": "Royal Clicks Photography",
+          "category_id": "cat_photographers",
+          "city": "Delhi NCR",
+          "address": null,
+          "description": "Award-winning candid wedding photographers with over 8 years of experience shooting royal destination weddings.",
+          "rating": "4.80",
+          "review_count": 1240,
+          "starting_price": "15000.00",
+          "cover_image": "/images/photographer.jpg",
+          "verification_status": "VERIFIED",
+          "pan_number": null,
+          "gst_number": null,
+          "bank_account_number": null,
+          "bank_ifsc": null,
+          "is_featured": 1,
+          "is_sponsored": 0,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "ven_royal_palace",
+          "user_id": "usr_vendor_venue",
+          "business_name": "Royal Palace Venue",
+          "category_id": "cat_venues",
+          "city": "Agra",
+          "address": null,
+          "description": "Heritage palace resort overlooking royal gardens, banquet hall capacity for 1500+ guests, luxury suites, and poolside cocktail lawns.",
+          "rating": "4.60",
+          "review_count": 760,
+          "starting_price": "50000.00",
+          "cover_image": "/images/venue.jpg",
+          "verification_status": "VERIFIED",
+          "pan_number": null,
+          "gst_number": null,
+          "bank_account_number": null,
+          "bank_ifsc": null,
+          "is_featured": 1,
+          "is_sponsored": 0,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        },
+        {
+          "id": "ven_zaika_caterers",
+          "user_id": "usr_vendor_cater",
+          "business_name": "Zaika Caterers",
+          "category_id": "cat_caterers",
+          "city": "Agra",
+          "address": null,
+          "description": "Royal Indian banquet catering, signature live tandoor and chaat counters, authentic Mughlai and multi-cuisine spreads.",
+          "rating": "4.70",
+          "review_count": 980,
+          "starting_price": "20000.00",
+          "cover_image": "/images/caterer.jpg",
+          "verification_status": "VERIFIED",
+          "pan_number": null,
+          "gst_number": null,
+          "bank_account_number": null,
+          "bank_ifsc": null,
+          "is_featured": 1,
+          "is_sponsored": 0,
+          "created_at": "2026-09-11T14:23:10.000Z",
+          "updated_at": "2026-09-11T14:23:10.000Z"
+        }
+      ]
+    }
+  }
+}

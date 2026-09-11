@@ -53,6 +53,27 @@ const vendorList: Vendor[] = [
 
 export default function TopVendors() {
   const [favorites, setFavorites] = useState<{ [key: string]: boolean }>({});
+  const [vendors, setVendors] = useState<Vendor[]>(vendorList);
+
+  React.useEffect(() => {
+    fetch('/api/vendors?limit=4')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data && d.data.length > 0) {
+          const mapped = d.data.map((v: any) => ({
+            id: v.id,
+            title: v.business_name,
+            subtitle: `${v.category_name} • ${v.city}`,
+            rating: parseFloat(v.rating) || 4.8,
+            reviews: `${v.review_count}`,
+            price: `₹${parseFloat(v.starting_price).toLocaleString('en-IN')}`,
+            image: v.cover_image || '/images/photographer.jpg'
+          }));
+          setVendors(mapped);
+        }
+      })
+      .catch((err) => console.log('Live vendors fetch error, using cache:', err));
+  }, []);
 
   const toggleFavorite = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -84,7 +105,7 @@ export default function TopVendors() {
 
         {/* Vendors Grid */}
         <div className="vendors-grid">
-          {vendorList.map((vendor) => {
+          {vendors.map((vendor) => {
             const isFav = !!favorites[vendor.id];
             return (
               <div key={vendor.id} className="vendor-card">
@@ -100,8 +121,8 @@ export default function TopVendors() {
                       width="18"
                       height="18"
                       viewBox="0 0 24 24"
-                      fill={isFav ? '#e6005c' : 'none'}
-                      stroke={isFav ? '#e6005c' : '#ffffff'}
+                      fill={isFav ? '#e5c158' : 'none'}
+                      stroke={isFav ? '#e5c158' : '#ffffff'}
                       strokeWidth="2.2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -283,7 +304,7 @@ export default function TopVendors() {
         }
 
         .star-icon {
-          color: #e53935;
+          color: #fbc02d;
           font-size: 14px;
         }
 
@@ -307,8 +328,8 @@ export default function TopVendors() {
         }
 
         .price-val {
-          font-weight: 700;
-          color: #d81b60;
+          font-weight: 800;
+          color: #031710;
           font-size: 13.5px;
         }
 

@@ -12,8 +12,8 @@ export default function QuickFeatures({ onSelectFeature }: QuickFeatureProps) {
       id: 'match',
       title: 'Find Your Match',
       subtitle: 'AI-Powered Compatibility',
-      iconBg: '#ffeef4',
-      iconColor: '#e6005c',
+      iconBg: '#fbf5e6',
+      iconColor: '#b8932f',
       icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
@@ -24,8 +24,8 @@ export default function QuickFeatures({ onSelectFeature }: QuickFeatureProps) {
       id: 'vendors',
       title: 'Wedding Vendors',
       subtitle: 'Verified & Trusted Professionals',
-      iconBg: '#ebf7f1',
-      iconColor: '#107c41',
+      iconBg: '#e6f3ee',
+      iconColor: '#0b5336',
       icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="8" cy="14" r="5" />
@@ -39,8 +39,8 @@ export default function QuickFeatures({ onSelectFeature }: QuickFeatureProps) {
       id: 'book',
       title: 'Book & Pay',
       subtitle: 'Secure & Simple Transactions',
-      iconBg: '#fff2ea',
-      iconColor: '#ea580c',
+      iconBg: '#fef7e9',
+      iconColor: '#c59528',
       icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="2" y="5" width="20" height="14" rx="2" />
@@ -54,8 +54,8 @@ export default function QuickFeatures({ onSelectFeature }: QuickFeatureProps) {
       id: 'track',
       title: 'Track & Manage',
       subtitle: 'Your Wedding with Ease',
-      iconBg: '#eef8f3',
-      iconColor: '#0d9488',
+      iconBg: '#e8f6f0',
+      iconColor: '#126646',
       icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M9 11l3 3L22 4" />
@@ -67,8 +67,8 @@ export default function QuickFeatures({ onSelectFeature }: QuickFeatureProps) {
       id: 'assistant',
       title: 'AI Assistant',
       subtitle: 'Sagun (Voice + Chat)',
-      iconBg: '#fdf2f8',
-      iconColor: '#db2777',
+      iconBg: '#fbf5e6',
+      iconColor: '#d4a937',
       icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
