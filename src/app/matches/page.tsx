@@ -1053,14 +1053,63 @@ export default function MatchesPage() {
           background: #2e7d32;
         }
 
+        .matches-page-root {
+          overflow-x: clip;
+          max-width: 100vw;
+          width: 100%;
+        }
+
         @media (max-width: 768px) {
+          .matches-hero-section {
+            padding: 28px 0 20px !important;
+          }
+          .hero-title {
+            font-size: 24px !important;
+            line-height: 1.3 !important;
+          }
+          .hero-subtitle {
+            font-size: 13px !important;
+            margin-bottom: 20px !important;
+          }
           .sagun-ai-callout-card {
-            flex-direction: column;
-            text-align: center;
+            flex-direction: column !important;
+            text-align: center !important;
+            padding: 14px 16px !important;
+            gap: 12px !important;
+          }
+          .btn-ask-sagun {
+            width: 100% !important;
           }
           .filter-bar-inner {
-            flex-direction: column;
-            align-items: stretch;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+          }
+          .filter-input-search {
+            min-width: 100% !important;
+            width: 100% !important;
+          }
+          .filter-dropdown-group {
+            width: 100% !important;
+            justify-content: space-between !important;
+          }
+          .filter-dropdown-group select {
+            flex: 1 !important;
+          }
+          .matches-cards-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .matches-grid-section {
+            padding: 24px 0 60px !important;
+          }
+          .results-header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 4px !important;
+          }
+          .results-header h2 {
+            font-size: 19px !important;
           }
           .modal-hero-row {
             flex-direction: column;

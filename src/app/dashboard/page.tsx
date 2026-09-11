@@ -311,9 +311,9 @@ export default function CustomerDashboardPage() {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#06140e', color: '#fff', display: 'flex' }}>
+    <div className="dashboard-root-layout" style={{ minHeight: '100vh', background: '#06140e', color: '#fff', display: 'flex' }}>
       {/* ================= LEFT SIDEBAR ================= */}
-      <aside style={{
+      <aside className="dashboard-sidebar" style={{
         width: '280px',
         flexShrink: 0,
         background: '#031710',
@@ -513,9 +513,9 @@ export default function CustomerDashboardPage() {
       </aside>
 
       {/* ================= RIGHT MAIN AREA ================= */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div className="dashboard-content-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* Top Bar */}
-        <header style={{
+        <header className="dashboard-header" style={{
           height: '70px',
           borderBottom: '1px solid rgba(229,193,88,0.18)',
           background: '#031710',
@@ -559,7 +559,7 @@ export default function CustomerDashboardPage() {
         </header>
 
         {/* Main Content Body */}
-        <main style={{ flex: 1, padding: '32px', maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
+        <main className="dashboard-main" style={{ flex: 1, padding: '32px', maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
           {error && (
             <div style={{ background: 'rgba(230,0,92,0.15)', border: '1px solid #ff2a73', color: '#ffb3c6', padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', fontSize: '14px' }}>
               ⚠️ {error}
@@ -1066,6 +1066,60 @@ export default function CustomerDashboardPage() {
           )}
         </main>
       </div>
+
+      <style jsx global>{`
+        .dashboard-root-layout {
+          overflow-x: clip;
+          max-width: 100vw;
+          width: 100%;
+        }
+
+        @media (max-width: 768px) {
+          .dashboard-root-layout {
+            flex-direction: column !important;
+          }
+          .dashboard-sidebar {
+            width: 100% !important;
+            height: auto !important;
+            position: relative !important;
+            border-right: none !important;
+            border-bottom: 1px solid rgba(229, 193, 88, 0.2) !important;
+          }
+          .dashboard-sidebar nav {
+            flex-direction: row !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            padding: 10px !important;
+            gap: 8px !important;
+          }
+          .dashboard-sidebar nav button,
+          .dashboard-sidebar nav a {
+            white-space: nowrap !important;
+            padding: 8px 12px !important;
+            font-size: 12px !important;
+            flex-shrink: 0 !important;
+          }
+          .dashboard-header {
+            padding: 14px 16px !important;
+            height: auto !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+          }
+          .dashboard-header h1 {
+            font-size: 16px !important;
+          }
+          .dashboard-main {
+            padding: 16px !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+            overflow-x: clip !important;
+          }
+          .dashboard-main div[style*="gridTemplateColumns"] {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1040,11 +1040,42 @@ export default function BookingsPage() {
           cursor: pointer;
         }
 
+        .bookings-page-root {
+          overflow-x: clip;
+          max-width: 100vw;
+          width: 100%;
+        }
+
         @media (max-width: 768px) {
+          .bookings-hero-section {
+            padding: 28px 0 20px !important;
+          }
+          .hero-title {
+            font-size: 24px !important;
+            line-height: 1.3 !important;
+          }
+          .hero-subtitle {
+            font-size: 13px !important;
+            margin-bottom: 20px !important;
+          }
+          .filter-tabs-row {
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+          }
+          .bookings-list-section {
+            padding: 20px 0 60px !important;
+          }
           .event-details-grid { grid-template-columns: 1fr; }
           .booking-card-header { flex-direction: column; gap: 12px; }
           .booking-price-badge { align-items: flex-start; text-align: left; }
           .stepper-track { flex-direction: column; gap: 10px; }
+          .card-actions-row {
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+          .card-actions-row button {
+            width: 100% !important;
+          }
         }
       `}</style>
     </div>

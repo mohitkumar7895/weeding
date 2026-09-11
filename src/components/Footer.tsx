@@ -304,22 +304,80 @@ export default function Footer() {
         @media (max-width: 1024px) {
           .footer-top-grid {
             grid-template-columns: repeat(3, 1fr);
-            row-gap: 36px;
+            row-gap: 28px;
           }
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
           .footer-wrapper {
-            padding: 40px 0 24px;
+            padding: 22px 0 16px;
           }
           .footer-top-grid {
-            grid-template-columns: 1fr;
-            row-gap: 28px;
+            grid-template-columns: 1fr 1fr;
+            row-gap: 16px;
+            column-gap: 16px;
+            padding-bottom: 16px;
+          }
+          .footer-brand-col {
+            grid-column: span 2;
+          }
+          .footer-brand-header {
+            gap: 10px;
+          }
+          .brand-name {
+            font-size: 18px;
+            margin-bottom: 0;
+          }
+          .brand-motto {
+            font-size: 11px;
+          }
+          .col-heading {
+            font-size: 12px;
+            margin-bottom: 8px;
+          }
+          .footer-link-list {
+            gap: 5px;
+          }
+          .footer-link {
+            font-size: 12px;
+          }
+          .footer-social-col {
+            grid-column: span 2;
+          }
+          .social-icons-row {
+            gap: 8px;
+          }
+          .social-btn {
+            width: 32px;
+            height: 32px;
+          }
+          .footer-app-col {
+            grid-column: span 2;
+          }
+          .app-badges {
+            flex-direction: row;
+            gap: 8px;
+          }
+          .app-badge-btn {
+            padding: 6px 10px;
+            gap: 6px;
+          }
+          .badge-main {
+            font-size: 11px;
+          }
+          .badge-sub {
+            font-size: 8px;
           }
           .footer-bottom-bar {
+            padding-top: 12px;
             flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
+            align-items: center;
+            text-align: center;
+            gap: 4px;
+            font-size: 11px;
+          }
+          .market-tag {
+            font-size: 10.5px;
           }
         }
       `}</style>

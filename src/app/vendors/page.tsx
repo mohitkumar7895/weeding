@@ -1177,23 +1177,72 @@ export default function VendorsPage() {
           color: #9b1c1c;
         }
 
+        .vendors-page-root {
+          overflow-x: clip;
+          max-width: 100vw;
+          width: 100%;
+        }
+
         @media (max-width: 768px) {
+          .vendors-hero-section {
+            padding: 28px 0 20px !important;
+          }
+          .hero-title {
+            font-size: 24px !important;
+            line-height: 1.3 !important;
+          }
+          .hero-subtitle {
+            font-size: 13px !important;
+            margin-bottom: 20px !important;
+          }
           .search-filter-card {
-            flex-direction: column;
-            gap: 10px;
+            flex-direction: column !important;
+            gap: 10px !important;
+            padding: 12px !important;
+          }
+          .search-input-group {
+            width: 100% !important;
+            padding: 0 !important;
           }
           .city-select-group {
-            border-left: none;
-            border-top: 1px solid #eee;
-            padding-left: 0;
-            padding-top: 10px;
-            width: 100%;
+            border-left: none !important;
+            border-top: 1px solid #eee !important;
+            padding-left: 0 !important;
+            padding-top: 10px !important;
+            width: 100% !important;
           }
           .btn-search-primary {
-            width: 100%;
+            width: 100% !important;
+          }
+          .pills-wrapper {
+            padding: 4px 0 10px !important;
+            gap: 8px !important;
+          }
+          .category-pill-btn {
+            padding: 6px 14px !important;
+            font-size: 12.5px !important;
+            white-space: nowrap !important;
+          }
+          .filters-summary-bar {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+          }
+          .filter-controls-right {
+            width: 100% !important;
+            justify-content: space-between !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+          }
+          .vendors-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .vendors-listing-section {
+            padding: 20px 0 60px !important;
           }
           .packages-selection-grid, .form-row-2 {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>

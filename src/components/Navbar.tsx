@@ -259,6 +259,8 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           background-image: radial-gradient(circle at 50% 50%, rgba(6, 42, 28, 0.85) 0%, rgba(3, 23, 16, 0.98) 100%);
           border-bottom: 1px solid rgba(229, 193, 88, 0.22);
           width: 100%;
+          display: flex;
+          flex-direction: column;
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
         }
 
@@ -536,18 +538,67 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           .desktop-nav {
             display: none;
           }
-          .mobile-toggle {
-            display: flex;
+          .brand-text-block {
+            display: none !important;
           }
           .mobile-location-badge {
-            display: inline-block;
+            display: none !important;
+          }
+          .search-trigger {
+            display: none !important;
+          }
+          .notification-btn {
+            display: none !important;
+          }
+          .navbar-container {
+            height: 58px;
+            padding: 0 14px;
+          }
+          .navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .navbar-actions .btn-login {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+          }
+          .navbar-actions .btn-register {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%);
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 2px 10px rgba(230, 0, 92, 0.4);
+          }
+          .mobile-toggle {
+            display: flex;
+            padding: 6px 4px;
+            cursor: pointer;
+            margin-left: 2px;
           }
           .mobile-drawer {
             display: block;
+            width: 100%;
             background-color: #031710;
-            background-image: radial-gradient(circle at 50% 50%, rgba(6, 42, 28, 0.95) 0%, rgba(3, 23, 16, 0.99) 100%);
-            border-bottom: 1px solid rgba(229, 193, 88, 0.22);
-            padding: 20px 24px;
+            background-image: radial-gradient(circle at 50% 50%, rgba(6, 42, 28, 0.98) 0%, rgba(3, 23, 16, 1) 100%);
+            border-top: 1px solid rgba(229, 193, 88, 0.25);
+            padding: 18px 20px 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            animation: drawerSlideDown 0.25s ease forwards;
           }
           .mobile-nav-links {
             display: flex;
@@ -582,12 +633,24 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           .full-w {
             flex: 1;
             text-align: center;
+            display: block !important;
           }
           .mobile-user-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
             width: 100%;
+          }
+        }
+
+        @keyframes drawerSlideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
       `}</style>
