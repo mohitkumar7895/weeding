@@ -122,10 +122,77 @@ input, select {
    NAVBAR & FOOTER ROYAL EMERALD + GOLD THEME (From StatsBar)
    ========================================================= */
 .navbar-wrapper {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+  height: 72px !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
   background-color: #031710 !important;
   background-image: radial-gradient(circle at 50% 50%, rgba(6, 42, 28, 0.85) 0%, rgba(3, 23, 16, 0.98) 100%) !important;
   border-bottom: 1px solid rgba(229, 193, 88, 0.22) !important;
   color: #ffffff !important;
+}
+
+.navbar-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+}
+
+.brand-logo {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  text-decoration: none !important;
+}
+
+.desktop-nav {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.navbar-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.mobile-toggle {
+  display: none !important;
+}
+
+.mobile-location-badge {
+  display: none !important;
+}
+
+.mobile-bottom-bar {
+  display: none !important;
+}
+
+.mobile-quick-categories {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  .mobile-toggle {
+    display: flex !important;
+  }
+  .mobile-location-badge {
+    display: flex !important;
+  }
+  .mobile-bottom-bar {
+    display: flex !important;
+  }
+  .mobile-quick-categories {
+    display: flex !important;
+  }
 }
 
 .brand-name-text {

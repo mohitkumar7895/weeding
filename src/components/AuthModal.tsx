@@ -54,11 +54,11 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         }
 
         setUser(data.data.user);
-        setNotification(`Welcome to WedWithMe, ${data.data.user.name}!`);
+        setNotification(`Welcome to WedWithMe, ${data.data.user.name}! 🎉`);
         setTimeout(() => {
           setNotification(null);
           onClose();
-        }, 1000);
+        }, 1200);
       } else {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
@@ -72,11 +72,11 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         }
 
         setUser(data.data.user);
-        setNotification(`Welcome back, ${data.data.user.name}!`);
+        setNotification(`Welcome back, ${data.data.user.name}! ✨`);
         setTimeout(() => {
           setNotification(null);
           onClose();
-        }, 1000);
+        }, 1200);
       }
     } catch (err: any) {
       setError(err.message || 'Authentication error');
@@ -95,7 +95,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         email: 'mohit@example.com',
         role: 'CUSTOMER',
       });
-      setNotification(`Signed in with ${provider}!`);
+      setNotification(`Signed in with ${provider}! 🎉`);
       setTimeout(() => {
         setNotification(null);
         onClose();
@@ -106,6 +106,9 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="auth-card" onClick={(e) => e.stopPropagation()}>
+        {/* Ambient Top Glow */}
+        <div className="card-top-glow" />
+
         {/* Close Button */}
         <button className="auth-close-btn" onClick={onClose} aria-label="Close dialog">
           ✕
@@ -113,51 +116,85 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
 
         {/* Header Branding */}
         <div className="auth-header">
+          {/* Logo SVG in Vibrant Pink per user requirement */}
           <div className="logo-svg-wrap">
-            <svg width="46" height="34" viewBox="0 0 54 40" fill="none">
+            <svg width="52" height="38" viewBox="0 0 54 40" fill="none">
               <defs>
-                <linearGradient id="modalLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#f5d475" />
-                  <stop offset="50%" stopColor="#e5c158" />
-                  <stop offset="100%" stopColor="#d4a937" />
+                <linearGradient id="authModalPinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ff2a73" />
+                  <stop offset="100%" stopColor="#e6005c" />
                 </linearGradient>
-                <linearGradient id="modalLogoHeart" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#f5d475" />
-                  <stop offset="100%" stopColor="#e5c158" />
+                <linearGradient id="authModalHeartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ff528c" />
+                  <stop offset="100%" stopColor="#d8004f" />
                 </linearGradient>
+                <filter id="authLogoGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#ff2a73" floodOpacity="0.45" />
+                </filter>
               </defs>
-              <path d="M4 10L11 32L17 14L22 30L26 12" stroke="url(#modalLogoGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z" fill="url(#modalLogoHeart)" />
-              <path d="M28 12L32 30L37 14L43 32L50 10" stroke="url(#modalLogoGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M4 10L11 32L17 14L22 30L26 12"
+                stroke="url(#authModalPinkGrad)"
+                strokeWidth="4.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                filter="url(#authLogoGlow)"
+              />
+              <path
+                d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z"
+                fill="url(#authModalHeartGrad)"
+              />
+              <path
+                d="M28 12L32 30L37 14L43 32L50 10"
+                stroke="url(#authModalPinkGrad)"
+                strokeWidth="4.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                filter="url(#authLogoGlow)"
+              />
             </svg>
           </div>
+
+          <div className="brand-title-wrap">
+            <span className="brand-name-text">WedWithMe</span>
+            <span className="brand-tagline-text">From Match to Marriage</span>
+          </div>
+
           <h2 className="auth-title">
             {mode === 'login' ? 'Welcome Back' : 'Create Your Account'}
           </h2>
           <p className="auth-sub">
             {mode === 'login'
-              ? 'Access your wedding planner, shortlisted vendors & matches'
-              : 'Begin your journey from Match to Marriage with AI precision'}
+              ? 'Access your wedding planner, shortlisted vendors & verified matches'
+              : 'Begin your celebratory journey with AI-powered matchmaking and vendor escrow'}
           </p>
         </div>
 
         {/* Tab Switcher */}
         <div className="auth-tabs">
           <button
+            type="button"
             className={`tab-btn ${mode === 'login' ? 'active-tab' : ''}`}
-            onClick={() => setMode('login')}
+            onClick={() => {
+              setMode('login');
+              setError(null);
+            }}
           >
             Sign In
           </button>
           <button
+            type="button"
             className={`tab-btn ${mode === 'register' ? 'active-tab' : ''}`}
-            onClick={() => setMode('register')}
+            onClick={() => {
+              setMode('register');
+              setError(null);
+            }}
           >
             Register
           </button>
         </div>
 
-        {/* Notification alert */}
+        {/* Notification Toast */}
         {notification && (
           <div className="notification-toast">
             <span className="toast-icon">✓</span>
@@ -165,10 +202,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           </div>
         )}
 
-        {/* Error alert */}
+        {/* Error Alert */}
         {error && (
-          <div style={{ background: 'rgba(230,0,92,0.15)', border: '1px solid #e6005c', color: '#ffb3c6', padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>⚠️</span>
+          <div className="error-alert">
+            <span className="error-icon">⚠️</span>
             <span>{error}</span>
           </div>
         )}
@@ -178,98 +215,120 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           {mode === 'register' && (
             <>
               {/* Role Selection */}
-              <div className="role-selector">
-                <button
-                  type="button"
-                  className={`role-chip ${role === 'couple' ? 'role-selected' : ''}`}
-                  onClick={() => setRole('couple')}
-                >
-                  Bride / Groom
-                </button>
-                <button
-                  type="button"
-                  className={`role-chip ${role === 'vendor' ? 'role-selected' : ''}`}
-                  onClick={() => setRole('vendor')}
-                >
-                  Wedding Vendor
-                </button>
-                <button
-                  type="button"
-                  className={`role-chip ${role === 'guest' ? 'role-selected' : ''}`}
-                  onClick={() => setRole('guest')}
-                >
-                  Guest
-                </button>
+              <div className="role-selector-wrap">
+                <label className="input-label">SELECT YOUR PROFILE TYPE</label>
+                <div className="role-selector">
+                  <button
+                    type="button"
+                    className={`role-chip ${role === 'couple' ? 'role-selected' : ''}`}
+                    onClick={() => setRole('couple')}
+                  >
+                    <span className="role-icon">💍</span>
+                    <span className="role-name">Bride / Groom</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`role-chip ${role === 'vendor' ? 'role-selected' : ''}`}
+                    onClick={() => setRole('vendor')}
+                  >
+                    <span className="role-icon">👑</span>
+                    <span className="role-name">Vendor</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`role-chip ${role === 'guest' ? 'role-selected' : ''}`}
+                    onClick={() => setRole('guest')}
+                  >
+                    <span className="role-icon">👥</span>
+                    <span className="role-name">Guest</span>
+                  </button>
+                </div>
               </div>
 
               {/* Full Name */}
               <div className="input-group">
-                <label className="input-label">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Mohit Kumar"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="auth-input"
-                />
+                <label className="input-label" htmlFor="auth-name">FULL NAME</label>
+                <div className="input-field-wrap">
+                  <span className="field-icon">👤</span>
+                  <input
+                    id="auth-name"
+                    type="text"
+                    required
+                    placeholder="e.g. Mohit Kumar"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="auth-input"
+                  />
+                </div>
               </div>
 
               {/* Phone Number */}
               <div className="input-group">
-                <label className="input-label">Mobile Number</label>
-                <input
-                  type="tel"
-                  placeholder="+91 98765 43210"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="auth-input"
-                />
+                <label className="input-label" htmlFor="auth-phone">MOBILE NUMBER (WHATSAPP VERIFIED)</label>
+                <div className="input-field-wrap">
+                  <span className="field-icon">📱</span>
+                  <input
+                    id="auth-phone"
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="auth-input"
+                  />
+                </div>
               </div>
             </>
           )}
 
           {/* Email */}
           <div className="input-group">
-            <label className="input-label">Email Address</label>
-            <input
-              type="email"
-              required
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="auth-input"
-            />
+            <label className="input-label" htmlFor="auth-email">EMAIL ADDRESS</label>
+            <div className="input-field-wrap">
+              <span className="field-icon">✉️</span>
+              <input
+                id="auth-email"
+                type="email"
+                required
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="auth-input"
+              />
+            </div>
           </div>
 
           {/* Password */}
           <div className="input-group">
             <div className="password-label-row">
-              <label className="input-label">Password</label>
+              <label className="input-label" htmlFor="auth-password">PASSWORD</label>
               {mode === 'login' && (
                 <a href="#forgot" className="forgot-link">
-                  Forgot?
+                  Forgot Password?
                 </a>
               )}
             </div>
-            <input
-              type="password"
-              required
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="auth-input"
-            />
+            <div className="input-field-wrap">
+              <span className="field-icon">🔒</span>
+              <input
+                id="auth-password"
+                type="password"
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="auth-input"
+              />
+            </div>
           </div>
 
-          {/* Submit Button */}
+          {/* Submit Button (Vibrant Pink Gradient per requirement) */}
           <button type="submit" disabled={loading} className="btn-submit-auth">
             {loading ? (
               <span className="spinner"></span>
             ) : mode === 'login' ? (
-              'Sign In'
+              'Sign In to WedWithMe'
             ) : (
-              'Create Account'
+              'Create Free Account'
             )}
           </button>
 
@@ -311,10 +370,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
               className="social-auth-btn"
               onClick={() => handleSocialAuth('OTP')}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6005c" strokeWidth="2">
-                <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-                <line x1="12" y1="18" x2="12.01" y2="18" />
-              </svg>
+              <span style={{ fontSize: '15px' }}>📲</span>
               <span>Phone OTP</span>
             </button>
           </div>
@@ -322,8 +378,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
 
         {/* Footer info */}
         <div className="auth-footer-note">
-          By continuing, you agree to WedWithMe&apos;s{' '}
-          <a href="#" className="terms-link">Terms of Service</a> and{' '}
+          Protected by <strong>WedWithMe Escrow & Privacy Shield</strong>
+          <br />
+          By continuing, you agree to our{' '}
+          <a href="#" className="terms-link">Terms</a> &amp;{' '}
           <a href="#" className="terms-link">Privacy Policy</a>.
         </div>
       </div>
@@ -332,106 +390,162 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         .modal-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(3, 20, 14, 0.78);
-          backdrop-filter: blur(8px);
+          background: rgba(2, 18, 12, 0.85);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
           z-index: 3000;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 16px;
-          animation: fadeIn 0.2s ease;
+          padding: 18px;
+          animation: fadeIn 0.2s ease-out;
         }
 
         .auth-card {
           width: 100%;
-          max-width: 440px;
-          background: #ffffff;
-          border-radius: 26px;
-          padding: 34px 36px;
+          max-width: 460px;
+          background: linear-gradient(180deg, rgba(6, 42, 28, 0.98) 0%, rgba(3, 23, 16, 0.99) 100%);
+          border-radius: 28px;
+          padding: 34px 36px 28px;
           position: relative;
-          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-          border: 1px solid rgba(229, 193, 88, 0.35);
+          box-shadow: 0 28px 70px rgba(0, 0, 0, 0.7), 0 0 35px rgba(255, 42, 115, 0.16);
+          border: 1.5px solid rgba(229, 193, 88, 0.32);
           animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-          max-height: 94vh;
+          max-height: 92vh;
           overflow-y: auto;
+          color: #ffffff;
+        }
+
+        .card-top-glow {
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 220px;
+          height: 90px;
+          background: radial-gradient(circle, rgba(255, 42, 115, 0.3) 0%, transparent 70%);
+          pointer-events: none;
+          z-index: 0;
         }
 
         .auth-close-btn {
           position: absolute;
           top: 18px;
           right: 18px;
-          width: 32px;
-          height: 32px;
+          width: 34px;
+          height: 34px;
           border-radius: 50%;
-          background: #f0f4f1;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(229, 193, 88, 0.2);
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 14px;
-          color: #4a5c53;
-          transition: background 0.15s ease;
+          color: #d1ded7;
+          transition: all 0.2s ease;
+          z-index: 2;
         }
 
         .auth-close-btn:hover {
-          background: #e2ebe5;
-          color: #1a2c22;
+          background: rgba(255, 42, 115, 0.25);
+          border-color: #ff2a73;
+          color: #ffffff;
+          transform: rotate(90deg);
         }
 
         .auth-header {
           text-align: center;
-          margin-bottom: 22px;
+          margin-bottom: 20px;
+          position: relative;
+          z-index: 1;
         }
 
         .logo-svg-wrap {
           display: flex;
           justify-content: center;
-          margin-bottom: 12px;
+          margin-bottom: 8px;
+        }
+
+        .brand-title-wrap {
+          margin-bottom: 10px;
+        }
+
+        .brand-name-text {
+          font-size: 24px !important;
+          font-weight: 800 !important;
+          color: #e5c158 !important;
+          letter-spacing: -0.3px !important;
+          display: block !important;
+          line-height: 1.1 !important;
+          text-shadow: 0 2px 10px rgba(229, 193, 88, 0.25) !important;
+        }
+
+        .brand-tagline-text {
+          font-size: 10px !important;
+          font-weight: 700 !important;
+          color: #fae8a4 !important;
+          letter-spacing: 0.8px !important;
+          text-transform: uppercase !important;
+          display: block !important;
+          margin-top: 2px;
         }
 
         .auth-title {
           font-family: var(--font-serif);
-          font-size: 26px;
+          font-size: 22px;
           font-weight: 700;
-          color: #122119;
-          margin-bottom: 6px;
+          color: #ffffff;
+          margin-bottom: 4px;
         }
 
         .auth-sub {
-          font-size: 12.5px;
-          color: #64756c;
-          line-height: 1.4;
+          font-size: 12px;
+          color: #9cb1a6;
+          line-height: 1.45;
+          max-width: 360px;
+          margin: 0 auto;
         }
 
         .auth-tabs {
           display: flex;
-          background: #f0f5f2;
+          background: rgba(0, 0, 0, 0.45);
+          border: 1px solid rgba(229, 193, 88, 0.2);
           border-radius: 9999px;
           padding: 4px;
-          margin-bottom: 20px;
+          margin-bottom: 18px;
+          position: relative;
+          z-index: 1;
         }
 
         .tab-btn {
           flex: 1;
           padding: 9px 0;
           font-size: 13.5px;
-          font-weight: 600;
-          color: #55675e;
+          font-weight: 700;
+          color: #9cb1a6;
           border-radius: 9999px;
           transition: all 0.2s ease;
+          text-align: center;
+        }
+
+        .tab-btn:hover {
+          color: #ffffff;
         }
 
         .active-tab {
-          background: #ffffff;
-          color: #06281c;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%) !important;
+          color: #ffffff !important;
+          box-shadow: 0 4px 14px rgba(230, 0, 92, 0.45) !important;
         }
 
         .notification-toast {
-          background: #063121;
-          color: #ffffff;
+          background: rgba(6, 49, 33, 0.95);
+          border: 1px solid #10b981;
+          color: #a7f3d0;
           padding: 10px 14px;
           border-radius: 12px;
           font-size: 13px;
+          font-weight: 600;
           display: flex;
           align-items: center;
           gap: 8px;
@@ -444,47 +558,126 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           font-weight: bold;
         }
 
-        .role-selector {
+        .error-alert {
+          background: rgba(230, 0, 92, 0.18);
+          border: 1px solid #ff2a73;
+          color: #ffb3c6;
+          padding: 10px 14px;
+          border-radius: 12px;
+          font-size: 13px;
           display: flex;
-          gap: 6px;
-          margin-bottom: 14px;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 16px;
+          animation: slideDown 0.2s ease;
         }
 
-        .role-chip {
-          flex: 1;
-          font-size: 11.5px;
-          font-weight: 600;
-          padding: 8px 4px;
-          border-radius: 8px;
-          background: #f3f6f4;
-          color: #384d42;
-          border: 1px solid #dbe4df;
-          transition: all 0.15s ease;
-          text-align: center;
-        }
-
-        .role-selected {
-          background: #063121;
-          color: #e5c158;
-          border-color: #063121;
+        .error-icon {
+          font-size: 14px;
         }
 
         .auth-form {
           display: flex;
           flex-direction: column;
           gap: 14px;
+          position: relative;
+          z-index: 1;
         }
 
-        .input-group {
+        .role-selector-wrap {
           display: flex;
           flex-direction: column;
           gap: 6px;
         }
 
+        .role-selector {
+          display: flex;
+          gap: 8px;
+        }
+
+        .role-chip {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          padding: 10px 6px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.05);
+          color: #d1ded7;
+          border: 1px solid rgba(229, 193, 88, 0.18);
+          transition: all 0.2s ease;
+        }
+
+        .role-chip:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(229, 193, 88, 0.4);
+        }
+
+        .role-icon {
+          font-size: 18px;
+        }
+
+        .role-name {
+          font-size: 11px;
+          font-weight: 700;
+        }
+
+        .role-selected {
+          background: rgba(255, 42, 115, 0.2) !important;
+          border-color: #ff2a73 !important;
+          color: #ffffff !important;
+          box-shadow: 0 0 14px rgba(255, 42, 115, 0.3) !important;
+        }
+
+        .input-group {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+
         .input-label {
-          font-size: 12.5px;
-          font-weight: 600;
-          color: #1f3227;
+          font-size: 11px;
+          font-weight: 700;
+          color: #e5c158;
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+        }
+
+        .input-field-wrap {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .field-icon {
+          position: absolute;
+          left: 12px;
+          font-size: 14px;
+          pointer-events: none;
+          opacity: 0.8;
+        }
+
+        .auth-input {
+          width: 100%;
+          padding: 11px 14px 11px 36px;
+          border-radius: 12px;
+          border: 1px solid rgba(229, 193, 88, 0.25);
+          background: rgba(2, 19, 12, 0.85);
+          font-size: 13.5px;
+          color: #ffffff;
+          transition: all 0.2s ease;
+        }
+
+        .auth-input::placeholder {
+          color: #5d7568;
+        }
+
+        .auth-input:focus {
+          border-color: #ff2a73;
+          background: rgba(3, 27, 18, 0.95);
+          box-shadow: 0 0 0 3px rgba(255, 42, 115, 0.25);
+          outline: none;
         }
 
         .password-label-row {
@@ -494,50 +687,43 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         }
 
         .forgot-link {
-          font-size: 11.5px;
-          color: #b8932f;
+          font-size: 11px;
+          color: #fae8a4;
           font-weight: 600;
+          text-decoration: underline;
         }
 
-        .auth-input {
-          padding: 11px 14px;
-          border-radius: 10px;
-          border: 1px solid #d4ded8;
-          background: #fafbfa;
-          font-size: 14px;
-          color: #122119;
-          transition: border-color 0.15s ease;
-        }
-
-        .auth-input:focus {
-          border-color: #e5c158;
-          background: #ffffff;
+        .forgot-link:hover {
+          color: #ffffff;
         }
 
         .btn-submit-auth {
           margin-top: 6px;
-          background: linear-gradient(135deg, #f5d475 0%, #d4a937 100%);
-          color: #031710;
+          background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%) !important;
+          color: #ffffff !important;
           font-size: 14.5px;
           font-weight: 800;
-          padding: 12px;
+          padding: 13px;
           border-radius: 9999px;
-          box-shadow: 0 4px 14px rgba(229, 193, 88, 0.35);
-          transition: transform 0.15s ease, filter 0.15s ease;
+          box-shadow: 0 4px 18px rgba(230, 0, 92, 0.45);
+          border: none;
+          transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
           display: flex;
           align-items: center;
           justify-content: center;
+          cursor: pointer;
         }
 
         .btn-submit-auth:hover {
-          filter: brightness(1.05);
+          filter: brightness(1.08);
           transform: translateY(-1px);
+          box-shadow: 0 6px 24px rgba(230, 0, 92, 0.6);
         }
 
         .spinner {
           width: 18px;
           height: 18px;
-          border: 2px solid rgba(255, 255, 255, 0.4);
+          border: 2px solid rgba(255, 255, 255, 0.35);
           border-top-color: #ffffff;
           border-radius: 50%;
           animation: spin 0.6s linear infinite;
@@ -548,15 +734,15 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           align-items: center;
           text-align: center;
           margin: 4px 0;
-          font-size: 11.5px;
-          color: #8da096;
+          font-size: 11px;
+          color: #799184;
         }
 
         .auth-divider::before,
         .auth-divider::after {
           content: '';
           flex: 1;
-          border-bottom: 1px solid #e5ece7;
+          border-bottom: 1px solid rgba(229, 193, 88, 0.16);
         }
 
         .auth-divider span {
@@ -575,31 +761,35 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           justify-content: center;
           gap: 8px;
           padding: 10px 14px;
-          border-radius: 10px;
-          border: 1px solid #d4ded8;
-          background: #ffffff;
+          border-radius: 12px;
+          border: 1px solid rgba(229, 193, 88, 0.22);
+          background: rgba(255, 255, 255, 0.05);
           font-size: 13px;
-          font-weight: 600;
-          color: #24382e;
-          transition: all 0.15s ease;
+          font-weight: 700;
+          color: #ffffff;
+          transition: all 0.2s ease;
         }
 
         .social-auth-btn:hover {
-          background: #f7faf8;
-          border-color: #b7c7be;
+          background: rgba(255, 42, 115, 0.16);
+          border-color: #ff2a73;
         }
 
         .auth-footer-note {
           margin-top: 18px;
           text-align: center;
           font-size: 11px;
-          color: #83978c;
-          line-height: 1.4;
+          color: #8da396;
+          line-height: 1.45;
         }
 
         .terms-link {
-          color: #e6005c;
+          color: #e5c158;
           text-decoration: underline;
+        }
+
+        .terms-link:hover {
+          color: #ffffff;
         }
 
         @keyframes fadeIn {
@@ -608,7 +798,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         }
 
         @keyframes scaleIn {
-          from { transform: scale(0.92); opacity: 0; }
+          from { transform: scale(0.94); opacity: 0; }
           to { transform: scale(1); opacity: 1; }
         }
 

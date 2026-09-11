@@ -215,13 +215,12 @@ export default function MobileAppView({ onOpenLoginModal }: MobileAppViewProps) 
             <svg width="34" height="24" viewBox="0 0 54 40" fill="none">
               <defs>
                 <linearGradient id="mobGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ff4d79" />
-                  <stop offset="50%" stopColor="#ff7a3d" />
-                  <stop offset="100%" stopColor="#ff0055" />
+                  <stop offset="0%" stopColor="#ff2a73" />
+                  <stop offset="100%" stopColor="#e6005c" />
                 </linearGradient>
                 <linearGradient id="mobHeart" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ffc107" />
-                  <stop offset="100%" stopColor="#ff4081" />
+                  <stop offset="0%" stopColor="#ff528c" />
+                  <stop offset="100%" stopColor="#d8004f" />
                 </linearGradient>
               </defs>
               <path d="M4 10L11 32L17 14L22 30L26 12" stroke="url(#mobGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -877,8 +876,8 @@ export default function MobileAppView({ onOpenLoginModal }: MobileAppViewProps) 
               </svg>
             </div>
 
-            <h1 className="splash-brand">WedWithMe</h1>
-            <p className="splash-sub">From Match to Marriage</p>
+            <h1 className="splash-brand brand-name-text">WedWithMe</h1>
+            <p className="splash-sub brand-tagline-text">From Match to Marriage</p>
 
             <div className="splash-couple-img-wrap">
               <img src="/images/hero.jpg" alt="Wedding Couple" className="splash-couple" />

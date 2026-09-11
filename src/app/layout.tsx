@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
+import StyledJsxRegistry from "./registry";
 import { AppProvider } from "@/context";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import "./globals.css";
@@ -34,10 +35,12 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
       <body>
-        <AppProvider>
-          {children}
-          <MobileBottomNav />
-        </AppProvider>
+        <StyledJsxRegistry>
+          <AppProvider>
+            {children}
+            <MobileBottomNav />
+          </AppProvider>
+        </StyledJsxRegistry>
       </body>
     </html>
   );

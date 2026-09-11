@@ -234,8 +234,25 @@ export default function CustomerDashboardPage() {
       <div style={{ minHeight: '100vh', background: '#031710', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
         <div style={{ maxWidth: '440px', width: '100%', background: '#062a1c', border: '1px solid rgba(229,193,88,0.3)', borderRadius: '20px', padding: '36px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <span style={{ color: '#ffffff', fontSize: '26px', fontWeight: '800', letterSpacing: '-0.5px' }}>WedWithMe</span>
-            <div style={{ fontSize: '11px', color: '#e5c158', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px' }}>Customer Suite</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+              <svg width="48" height="34" viewBox="0 0 54 40" fill="none">
+                <defs>
+                  <linearGradient id="dashPinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ff2a73" />
+                    <stop offset="100%" stopColor="#e6005c" />
+                  </linearGradient>
+                  <linearGradient id="dashHeartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ff528c" />
+                    <stop offset="100%" stopColor="#d8004f" />
+                  </linearGradient>
+                </defs>
+                <path d="M4 10L11 32L17 14L22 30L26 12" stroke="url(#dashPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z" fill="url(#dashHeartGrad)" />
+                <path d="M28 12L32 30L37 14L43 32L50 10" stroke="url(#dashPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <span style={{ color: '#e5c158', fontSize: '26px', fontWeight: '800', letterSpacing: '-0.5px' }}>WedWithMe</span>
+            <div style={{ fontSize: '11px', color: '#fae8a4', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px' }}>Customer Suite</div>
             <h2 style={{ fontSize: '18px', marginTop: '12px', color: '#fff' }}>Welcome Back</h2>
             <p style={{ fontSize: '13px', color: '#9cb1a6' }}>Log in to view your matches, bookings, and privacy settings</p>
           </div>
@@ -311,7 +328,12 @@ export default function CustomerDashboardPage() {
         {/* Sidebar Brand Header */}
         <div style={{ padding: '24px 22px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '22px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.3px' }}>WedWithMe</span>
+            <svg width="32" height="24" viewBox="0 0 54 40" fill="none">
+              <path d="M4 10L11 32L17 14L22 30L26 12" stroke="url(#dashPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z" fill="url(#dashHeartGrad)" />
+              <path d="M28 12L32 30L37 14L43 32L50 10" stroke="url(#dashPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span style={{ fontSize: '22px', fontWeight: '800', color: '#e5c158', letterSpacing: '-0.3px' }}>WedWithMe</span>
           </Link>
           <span style={{
             fontSize: '10px',
