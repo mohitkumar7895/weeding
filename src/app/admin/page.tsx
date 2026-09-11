@@ -296,11 +296,28 @@ export default function AdminDashboardPage() {
   if (authNeeded) {
     return (
       <div style={{ minHeight: '100vh', background: '#0a0d14', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-        <div style={{ maxWidth: '420px', width: '100%', background: '#121624', border: '1px solid #e6005c', borderRadius: '16px', padding: '32px', boxShadow: '0 20px 50px rgba(0,0,0,0.7)' }}>
+        <div style={{ maxWidth: '440px', width: '100%', background: 'linear-gradient(180deg, #101422 0%, #080a12 100%)', border: '1.5px solid rgba(255,42,115,0.4)', borderRadius: '24px', padding: '36px', boxShadow: '0 25px 60px rgba(0,0,0,0.7), 0 0 35px rgba(255,42,115,0.2)' }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <span style={{ color: '#ff2a73', fontSize: '26px', fontWeight: 'bold' }}>WedWithMe</span>
-            <h2 style={{ fontSize: '18px', marginTop: '6px' }}>Master Admin Governance</h2>
-            <p style={{ fontSize: '13px', color: '#a0aec0' }}>Super Admin credentials required</p>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+              <svg width="48" height="34" viewBox="0 0 54 40" fill="none">
+                <defs>
+                  <linearGradient id="adminPinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ff2a73" />
+                    <stop offset="100%" stopColor="#e6005c" />
+                  </linearGradient>
+                  <linearGradient id="adminHeartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ff528c" />
+                    <stop offset="100%" stopColor="#d8004f" />
+                  </linearGradient>
+                </defs>
+                <path d="M4 10L11 32L17 14L22 30L26 12" stroke="url(#adminPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z" fill="url(#adminHeartGrad)" />
+                <path d="M28 12L32 30L37 14L43 32L50 10" stroke="url(#adminPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <span style={{ color: '#e5c158', fontSize: '26px', fontWeight: '800', letterSpacing: '-0.5px' }}>WedWithMe</span>
+            <h2 style={{ fontSize: '18px', marginTop: '6px', color: '#fff' }}>Master Admin Governance</h2>
+            <p style={{ fontSize: '13px', color: '#9cb1a6' }}>Super Admin credentials required</p>
           </div>
           {error && <div style={{ background: 'rgba(230,0,92,0.2)', color: '#ffb3c6', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>{error}</div>}
           <form onSubmit={handleAdminLogin}>
@@ -380,7 +397,12 @@ export default function AdminDashboardPage() {
         {/* Brand Header */}
         <div style={{ paddingBottom: '18px', borderBottom: '1px solid rgba(255, 42, 115, 0.15)', marginBottom: '18px' }}>
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#ff4d79', letterSpacing: '-0.5px' }}>WedWithMe</span>
+            <svg width="30" height="22" viewBox="0 0 54 40" fill="none">
+              <path d="M4 10L11 32L17 14L22 30L26 12" stroke="url(#adminPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z" fill="url(#adminHeartGrad)" />
+              <path d="M28 12L32 30L37 14L43 32L50 10" stroke="url(#adminPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#e5c158', letterSpacing: '-0.5px' }}>WedWithMe</span>
           </Link>
           <div style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', background: 'rgba(230,0,92,0.15)', color: '#ff6b9d', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(230,0,92,0.3)', fontWeight: 600 }}>
             Super Admin Governance

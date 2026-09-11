@@ -358,11 +358,28 @@ export default function VendorDashboardPage() {
   if (authNeeded) {
     return (
       <div style={{ minHeight: '100vh', background: '#03140e', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-        <div style={{ maxWidth: '440px', width: '100%', background: '#061d15', border: '1px solid rgba(229,193,88,0.3)', borderRadius: '16px', padding: '32px', boxShadow: '0 20px 50px rgba(0,0,0,0.7)' }}>
+        <div style={{ maxWidth: '440px', width: '100%', background: 'linear-gradient(180deg, #062a1c 0%, #031710 100%)', border: '1.5px solid rgba(229,193,88,0.35)', borderRadius: '24px', padding: '36px', boxShadow: '0 25px 60px rgba(0,0,0,0.7), 0 0 30px rgba(255,42,115,0.15)' }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <span style={{ color: '#e5c158', fontSize: '26px', fontWeight: 'bold' }}>WedWithMe</span>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+              <svg width="48" height="34" viewBox="0 0 54 40" fill="none">
+                <defs>
+                  <linearGradient id="vendorPinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ff2a73" />
+                    <stop offset="100%" stopColor="#e6005c" />
+                  </linearGradient>
+                  <linearGradient id="vendorHeartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ff528c" />
+                    <stop offset="100%" stopColor="#d8004f" />
+                  </linearGradient>
+                </defs>
+                <path d="M4 10L11 32L17 14L22 30L26 12" stroke="url(#vendorPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z" fill="url(#vendorHeartGrad)" />
+                <path d="M28 12L32 30L37 14L43 32L50 10" stroke="url(#vendorPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <span style={{ color: '#e5c158', fontSize: '26px', fontWeight: '800', letterSpacing: '-0.5px' }}>WedWithMe</span>
             <h2 style={{ fontSize: '20px', marginTop: '8px', color: '#fff' }}>Vendor Partner Suite</h2>
-            <p style={{ fontSize: '13px', color: '#a0aec0' }}>Log in to manage bookings, packages, calendar availability, and payouts</p>
+            <p style={{ fontSize: '13px', color: '#9cb1a6' }}>Log in to manage bookings, packages, calendar availability, and payouts</p>
           </div>
           {error && <div style={{ background: 'rgba(230,0,92,0.15)', border: '1px solid #e6005c', color: '#ffb3c6', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>{error}</div>}
           <form onSubmit={handleVendorLogin}>
@@ -436,6 +453,11 @@ export default function VendorDashboardPage() {
         {/* Brand Header */}
         <div style={{ paddingBottom: '18px', borderBottom: '1px solid rgba(229,193,88,0.15)', marginBottom: '18px' }}>
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="30" height="22" viewBox="0 0 54 40" fill="none">
+              <path d="M4 10L11 32L17 14L22 30L26 12" stroke="url(#vendorPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z" fill="url(#vendorHeartGrad)" />
+              <path d="M28 12L32 30L37 14L43 32L50 10" stroke="url(#vendorPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
             <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#e5c158', letterSpacing: '-0.5px' }}>WedWithMe</span>
           </Link>
           <div style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', background: 'rgba(229,193,88,0.12)', color: '#e5c158', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(229,193,88,0.25)', fontWeight: 600 }}>
