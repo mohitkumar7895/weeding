@@ -320,37 +320,35 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
         .desktop-nav :global(a),
         .desktop-nav :global(.nav-item) {
           color: #ffffff !important;
-          font-size: 13.5px !important;
+          font-size: 14px !important;
           font-weight: 600 !important;
-          letter-spacing: 0.2px;
+          letter-spacing: 0.1px;
           transition: all 0.2s ease;
           position: relative;
-          padding: 7px 18px !important;
+          padding: 6px 14px !important;
           border-radius: 9999px !important;
           text-decoration: none !important;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          background: rgba(230, 0, 92, 0.16) !important;
-          border: 1px solid rgba(255, 42, 115, 0.35) !important;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
         }
 
         .desktop-nav :global(a:hover),
         .desktop-nav :global(.nav-item:hover) {
-          color: #ffffff !important;
-          background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%) !important;
-          border-color: #ff2a73 !important;
-          box-shadow: 0 4px 14px rgba(230, 0, 92, 0.45) !important;
+          color: #e5c158 !important;
+          background: rgba(255, 255, 255, 0.08) !important;
           transform: translateY(-1px);
         }
 
         .desktop-nav :global(.nav-item-active) {
-          color: #ffffff !important;
+          color: #e5c158 !important;
           font-weight: 700 !important;
-          background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%) !important;
-          border: 1px solid #ff2a73 !important;
-          box-shadow: 0 4px 16px rgba(230, 0, 92, 0.55) !important;
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
         }
 
         .navbar-actions {
@@ -384,18 +382,22 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
 
         .icon-btn:hover {
           color: #ffffff;
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .notification-btn {
+          display: none;
+          position: relative;
         }
 
         .bell-badge {
           position: absolute;
-          top: 6px;
-          right: 6px;
+          top: 7px;
+          right: 7px;
           width: 7px;
           height: 7px;
           border-radius: 50%;
-          background: #ff2a73;
-          box-shadow: 0 0 6px #ff2a73;
+          background: #e6005c;
         }
 
         .btn-login {
@@ -404,16 +406,15 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           font-weight: 600;
           padding: 7px 22px;
           border-radius: 9999px;
-          border: 1px solid rgba(255, 42, 115, 0.5);
-          background: rgba(230, 0, 92, 0.18);
+          border: 1px solid rgba(255, 255, 255, 0.28);
+          background: transparent;
           transition: all 0.2s ease;
         }
 
         .btn-login:hover {
-          background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%);
-          border-color: #ff2a73;
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.5);
           color: #ffffff;
-          box-shadow: 0 4px 14px rgba(230, 0, 92, 0.4);
         }
 
         .btn-register {

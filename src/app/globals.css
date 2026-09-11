@@ -214,43 +214,41 @@ input, select {
   display: block !important;
 }
 
-/* Nav Links as Pink Buttons per user requirement */
+/* Desktop Navigation Links (Exact Match to Reference Screenshot) */
 .desktop-nav a,
 .desktop-nav .nav-item,
 a.nav-item {
   color: #ffffff !important;
-  font-size: 13.5px !important;
-  font-weight: 700 !important;
-  padding: 8px 18px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  padding: 6px 14px !important;
   border-radius: 9999px !important;
   text-decoration: none !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: rgba(230, 0, 92, 0.2) !important;
-  border: 1px solid rgba(255, 42, 115, 0.45) !important;
-  box-shadow: 0 2px 8px rgba(230, 0, 92, 0.22) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   transition: all 0.2s ease !important;
 }
 
 .desktop-nav a:hover,
 .desktop-nav .nav-item:hover,
 a.nav-item:hover {
-  background: rgba(230, 0, 92, 0.4) !important;
-  border-color: #ff2a73 !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 14px rgba(230, 0, 92, 0.4) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #e5c158 !important;
   transform: translateY(-1px) !important;
 }
 
 .desktop-nav a.nav-item-active,
 .desktop-nav .nav-item-active,
 a.nav-item-active {
-  color: #ffffff !important;
-  background: linear-gradient(135deg, #ff2a73 0%, #e6005c 100%) !important;
-  border-color: #ff2a73 !important;
-  box-shadow: 0 4px 16px rgba(230, 0, 92, 0.5) !important;
+  color: #e5c158 !important;
+  background: transparent !important;
   font-weight: 800 !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .mobile-nav-links a,
@@ -415,18 +413,29 @@ a.mobile-nav-item.active {
 .stagger-4 { transition-delay: 0.32s !important; }
 .stagger-5 { transition-delay: 0.40s !important; }
 
-/* Typewriter Ink Cursor */
+/* Typewriter Ink Cursor & Scroll Reveal Integration */
+[data-typewriter]:not(.is-revealed) {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+[data-typewriter].is-revealed {
+  opacity: 1;
+}
+
 .typewriter-ink-cursor {
   display: inline-block;
   color: #ff2a73;
   font-weight: 800;
-  animation: blinkInkCursor 0.75s infinite;
+  text-shadow: 0 0 8px rgba(255, 42, 115, 0.6);
+  animation: blinkInkCursor 0.65s ease-in-out infinite;
   margin-left: 2px;
+  vertical-align: baseline;
 }
 
 @keyframes blinkInkCursor {
   0%, 100% { opacity: 1; transform: scaleY(1); }
-  50% { opacity: 0; transform: scaleY(0.6); }
+  50% { opacity: 0; transform: scaleY(0.5); }
 }
 
 /* Hero Live Typewriter Bar */
