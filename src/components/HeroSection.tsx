@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function HeroSection() {
@@ -9,6 +9,40 @@ export default function HeroSection() {
   const [guests, setGuests] = useState('');
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [showGuestPicker, setShowGuestPicker] = useState(false);
+
+  // Live Continuous Typewriter Effect
+  const phrases = [
+    'Finding 36 Guna verified Kundali matches...',
+    'Booking royal palace venues in Agra & Jaipur...',
+    'Selecting 100% verified wedding caterers & decor...',
+    'Sagun AI: Your 24/7 personal wedding concierge...',
+    'Protected by WedWithMe Escrow Guarantee...',
+  ];
+  const [activePhraseIndex, setActivePhraseIndex] = useState(0);
+  const [typedText, setTypedText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const currentPhrase = phrases[activePhraseIndex];
+    const typingSpeed = isDeleting ? 25 : 55;
+
+    const timeout = setTimeout(() => {
+      if (!isDeleting) {
+        setTypedText(currentPhrase.substring(0, typedText.length + 1));
+        if (typedText.length + 1 === currentPhrase.length) {
+          setTimeout(() => setIsDeleting(true), 1800);
+        }
+      } else {
+        setTypedText(currentPhrase.substring(0, typedText.length - 1));
+        if (typedText.length === 0) {
+          setIsDeleting(false);
+          setActivePhraseIndex((prev) => (prev + 1) % phrases.length);
+        }
+      }
+    }, typingSpeed);
+
+    return () => clearTimeout(timeout);
+  }, [typedText, isDeleting, activePhraseIndex]);
 
   const popularCities = ['Agra', 'Delhi NCR', 'Jaipur', 'Udaipur', 'Goa', 'Mumbai', 'Bengaluru'];
   const guestRanges = ['< 100 Guests', '100 - 250 Guests', '250 - 500 Guests', '500 - 1000 Guests', '1000+ Royal Feast'];
@@ -58,6 +92,13 @@ export default function HeroSection() {
             <br className="hide-mobile" />
             and create unforgettable moments — all in one place.
           </p>
+
+          {/* Live Dynamic Typewriter Bar ("likhta hua aana") */}
+          <div className="hero-typewriter-bar">
+            <span className="typewriter-sparkle">✨</span>
+            <span className="hero-typewriter-text">{typedText}</span>
+            <span className="hero-typewriter-cursor">|</span>
+          </div>
 
           {/* Floating Search Pill Bar */}
           <form className="hero-search-pill" onSubmit={handleSearch}>

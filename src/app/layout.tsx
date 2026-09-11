@@ -3,6 +3,7 @@ import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import StyledJsxRegistry from "./registry";
 import { AppProvider } from "@/context";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import ScrollAnimationManager from "@/components/ScrollAnimationManager";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -39,6 +40,7 @@ export default function RootLayout({
           <AppProvider>
             {children}
             <MobileBottomNav />
+            <ScrollAnimationManager />
           </AppProvider>
         </StyledJsxRegistry>
       </body>

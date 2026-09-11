@@ -84,10 +84,10 @@ export default function QuickFeatures({ onSelectFeature }: QuickFeatureProps) {
     <section className="quick-features-section">
       <div className="container-custom">
         <div className="features-grid">
-          {features.map((item) => (
+          {features.map((item, index) => (
             <div
               key={item.id}
-              className="feature-card"
+              className={`feature-card reveal-on-scroll stagger-${(index % 5) + 1}`}
               onClick={() => onSelectFeature && onSelectFeature(item.id)}
             >
               <div

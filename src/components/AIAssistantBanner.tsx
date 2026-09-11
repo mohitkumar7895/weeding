@@ -10,7 +10,7 @@ export default function AIAssistantBanner({ onOpenSagun }: AIAssistantBannerProp
   return (
     <section className="assistant-section">
       <div className="container-custom">
-        <div className="assistant-card">
+        <div className="assistant-card reveal-on-scroll">
           {/* Subtle decorative gold line art watermark */}
           <div className="mandala-watermark">
             <svg width="240" height="240" viewBox="0 0 200 200" fill="none" opacity="0.1">
@@ -59,12 +59,11 @@ export default function AIAssistantBanner({ onOpenSagun }: AIAssistantBannerProp
             {/* Right Side: Hindi Dialogue Bubble & Audio Wave */}
             <div className="assistant-right">
               <div className="speech-bubble-card" onClick={onOpenSagun}>
-                <div className="hindi-message">
-                  नमस्ते! मैं हूँ शगुन,
-                  <br />
-                  आपकी AI वेडिंग असिस्टेंट!
-                  <br />
-                  आपकी कैसे मदद कर सकती हूँ?
+                <div
+                  className="hindi-message"
+                  data-typewriter="नमस्ते! मैं हूँ शगुन, आपकी AI वेडिंग असिस्टेंट! शादी की तैयारी में आपकी कैसे मदद करूँ?"
+                >
+                  नमस्ते! मैं हूँ शगुन, आपकी AI वेडिंग असिस्टेंट! शादी की तैयारी में आपकी कैसे मदद करूँ?
                 </div>
 
                 {/* Animated Audio Sound Wave */}

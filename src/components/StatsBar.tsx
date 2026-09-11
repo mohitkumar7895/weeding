@@ -63,10 +63,16 @@ export default function StatsBar() {
     <section className="stats-section">
       <div className="container-custom">
         <div className="stats-grid">
-          {stats.map((item) => (
-            <div key={item.id} className="stat-col">
+          {stats.map((item, idx) => (
+            <div key={item.id} className={`stat-col reveal-on-scroll stagger-${idx + 1}`}>
               <div className="stat-icon-wrap">{item.icon}</div>
-              <div className="stat-number">{item.number}</div>
+              <div
+                className="stat-number"
+                data-count-to={item.id === 'couples' ? '50000' : item.id === 'vendors' ? '10000' : item.id === 'cities' ? '100' : undefined}
+                data-count-suffix={item.id === 'global' ? '' : '+'}
+              >
+                {item.number}
+              </div>
               <div className="stat-label">{item.label}</div>
             </div>
           ))}

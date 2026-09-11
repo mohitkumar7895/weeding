@@ -393,4 +393,84 @@ a.mobile-nav-item.active {
   -webkit-overflow-scrolling: touch;
 }
 
+/* =========================================================
+   SCROLL REVEAL & LIVE TYPEWRITER ANIMATIONS
+   ========================================================= */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-on-scroll.is-revealed {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* Stagger delay classes */
+.stagger-1 { transition-delay: 0.08s !important; }
+.stagger-2 { transition-delay: 0.16s !important; }
+.stagger-3 { transition-delay: 0.24s !important; }
+.stagger-4 { transition-delay: 0.32s !important; }
+.stagger-5 { transition-delay: 0.40s !important; }
+
+/* Typewriter Ink Cursor */
+.typewriter-ink-cursor {
+  display: inline-block;
+  color: #ff2a73;
+  font-weight: 800;
+  animation: blinkInkCursor 0.75s infinite;
+  margin-left: 2px;
+}
+
+@keyframes blinkInkCursor {
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: 0; transform: scaleY(0.6); }
+}
+
+/* Hero Live Typewriter Bar */
+.hero-typewriter-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(3, 23, 16, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(229, 193, 88, 0.32);
+  border-radius: 9999px;
+  padding: 8px 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  animation: pulseTypewriter 3s ease-in-out infinite;
+}
+
+@keyframes pulseTypewriter {
+  0%, 100% {
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), 0 0 14px rgba(255, 42, 115, 0.15);
+  }
+  50% {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), 0 0 24px rgba(255, 42, 115, 0.3);
+  }
+}
+
+.typewriter-sparkle {
+  color: #e5c158;
+  font-size: 14px;
+}
+
+.hero-typewriter-text {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  min-height: 20px;
+}
+
+.hero-typewriter-cursor {
+  color: #ff2a73;
+  font-weight: 800;
+  animation: blinkInkCursor 0.75s infinite;
+}
+
+
 

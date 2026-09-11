@@ -83,12 +83,17 @@ export default function WhyChooseUs() {
     <section className="why-choose-section">
       <div className="container-custom">
         {/* Left-aligned title matching reference screenshot exactly */}
-        <h2 className="why-title">Why Choose WedWithMe?</h2>
+        <h2 className="why-title" data-typewriter="Why Choose WedWithMe?">
+          Why Choose WedWithMe?
+        </h2>
 
         {/* 5-Column Grid with Circular Pastel Icons & 2-Line Labels */}
         <div className="why-grid">
-          {items.map((item) => (
-            <div key={item.id} className="why-card">
+          {items.map((item, index) => (
+            <div
+              key={item.id}
+              className={`why-card reveal-on-scroll stagger-${(index % 5) + 1}`}
+            >
               <div
                 className="icon-circle"
                 style={{ backgroundColor: item.circleBg, color: item.iconColor }}
