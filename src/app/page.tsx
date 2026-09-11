@@ -11,6 +11,7 @@ import StatsBar from '@/components/StatsBar';
 import Footer from '@/components/Footer';
 import SagunModal from '@/components/SagunModal';
 import AuthModal from '@/components/AuthModal';
+import MobileAppView from '@/components/MobileAppView';
 
 export default function Home() {
   const [sagunModalOpen, setSagunModalOpen] = useState(false);
@@ -47,36 +48,44 @@ export default function Home() {
 
   return (
     <div className="page-wrapper">
-      {/* 1. Header Navigation */}
-      <Navbar onOpenLogin={openLogin} onOpenRegister={openRegister} />
+      {/* ================= MOBILE VIEW (Displayed automatically on screens <= 768px) ================= */}
+      <div className="mobile-only-container">
+        <MobileAppView onOpenLoginModal={openLogin} />
+      </div>
 
-      <main>
-        {/* 2. Hero Section */}
-        <HeroSection />
+      {/* ================= DESKTOP VIEW (Displayed on screens > 768px) ================= */}
+      <div className="desktop-only-container">
+        {/* 1. Header Navigation */}
+        <Navbar onOpenLogin={openLogin} onOpenRegister={openRegister} />
 
-        {/* 3. 5 Quick Features / Service Pill Cards */}
-        <QuickFeatures onSelectFeature={handleSelectFeature} />
+        <main>
+          {/* 2. Hero Section */}
+          <HeroSection />
 
-        {/* 4. Top Wedding Vendors */}
-        <TopVendors />
+          {/* 3. 5 Quick Features / Service Pill Cards */}
+          <QuickFeatures onSelectFeature={handleSelectFeature} />
 
-        {/* 5. Meet Sagun AI Wedding Assistant */}
-        <AIAssistantBanner onOpenSagun={() => setSagunModalOpen(true)} />
+          {/* 4. Top Wedding Vendors */}
+          <TopVendors />
 
-        {/* 6. Why Choose WedWithMe */}
-        <WhyChooseUs />
+          {/* 5. Meet Sagun AI Wedding Assistant */}
+          <AIAssistantBanner onOpenSagun={() => setSagunModalOpen(true)} />
 
-        {/* 7. Statistics Bar */}
-        <StatsBar />
-      </main>
+          {/* 6. Why Choose WedWithMe */}
+          <WhyChooseUs />
 
-      {/* 8. Footer */}
-      <Footer />
+          {/* 7. Statistics Bar */}
+          <StatsBar />
+        </main>
 
-      {/* 9. Interactive AI Assistant Modal */}
+        {/* 8. Footer */}
+        <Footer />
+      </div>
+
+      {/* Interactive AI Assistant Modal */}
       <SagunModal isOpen={sagunModalOpen} onClose={() => setSagunModalOpen(false)} />
 
-      {/* 10. Login & Register Modal */}
+      {/* Login & Register Modal */}
       <AuthModal
         isOpen={authModalOpen}
         initialMode={authMode}
@@ -91,8 +100,25 @@ export default function Home() {
           background-color: #ffffff;
         }
 
-        main {
-          flex: 1;
+        /* Default: Show Desktop, Hide Mobile */
+        .mobile-only-container {
+          display: none;
+        }
+
+        .desktop-only-container {
+          display: block;
+        }
+
+        /* Responsive Breakpoint: Mobile screens <= 768px */
+        @media (max-width: 768px) {
+          .mobile-only-container {
+            display: block;
+            width: 100%;
+            background-color: #03140e;
+          }
+          .desktop-only-container {
+            display: none;
+          }
         }
       `}</style>
     </div>
