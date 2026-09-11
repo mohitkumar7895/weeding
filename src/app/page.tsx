@@ -1,69 +1,100 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
+
+import React, { useState } from 'react';
+import Navbar from '@/components/Navbar';
+import HeroSection from '@/components/HeroSection';
+import QuickFeatures from '@/components/QuickFeatures';
+import TopVendors from '@/components/TopVendors';
+import AIAssistantBanner from '@/components/AIAssistantBanner';
+import WhyChooseUs from '@/components/WhyChooseUs';
+import StatsBar from '@/components/StatsBar';
+import Footer from '@/components/Footer';
+import SagunModal from '@/components/SagunModal';
+import AuthModal from '@/components/AuthModal';
 
 export default function Home() {
+  const [sagunModalOpen, setSagunModalOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+
+  const openLogin = () => {
+    setAuthMode('login');
+    setAuthModalOpen(true);
+  };
+
+  const openRegister = () => {
+    setAuthMode('register');
+    setAuthModalOpen(true);
+  };
+
+  const handleSelectFeature = (id: string) => {
+    if (id === 'assistant') {
+      setSagunModalOpen(true);
+    } else if (id === 'vendors') {
+      const vendorSection = document.getElementById('vendors');
+      if (vendorSection) {
+        vendorSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else if (id === 'match') {
+      openRegister();
+    } else {
+      const vendorSection = document.getElementById('vendors');
+      if (vendorSection) {
+        vendorSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <div className="page-wrapper">
+      {/* 1. Header Navigation */}
+      <Navbar onOpenLogin={openLogin} onOpenRegister={openRegister} />
+
+      <main>
+        {/* 2. Hero Section */}
+        <HeroSection />
+
+        {/* 3. 5 Quick Features / Service Pill Cards */}
+        <QuickFeatures onSelectFeature={handleSelectFeature} />
+
+        {/* 4. Top Wedding Vendors */}
+        <TopVendors />
+
+        {/* 5. Meet Sagun AI Wedding Assistant */}
+        <AIAssistantBanner onOpenSagun={() => setSagunModalOpen(true)} />
+
+        {/* 6. Why Choose WedWithMe */}
+        <WhyChooseUs />
+
+        {/* 7. Statistics Bar */}
+        <StatsBar />
       </main>
+
+      {/* 8. Footer */}
+      <Footer />
+
+      {/* 9. Interactive AI Assistant Modal */}
+      <SagunModal isOpen={sagunModalOpen} onClose={() => setSagunModalOpen(false)} />
+
+      {/* 10. Login & Register Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        initialMode={authMode}
+        onClose={() => setAuthModalOpen(false)}
+      />
+
+      <style jsx global>{`
+        .page-wrapper {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          background-color: #ffffff;
+        }
+
+        main {
+          flex: 1;
+        }
+      `}</style>
     </div>
   );
 }
