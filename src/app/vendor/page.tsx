@@ -18,8 +18,8 @@ export default function VendorDashboardPage() {
 
   const [loading, setLoading] = useState(true);
   const [authNeeded, setAuthNeeded] = useState(false);
-  const [email, setEmail] = useState('vendor.venue@wedwithme.com');
-  const [password, setPassword] = useState('Admin@123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -27,8 +27,8 @@ export default function VendorDashboardPage() {
   const [newPkgName, setNewPkgName] = useState('');
   const [newPkgPrice, setNewPkgPrice] = useState('');
   const [newPkgDesc, setNewPkgDesc] = useState('');
-  const [newPkgCapacity, setNewPkgCapacity] = useState('250');
-  const [newPkgInclusions, setNewPkgInclusions] = useState('Decoration, Sound System, Catering Support');
+  const [newPkgCapacity, setNewPkgCapacity] = useState('');
+  const [newPkgInclusions, setNewPkgInclusions] = useState('');
 
   const [newSrvTitle, setNewSrvTitle] = useState('');
   const [newSrvPrice, setNewSrvPrice] = useState('');
@@ -39,7 +39,7 @@ export default function VendorDashboardPage() {
   const [docFileUrl, setDocFileUrl] = useState('');
 
   const [blockDate, setBlockDate] = useState('');
-  const [blockReason, setBlockReason] = useState('Reserved for private event');
+  const [blockReason, setBlockReason] = useState('');
 
   const [reelTitle, setReelTitle] = useState('');
   const [reelVideoUrl, setReelVideoUrl] = useState('');

@@ -31,6 +31,11 @@ interface ProfileFields {
   drinking: string;
   interests: string;
   photo_url: string;
+  profile_visibility?: 'PUBLIC' | 'PRIVATE' | 'LIMITED';
+  hide_phone?: boolean;
+  hide_photos?: boolean;
+  hide_income?: boolean;
+  hide_location?: boolean;
 }
 
 interface CustomerProfileEditorProps {
@@ -273,7 +278,7 @@ export default function CustomerProfileEditor({ user, onProfileUpdated }: Custom
     profession: '',
     company: '',
     annual_income: '',
-    country: 'India',
+    country: '',
     state: '',
     city: '',
     about_me: '',
@@ -288,6 +293,11 @@ export default function CustomerProfileEditor({ user, onProfileUpdated }: Custom
     drinking: '',
     interests: '',
     photo_url: '',
+    profile_visibility: 'PUBLIC',
+    hide_phone: true,
+    hide_photos: false,
+    hide_income: false,
+    hide_location: false,
   });
 
   const [loading, setLoading] = useState(true);
@@ -316,36 +326,43 @@ export default function CustomerProfileEditor({ user, onProfileUpdated }: Custom
       const data = await res.json();
       if (data.success && data.data) {
         const d = data.data;
-        if (d.name) setFullName(d.name);
+        const p = d.profile || d;
+        const u = d.user || d;
+        if (u?.name || p?.name) setFullName(u?.name || p?.name || '');
         setForm({
-          gender: d.gender || '',
-          date_of_birth: d.date_of_birth ? String(d.date_of_birth).substring(0, 10) : '',
-          height_cm: d.height_cm ? String(d.height_cm) : '',
-          marital_status: d.marital_status || '',
-          religion: d.religion || '',
-          caste: d.caste || '',
-          sub_caste: d.sub_caste || '',
-          mother_tongue: d.mother_tongue || '',
-          education: d.education || '',
-          college: d.college || '',
-          profession: d.profession || '',
-          company: d.company || '',
-          annual_income: d.annual_income ? String(d.annual_income) : '',
-          country: d.country || 'India',
-          state: d.state || '',
-          city: d.city || '',
-          about_me: d.about_me || '',
-          family_type: d.family_type || '',
-          family_values: d.family_values || '',
-          father_occupation: d.father_occupation || '',
-          mother_occupation: d.mother_occupation || '',
-          siblings_details: d.siblings_details || '',
-          hobbies: d.hobbies || '',
-          diet: d.diet || '',
-          smoking: d.smoking || '',
-          drinking: d.drinking || '',
-          interests: d.interests || '',
-          photo_url: d.photo_url || '',
+          gender: p.gender || '',
+          date_of_birth: p.date_of_birth ? String(p.date_of_birth).substring(0, 10) : '',
+          height_cm: p.height_cm ? String(p.height_cm) : '',
+          marital_status: p.marital_status || '',
+          religion: p.religion || '',
+          caste: p.caste || '',
+          sub_caste: p.sub_caste || '',
+          mother_tongue: p.mother_tongue || '',
+          education: p.education || '',
+          college: p.college || '',
+          profession: p.profession || '',
+          company: p.company || '',
+          annual_income: p.annual_income ? String(p.annual_income) : '',
+          country: p.country || '',
+          state: p.state || '',
+          city: p.city || '',
+          about_me: p.about_me || '',
+          family_type: p.family_type || '',
+          family_values: p.family_values || '',
+          father_occupation: p.father_occupation || '',
+          mother_occupation: p.mother_occupation || '',
+          siblings_details: p.siblings_details || '',
+          hobbies: p.hobbies || '',
+          diet: p.diet || '',
+          smoking: p.smoking || '',
+          drinking: p.drinking || '',
+          interests: p.interests || '',
+          photo_url: p.primaryPhotoUrl || p.photo_url || (d.photos?.[0]?.url ?? ''),
+          profile_visibility: p.profile_visibility || 'PUBLIC',
+          hide_phone: p.hide_phone !== undefined && p.hide_phone !== null ? Boolean(p.hide_phone) : true,
+          hide_photos: Boolean(p.hide_photos),
+          hide_income: Boolean(p.hide_income),
+          hide_location: Boolean(p.hide_location),
         });
       }
     } catch (err: any) {
@@ -416,6 +433,7 @@ export default function CustomerProfileEditor({ user, onProfileUpdated }: Custom
           onProfileUpdated({
             name: fullName,
             ...form,
+            photo_url: form.photo_url,
             completion_percentage: percentage,
           });
         }
@@ -1323,6 +1341,437 @@ export default function CustomerProfileEditor({ user, onProfileUpdated }: Custom
                   style={inputStyle}
                 />
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ================= SECTION 9: PROFILE PRIVACY & VISIBILITY ================= */}
+        <div style={cardStyle}>
+          <div style={cardHeaderStyle}>
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🛡️</span>
+                <span>Section 9: Profile Privacy & Visibility Controls</span>
+              </h3>
+              <p style={{ fontSize: '13px', color: '#9cb1a6', margin: 0 }}>
+                Control how your matrimonial profile is discovered on WedWithMe and manage disclosure for sensitive fields.
+              </p>
+            </div>
+            <span style={{
+              fontSize: '11px',
+              background: form.profile_visibility === 'PUBLIC' ? 'rgba(56,161,105,0.2)' : form.profile_visibility === 'LIMITED' ? 'rgba(229,193,88,0.2)' : 'rgba(230,0,92,0.2)',
+              color: form.profile_visibility === 'PUBLIC' ? '#9ae6b4' : form.profile_visibility === 'LIMITED' ? '#fae8a4' : '#ffb3c6',
+              border: `1px solid ${form.profile_visibility === 'PUBLIC' ? '#38a169' : form.profile_visibility === 'LIMITED' ? '#e5c158' : '#ff2a73'}`,
+              padding: '4px 10px',
+              borderRadius: '9999px',
+              fontWeight: '800',
+              textTransform: 'uppercase',
+            }}>
+              {form.profile_visibility || 'PUBLIC'} Mode
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+            {/* 1. Overall Profile Visibility Mode */}
+            <div>
+              <label style={{ ...labelStyle, marginBottom: '10px' }}>
+                Profile Visibility Mode (Choose One) *
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+                {/* Mode A: Public */}
+                <div
+                  onClick={() => handleChange('profile_visibility', 'PUBLIC')}
+                  style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    background: form.profile_visibility === 'PUBLIC' ? 'rgba(56,161,105,0.12)' : '#062a1c',
+                    border: `1.5px solid ${form.profile_visibility === 'PUBLIC' ? '#38a169' : 'rgba(255,255,255,0.1)'}`,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    position: 'relative',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '15px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🌐</span> Public
+                    </span>
+                    <span style={{ fontSize: '10px', background: 'rgba(56,161,105,0.2)', color: '#9ae6b4', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+                      Recommended
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#9cb1a6', margin: 0, lineHeight: 1.4 }}>
+                    Profile can be discovered by verified matrimonial members according to compatibility rules.
+                  </p>
+                </div>
+
+                {/* Mode B: Limited */}
+                <div
+                  onClick={() => handleChange('profile_visibility', 'LIMITED')}
+                  style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    background: form.profile_visibility === 'LIMITED' ? 'rgba(229,193,88,0.12)' : '#062a1c',
+                    border: `1.5px solid ${form.profile_visibility === 'LIMITED' ? '#e5c158' : 'rgba(255,255,255,0.1)'}`,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    position: 'relative',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '15px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🛡️</span> Limited
+                    </span>
+                    <span style={{ fontSize: '10px', background: 'rgba(229,193,88,0.2)', color: '#fae8a4', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+                      Shielded
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#9cb1a6', margin: 0, lineHeight: 1.4 }}>
+                    Only permitted profile information is shown. Sensitive details are shielded based on field controls.
+                  </p>
+                </div>
+
+                {/* Mode C: Private */}
+                <div
+                  onClick={() => handleChange('profile_visibility', 'PRIVATE')}
+                  style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    background: form.profile_visibility === 'PRIVATE' ? 'rgba(230,0,92,0.12)' : '#062a1c',
+                    border: `1.5px solid ${form.profile_visibility === 'PRIVATE' ? '#ff2a73' : 'rgba(255,255,255,0.1)'}`,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    position: 'relative',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '15px', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🔒</span> Private
+                    </span>
+                    <span style={{ fontSize: '10px', background: 'rgba(230,0,92,0.2)', color: '#ffb3c6', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+                      Hidden
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#9cb1a6', margin: 0, lineHeight: 1.4 }}>
+                    Profile is strictly hidden from search, discovery queue, and matches. Direct views are blocked.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Field-Level Sensitive Privacy Controls */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <label style={{ ...labelStyle, marginBottom: 0 }}>
+                  Field-Level Sensitive Privacy Controls (4 Essential Fields)
+                </label>
+                <span style={{ fontSize: '11px', color: '#9cb1a6' }}>
+                  Enforced server-side in all API responses
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+                {/* Control 1: Phone Number */}
+                <div style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: '#062a1c',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>📱</span> Phone Number
+                      </span>
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        color: form.hide_phone ? '#fae8a4' : '#9ae6b4',
+                        background: form.hide_phone ? 'rgba(229,193,88,0.15)' : 'rgba(56,161,105,0.15)',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                      }}>
+                        {form.hide_phone ? 'Private' : 'Visible'}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#9cb1a6', margin: 0, lineHeight: 1.4 }}>
+                      {form.hide_phone
+                        ? 'Masked on discovery/search. Only shared after mutual interest acceptance.'
+                        : 'Visible to verified matrimonial candidates.'}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('hide_phone', false)}
+                      style={{
+                        flex: 1,
+                        padding: '7px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        background: !form.hide_phone ? 'linear-gradient(135deg, #38a169 0%, #2f855a 100%)' : 'rgba(255,255,255,0.06)',
+                        color: !form.hide_phone ? '#fff' : '#cbd5e0',
+                        border: `1px solid ${!form.hide_phone ? '#38a169' : 'rgba(255,255,255,0.1)'}`,
+                      }}
+                    >
+                      ✓ Visible
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('hide_phone', true)}
+                      style={{
+                        flex: 1,
+                        padding: '7px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        background: form.hide_phone ? 'linear-gradient(135deg, #e5c158 0%, #b89530 100%)' : 'rgba(255,255,255,0.06)',
+                        color: form.hide_phone ? '#031710' : '#cbd5e0',
+                        border: `1px solid ${form.hide_phone ? '#e5c158' : 'rgba(255,255,255,0.1)'}`,
+                      }}
+                    >
+                      🔒 Private
+                    </button>
+                  </div>
+                </div>
+
+                {/* Control 2: Photographs */}
+                <div style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: '#062a1c',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>📷</span> Photographs
+                      </span>
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        color: form.hide_photos ? '#fae8a4' : '#9ae6b4',
+                        background: form.hide_photos ? 'rgba(229,193,88,0.15)' : 'rgba(56,161,105,0.15)',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                      }}>
+                        {form.hide_photos ? 'Protected' : 'Visible'}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#9cb1a6', margin: 0, lineHeight: 1.4 }}>
+                      {form.hide_photos
+                        ? 'Photo is hidden behind a privacy shield. URL is not sent in public APIs.'
+                        : 'Visible on discovery cards and matches profile views.'}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('hide_photos', false)}
+                      style={{
+                        flex: 1,
+                        padding: '7px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        background: !form.hide_photos ? 'linear-gradient(135deg, #38a169 0%, #2f855a 100%)' : 'rgba(255,255,255,0.06)',
+                        color: !form.hide_photos ? '#fff' : '#cbd5e0',
+                        border: `1px solid ${!form.hide_photos ? '#38a169' : 'rgba(255,255,255,0.1)'}`,
+                      }}
+                    >
+                      ✓ Visible
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('hide_photos', true)}
+                      style={{
+                        flex: 1,
+                        padding: '7px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        background: form.hide_photos ? 'linear-gradient(135deg, #e5c158 0%, #b89530 100%)' : 'rgba(255,255,255,0.06)',
+                        color: form.hide_photos ? '#031710' : '#cbd5e0',
+                        border: `1px solid ${form.hide_photos ? '#e5c158' : 'rgba(255,255,255,0.1)'}`,
+                      }}
+                    >
+                      🔒 Private
+                    </button>
+                  </div>
+                </div>
+
+                {/* Control 3: Income */}
+                <div style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: '#062a1c',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>💰</span> Annual Income
+                      </span>
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        color: form.hide_income ? '#fae8a4' : '#9ae6b4',
+                        background: form.hide_income ? 'rgba(229,193,88,0.15)' : 'rgba(56,161,105,0.15)',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                      }}>
+                        {form.hide_income ? 'Confidential' : 'Visible'}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#9cb1a6', margin: 0, lineHeight: 1.4 }}>
+                      {form.hide_income
+                        ? 'Exact income is masked as "Confidential / Disclosed after connection".'
+                        : 'Income range is shown on verified cards and matches.'}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('hide_income', false)}
+                      style={{
+                        flex: 1,
+                        padding: '7px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        background: !form.hide_income ? 'linear-gradient(135deg, #38a169 0%, #2f855a 100%)' : 'rgba(255,255,255,0.06)',
+                        color: !form.hide_income ? '#fff' : '#cbd5e0',
+                        border: `1px solid ${!form.hide_income ? '#38a169' : 'rgba(255,255,255,0.1)'}`,
+                      }}
+                    >
+                      ✓ Visible
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('hide_income', true)}
+                      style={{
+                        flex: 1,
+                        padding: '7px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        background: form.hide_income ? 'linear-gradient(135deg, #e5c158 0%, #b89530 100%)' : 'rgba(255,255,255,0.06)',
+                        color: form.hide_income ? '#031710' : '#cbd5e0',
+                        border: `1px solid ${form.hide_income ? '#e5c158' : 'rgba(255,255,255,0.1)'}`,
+                      }}
+                    >
+                      🔒 Confidential
+                    </button>
+                  </div>
+                </div>
+
+                {/* Control 4: Exact Location */}
+                <div style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: '#062a1c',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>📍</span> Exact Location (City)
+                      </span>
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        color: form.hide_location ? '#fae8a4' : '#9ae6b4',
+                        background: form.hide_location ? 'rgba(229,193,88,0.15)' : 'rgba(56,161,105,0.15)',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                      }}>
+                        {form.hide_location ? 'Protected' : 'Visible'}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#9cb1a6', margin: 0, lineHeight: 1.4 }}>
+                      {form.hide_location
+                        ? 'Exact city is shielded as "Protected by Member". Only country/region is shown.'
+                        : 'City is visible to matching candidates in your region.'}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('hide_location', false)}
+                      style={{
+                        flex: 1,
+                        padding: '7px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        background: !form.hide_location ? 'linear-gradient(135deg, #38a169 0%, #2f855a 100%)' : 'rgba(255,255,255,0.06)',
+                        color: !form.hide_location ? '#fff' : '#cbd5e0',
+                        border: `1px solid ${!form.hide_location ? '#38a169' : 'rgba(255,255,255,0.1)'}`,
+                      }}
+                    >
+                      ✓ Visible
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleChange('hide_location', true)}
+                      style={{
+                        flex: 1,
+                        padding: '7px 12px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        background: form.hide_location ? 'linear-gradient(135deg, #e5c158 0%, #b89530 100%)' : 'rgba(255,255,255,0.06)',
+                        color: form.hide_location ? '#031710' : '#cbd5e0',
+                        border: `1px solid ${form.hide_location ? '#e5c158' : 'rgba(255,255,255,0.1)'}`,
+                      }}
+                    >
+                      🔒 Protected
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Privacy Guarantee Note */}
+            <div style={{
+              background: 'rgba(229,193,88,0.08)',
+              border: '1px solid rgba(229,193,88,0.25)',
+              borderRadius: '10px',
+              padding: '12px 16px',
+              fontSize: '12.5px',
+              color: '#fae8a4',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}>
+              <span style={{ fontSize: '18px' }}>🔐</span>
+              <span>
+                <strong>Server-Side Privacy Guarantee:</strong> Your settings are saved directly in MySQL and enforced in all API endpoints. Sensitive fields marked Private are never sent over the wire to unauthorized viewers.
+              </span>
             </div>
           </div>
         </div>

@@ -38,7 +38,7 @@ export default function AdminDashboardPage() {
 
   // New Commission Rule Form
   const [newRuleName, setNewRuleName] = useState('');
-  const [newRuleValue, setNewRuleValue] = useState('10.0');
+  const [newRuleValue, setNewRuleValue] = useState('');
   const [newRuleType, setNewRuleType] = useState<'PERCENTAGE' | 'FIXED'>('PERCENTAGE');
 
   const [loading, setLoading] = useState(true);
@@ -46,8 +46,8 @@ export default function AdminDashboardPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const [authNeeded, setAuthNeeded] = useState(false);
-  const [adminEmail, setAdminEmail] = useState('admin@wedwithme.com');
-  const [adminPassword, setAdminPassword] = useState('Admin@123456');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
 
   useEffect(() => {
     fetchStats();

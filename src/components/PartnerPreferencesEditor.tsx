@@ -130,24 +130,24 @@ const INCOME_OPTIONS = [
 
 export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPreferencesEditorProps) {
   const [prefs, setPrefs] = useState<PartnerPreferencesData>({
-    min_age: 21,
-    max_age: 32,
-    min_height_cm: 150,
-    max_height_cm: 190,
-    accepted_marital_status: 'Never Married',
-    preferred_religions: 'Hindu',
-    preferred_castes: 'Any',
-    preferred_sub_castes: 'Any',
-    preferred_educations: 'Graduate, Post Graduate',
-    preferred_professions: 'Any',
+    min_age: 0,
+    max_age: 0,
+    min_height_cm: 0,
+    max_height_cm: 0,
+    accepted_marital_status: '',
+    preferred_religions: '',
+    preferred_castes: '',
+    preferred_sub_castes: '',
+    preferred_educations: '',
+    preferred_professions: '',
     min_income: 0,
-    preferred_country: 'India',
-    preferred_state: 'Any',
-    preferred_city: 'Any',
-    preferred_diet: 'Any',
-    preferred_manglik: 'Any',
-    preferred_smoking: 'No',
-    preferred_drinking: 'No',
+    preferred_country: '',
+    preferred_state: '',
+    preferred_city: '',
+    preferred_diet: '',
+    preferred_manglik: '',
+    preferred_smoking: '',
+    preferred_drinking: '',
     deal_breakers: '',
   });
 
@@ -170,24 +170,24 @@ export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPrefe
       if (json.success && json.data) {
         const d = json.data;
         setPrefs({
-          min_age: Number(d.min_age) || 21,
-          max_age: Number(d.max_age) || 32,
-          min_height_cm: Number(d.min_height_cm) || 150,
-          max_height_cm: Number(d.max_height_cm) || 190,
-          accepted_marital_status: d.accepted_marital_status || 'Never Married',
-          preferred_religions: d.preferred_religions || 'Hindu',
-          preferred_castes: d.preferred_castes || 'Any',
-          preferred_sub_castes: d.preferred_sub_castes || 'Any',
-          preferred_educations: d.preferred_educations || 'Graduate, Post Graduate',
-          preferred_professions: d.preferred_professions || 'Any',
+          min_age: Number(d.min_age) || 0,
+          max_age: Number(d.max_age) || 0,
+          min_height_cm: Number(d.min_height_cm) || 0,
+          max_height_cm: Number(d.max_height_cm) || 0,
+          accepted_marital_status: d.accepted_marital_status || '',
+          preferred_religions: d.preferred_religions || '',
+          preferred_castes: d.preferred_castes || '',
+          preferred_sub_castes: d.preferred_sub_castes || '',
+          preferred_educations: d.preferred_educations || '',
+          preferred_professions: d.preferred_professions || '',
           min_income: Number(d.min_income) || 0,
-          preferred_country: d.preferred_country || 'India',
-          preferred_state: d.preferred_state || 'Any',
-          preferred_city: d.preferred_city || 'Any',
-          preferred_diet: d.preferred_diet || 'Any',
-          preferred_manglik: d.preferred_manglik || 'Any',
-          preferred_smoking: d.preferred_smoking || 'No',
-          preferred_drinking: d.preferred_drinking || 'No',
+          preferred_country: d.preferred_country || '',
+          preferred_state: d.preferred_state || '',
+          preferred_city: d.preferred_city || '',
+          preferred_diet: d.preferred_diet || '',
+          preferred_manglik: d.preferred_manglik || '',
+          preferred_smoking: d.preferred_smoking || '',
+          preferred_drinking: d.preferred_drinking || '',
           deal_breakers: d.deal_breakers || '',
         });
       }
@@ -209,7 +209,11 @@ export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPrefe
     field: keyof PartnerPreferencesData
   ) => {
     if (option === 'Any') {
-      handleFieldChange(field, 'Any');
+      if (currentListStr === 'Any') {
+        handleFieldChange(field, '');
+      } else {
+        handleFieldChange(field, 'Any');
+      }
       return;
     }
 
@@ -224,15 +228,11 @@ export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPrefe
       updated = [...currentItems.filter((i) => i !== 'Any'), option];
     }
 
-    if (updated.length === 0) {
-      updated = ['Any'];
-    }
-
     handleFieldChange(field, updated.join(', '));
   };
 
   const isSelected = (currentListStr: string, option: string) => {
-    if (!currentListStr) return option === 'Any';
+    if (!currentListStr) return false;
     const items = currentListStr.split(',').map((s) => s.trim().toLowerCase());
     return items.includes(option.toLowerCase());
   };
@@ -375,33 +375,35 @@ export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPrefe
               </h3>
             </div>
             <span style={{ fontSize: '12px', color: '#e5c158', fontWeight: '700' }}>
-              {prefs.min_age} to {prefs.max_age} yrs • {prefs.min_height_cm}cm - {prefs.max_height_cm}cm
+              {prefs.min_age && prefs.max_age ? `${prefs.min_age} to ${prefs.max_age} yrs` : 'Age Range'}{prefs.min_height_cm && prefs.max_height_cm ? ` • ${prefs.min_height_cm}cm - ${prefs.max_height_cm}cm` : ''}
             </span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
             {/* Min Age */}
             <div>
-              <label style={labelStyle}>Minimum Age ({prefs.min_age} years)</label>
+              <label style={labelStyle}>Minimum Age {prefs.min_age ? `(${prefs.min_age} years)` : ''}</label>
               <input
                 type="number"
                 min="18"
-                max={prefs.max_age}
-                value={prefs.min_age}
-                onChange={(e) => handleFieldChange('min_age', Number(e.target.value))}
+                max={prefs.max_age || 75}
+                value={prefs.min_age || ''}
+                onChange={(e) => handleFieldChange('min_age', e.target.value ? Number(e.target.value) : 0)}
+                placeholder="e.g. 21"
                 style={inputStyle}
               />
             </div>
 
             {/* Max Age */}
             <div>
-              <label style={labelStyle}>Maximum Age ({prefs.max_age} years)</label>
+              <label style={labelStyle}>Maximum Age {prefs.max_age ? `(${prefs.max_age} years)` : ''}</label>
               <input
                 type="number"
-                min={prefs.min_age}
+                min={prefs.min_age || 18}
                 max="75"
-                value={prefs.max_age}
-                onChange={(e) => handleFieldChange('max_age', Number(e.target.value))}
+                value={prefs.max_age || ''}
+                onChange={(e) => handleFieldChange('max_age', e.target.value ? Number(e.target.value) : 0)}
+                placeholder="e.g. 32"
                 style={inputStyle}
               />
             </div>
@@ -410,10 +412,11 @@ export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPrefe
             <div>
               <label style={labelStyle}>Minimum Height</label>
               <select
-                value={prefs.min_height_cm}
-                onChange={(e) => handleFieldChange('min_height_cm', Number(e.target.value))}
+                value={prefs.min_height_cm || ''}
+                onChange={(e) => handleFieldChange('min_height_cm', e.target.value ? Number(e.target.value) : 0)}
                 style={inputStyle}
               >
+                <option value="">Select minimum height</option>
                 {HEIGHT_OPTIONS.map((h) => (
                   <option key={h.cm} value={h.cm}>
                     {h.label}
@@ -426,10 +429,11 @@ export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPrefe
             <div>
               <label style={labelStyle}>Maximum Height</label>
               <select
-                value={prefs.max_height_cm}
-                onChange={(e) => handleFieldChange('max_height_cm', Number(e.target.value))}
+                value={prefs.max_height_cm || ''}
+                onChange={(e) => handleFieldChange('max_height_cm', e.target.value ? Number(e.target.value) : 0)}
                 style={inputStyle}
               >
+                <option value="">Select maximum height</option>
                 {HEIGHT_OPTIONS.map((h) => (
                   <option key={h.cm} value={h.cm}>
                     {h.label}
@@ -495,10 +499,11 @@ export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPrefe
             <div>
               <label style={labelStyle}>Preferred Religion</label>
               <select
-                value={prefs.preferred_religions}
+                value={prefs.preferred_religions || ''}
                 onChange={(e) => handleFieldChange('preferred_religions', e.target.value)}
                 style={inputStyle}
               >
+                <option value="">Select preferred religion</option>
                 {RELIGION_OPTIONS.map((rel) => (
                   <option key={rel} value={rel}>
                     {rel}
@@ -628,10 +633,11 @@ export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPrefe
           <div style={{ maxWidth: '480px' }}>
             <label style={labelStyle}>Minimum Partner Annual Income</label>
             <select
-              value={prefs.min_income}
-              onChange={(e) => handleFieldChange('min_income', Number(e.target.value))}
+              value={prefs.min_income || ''}
+              onChange={(e) => handleFieldChange('min_income', e.target.value ? Number(e.target.value) : 0)}
               style={inputStyle}
             >
+              <option value="">Select minimum annual income</option>
               {INCOME_OPTIONS.map((inc) => (
                 <option key={inc.val} value={inc.val}>
                   {inc.label}
@@ -713,10 +719,11 @@ export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPrefe
             <div>
               <label style={labelStyle}>Dietary Preference</label>
               <select
-                value={prefs.preferred_diet}
+                value={prefs.preferred_diet || ''}
                 onChange={(e) => handleFieldChange('preferred_diet', e.target.value)}
                 style={inputStyle}
               >
+                <option value="">Select dietary preference</option>
                 <option value="Any">Any / No Diet Restriction</option>
                 <option value="Vegetarian">Pure Vegetarian</option>
                 <option value="Non-Vegetarian">Non-Vegetarian</option>
@@ -730,10 +737,11 @@ export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPrefe
             <div>
               <label style={labelStyle}>Manglik Alignment</label>
               <select
-                value={prefs.preferred_manglik}
+                value={prefs.preferred_manglik || ''}
                 onChange={(e) => handleFieldChange('preferred_manglik', e.target.value)}
                 style={inputStyle}
               >
+                <option value="">Select Manglik alignment</option>
                 <option value="Any">Doesn&apos;t Matter / Any</option>
                 <option value="Non-Manglik">Non-Manglik Only</option>
                 <option value="Manglik">Manglik Only</option>
@@ -744,10 +752,11 @@ export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPrefe
             <div>
               <label style={labelStyle}>Smoking Habit</label>
               <select
-                value={prefs.preferred_smoking}
+                value={prefs.preferred_smoking || ''}
                 onChange={(e) => handleFieldChange('preferred_smoking', e.target.value)}
                 style={inputStyle}
               >
+                <option value="">Select smoking preference</option>
                 <option value="No">No (Non-Smoker Preferred)</option>
                 <option value="Any">Doesn&apos;t Matter</option>
               </select>
@@ -757,10 +766,11 @@ export default function PartnerPreferencesEditor({ user, onSaved }: PartnerPrefe
             <div>
               <label style={labelStyle}>Drinking Habit</label>
               <select
-                value={prefs.preferred_drinking}
+                value={prefs.preferred_drinking || ''}
                 onChange={(e) => handleFieldChange('preferred_drinking', e.target.value)}
                 style={inputStyle}
               >
+                <option value="">Select drinking preference</option>
                 <option value="No">No (Teetotaler Preferred)</option>
                 <option value="Occasionally">Socially / Occasionally OK</option>
                 <option value="Any">Doesn&apos;t Matter</option>

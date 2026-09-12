@@ -182,7 +182,7 @@ export async function GET() {
     if (!user) {
       user = {
         id: session.id,
-        name: session.name || 'Valued Partner',
+        name: session.name || '',
         email: session.email || '',
         phone: '',
         role: session.role || 'CUSTOMER',
@@ -193,36 +193,36 @@ export async function GET() {
       profile = {
         id: 'prof_' + session.id,
         user_id: session.id,
-        gender: 'OTHER',
-        date_of_birth: '1998-01-01',
-        height_cm: 168,
-        marital_status: 'NEVER_MARRIED',
-        religion: 'Hindu',
+        gender: '',
+        date_of_birth: '',
+        height_cm: null,
+        marital_status: '',
+        religion: '',
         caste: '',
         sub_caste: '',
-        mother_tongue: 'Hindi',
-        education: 'Graduate',
+        mother_tongue: '',
+        education: '',
         college: '',
-        profession: 'Professional',
+        profession: '',
         company: '',
-        annual_income: 1200000,
-        country: 'India',
-        state: 'Delhi',
-        city: 'Delhi NCR',
-        about_me: 'Hello, I am looking for a life partner on WedWithMe.',
+        annual_income: null,
+        country: '',
+        state: '',
+        city: '',
+        about_me: '',
         family_details: '',
-        family_type: 'Nuclear',
-        family_values: 'Moderate',
+        family_type: '',
+        family_values: '',
         father_occupation: '',
         mother_occupation: '',
         siblings_details: '',
-        hobbies: 'Traveling, Reading, Photography',
-        diet: 'Vegetarian',
-        smoking: 'No',
-        drinking: 'No',
-        interests: 'Music, Cinema, Fitness',
+        hobbies: '',
+        diet: '',
+        smoking: '',
+        drinking: '',
+        interests: '',
         verification_status: 'UNVERIFIED',
-        profile_score: 65,
+        profile_score: 0,
       };
     }
 
@@ -237,7 +237,14 @@ export async function GET() {
         user,
         profile: {
           ...profile,
+          name: user.name || '',
+          photo_url: primaryPhotoUrl,
           primaryPhotoUrl,
+          profile_visibility: profile.profile_visibility || 'PUBLIC',
+          hide_phone: profile.hide_phone !== undefined && profile.hide_phone !== null ? Boolean(profile.hide_phone) : true,
+          hide_photos: Boolean(profile.hide_photos),
+          hide_income: Boolean(profile.hide_income),
+          hide_location: Boolean(profile.hide_location),
         },
         photos,
         completionPercentage: completion.percentage,
@@ -260,36 +267,53 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const {
       name,
-      gender = 'OTHER',
-      date_of_birth = '1998-01-01',
-      height_cm = 168,
-      marital_status = 'NEVER_MARRIED',
-      religion = 'Hindu',
+      gender = '',
+      date_of_birth = '',
+      height_cm = null,
+      marital_status = '',
+      religion = '',
       caste = '',
       sub_caste = '',
-      mother_tongue = 'Hindi',
-      education = 'Graduate',
+      mother_tongue = '',
+      education = '',
       college = '',
-      profession = 'Professional',
+      profession = '',
       company = '',
-      annual_income = 1200000,
-      country = 'India',
-      state = 'Delhi',
-      city = 'Delhi NCR',
+      annual_income = null,
+      country = '',
+      state = '',
+      city = '',
       about_me = '',
       family_details = '',
-      family_type = 'Nuclear',
-      family_values = 'Moderate',
+      family_type = '',
+      family_values = '',
       father_occupation = '',
       mother_occupation = '',
       siblings_details = '',
       hobbies = '',
-      diet = 'Vegetarian',
-      smoking = 'No',
-      drinking = 'No',
+      diet = '',
+      smoking = '',
+      drinking = '',
       interests = '',
       photo_url,
+      profile_visibility = 'PUBLIC',
+      hide_phone = true,
+      hide_photos = false,
+      hide_income = false,
+      hide_location = false,
     } = body;
+
+    const finalGender = ['MALE', 'FEMALE', 'OTHER'].includes(String(gender).toUpperCase()) ? String(gender).toUpperCase() : null;
+    const finalDob = date_of_birth && String(date_of_birth).trim() ? String(date_of_birth).trim().substring(0, 10) : null;
+    const finalHeight = height_cm && Number(height_cm) > 0 ? Number(height_cm) : null;
+    const finalIncome = annual_income !== null && annual_income !== undefined && annual_income !== '' && !isNaN(Number(annual_income)) ? Number(annual_income) : null;
+    const finalVisibility = ['PUBLIC', 'PRIVATE', 'LIMITED'].includes(String(profile_visibility).toUpperCase())
+      ? String(profile_visibility).toUpperCase()
+      : 'PUBLIC';
+    const finalHidePhone = hide_phone !== undefined && hide_phone !== null ? Boolean(hide_phone) : true;
+    const finalHidePhotos = Boolean(hide_photos);
+    const finalHideIncome = Boolean(hide_income);
+    const finalHideLocation = Boolean(hide_location);
 
     let profileId: string = session.profile_id || ('prof_' + session.id);
     let hasPhoto = Boolean(photo_url);
@@ -339,12 +363,17 @@ export async function PUT(req: NextRequest) {
              smoking = ?,
              drinking = ?,
              interests = ?,
+             profile_visibility = ?,
+             hide_phone = ?,
+             hide_photos = ?,
+             hide_income = ?,
+             hide_location = ?,
              updated_at = NOW()
            WHERE id = ?`,
           [
-            gender,
-            date_of_birth,
-            Number(height_cm) || 168,
+            finalGender,
+            finalDob,
+            finalHeight,
             marital_status,
             religion,
             caste,
@@ -354,7 +383,7 @@ export async function PUT(req: NextRequest) {
             college,
             profession,
             company,
-            Number(annual_income) || 0,
+            finalIncome,
             country,
             state,
             city,
@@ -370,6 +399,11 @@ export async function PUT(req: NextRequest) {
             smoking,
             drinking,
             interests,
+            finalVisibility,
+            finalHidePhone,
+            finalHidePhotos,
+            finalHideIncome,
+            finalHideLocation,
             profileId,
           ]
         );
@@ -382,16 +416,18 @@ export async function PUT(req: NextRequest) {
              caste, sub_caste, mother_tongue, education, college, profession, company,
              annual_income, country, state, city, about_me, family_details, family_type,
              family_values, father_occupation, mother_occupation, siblings_details,
-             hobbies, diet, smoking, drinking, interests, verification_status, profile_visibility
+             hobbies, diet, smoking, drinking, interests, verification_status,
+             profile_visibility, hide_phone, hide_photos, hide_income, hide_location
            ) VALUES (
-             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'UNVERIFIED', 'PUBLIC'
+             ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'UNVERIFIED',
+             ?, ?, ?, ?, ?
            )`,
           [
             profileId,
             session.id,
-            gender,
-            date_of_birth,
-            Number(height_cm) || 168,
+            finalGender,
+            finalDob,
+            finalHeight,
             marital_status,
             religion,
             caste,
@@ -401,7 +437,7 @@ export async function PUT(req: NextRequest) {
             college,
             profession,
             company,
-            Number(annual_income) || 0,
+            finalIncome,
             country,
             state,
             city,
@@ -417,8 +453,37 @@ export async function PUT(req: NextRequest) {
             smoking,
             drinking,
             interests,
+            finalVisibility,
+            finalHidePhone,
+            finalHidePhotos,
+            finalHideIncome,
+            finalHideLocation,
           ]
         );
+      }
+
+      // Synchronize to privacy_settings table
+      try {
+        await query(
+          `INSERT INTO privacy_settings (id, user_id, phone_visibility, email_visibility, income_visibility, photos_visibility, location_visibility)
+           VALUES (?, ?, ?, 'PRIVATE', ?, ?, ?)
+           ON DUPLICATE KEY UPDATE
+             phone_visibility = VALUES(phone_visibility),
+             income_visibility = VALUES(income_visibility),
+             photos_visibility = VALUES(photos_visibility),
+             location_visibility = VALUES(location_visibility),
+             updated_at = CURRENT_TIMESTAMP`,
+          [
+            randomUUID(),
+            session.id,
+            finalHidePhone ? 'PRIVATE' : 'PUBLIC',
+            finalHideIncome ? 'PRIVATE' : 'PUBLIC',
+            finalHidePhotos ? 'PRIVATE' : 'PUBLIC',
+            finalHideLocation ? 'PRIVATE' : 'PUBLIC',
+          ]
+        );
+      } catch (syncErr: any) {
+        console.warn('Sync to privacy_settings warning:', syncErr.message);
       }
 
       // 3. Handle photo upload / update
@@ -501,17 +566,11 @@ export async function PUT(req: NextRequest) {
         },
       });
     } catch (dbErr: any) {
-      console.warn('[customer/profile PUT] DB warning (offline standby):', dbErr.message);
-      // Return simulated success in offline mode
-      const completion = calculateProfileCompletion(name, body, hasPhoto);
+      console.error('[customer/profile PUT] DB error:', dbErr.message);
       return NextResponse.json({
-        success: true,
-        message: 'Profile updated successfully! (Local Session)',
-        data: {
-          completionPercentage: completion.percentage,
-          missingFields: completion.missingFields,
-        },
-      });
+        success: false,
+        message: 'Database save error: ' + dbErr.message,
+      }, { status: 500 });
     }
   } catch (error: any) {
     console.error('[customer/profile PUT] Error:', error);

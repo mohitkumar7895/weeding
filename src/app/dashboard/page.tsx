@@ -4,9 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CustomerProfileEditor from '@/components/CustomerProfileEditor';
 import PartnerPreferencesEditor from '@/components/PartnerPreferencesEditor';
+import CustomerMatchesSection from '@/components/CustomerMatchesSection';
+import CustomerSearchSection from '@/components/CustomerSearchSection';
 
 export default function CustomerDashboardPage() {
-  const [activeTab, setActiveTab] = useState<'profile' | 'preferences' | 'matches' | 'bookings' | 'privacy' | 'checklist'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'preferences' | 'matches' | 'search' | 'saved_searches' | 'bookings' | 'privacy' | 'checklist'>('profile');
   const [user, setUser] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
@@ -15,29 +17,29 @@ export default function CustomerDashboardPage() {
 
   const [loading, setLoading] = useState(true);
   const [authNeeded, setAuthNeeded] = useState(false);
-  const [email, setEmail] = useState('gopal.yadav@example.com');
-  const [password, setPassword] = useState('User@123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [payingBookingId, setPayingBookingId] = useState<string | null>(null);
 
   // Modals
   const [cancelModalBooking, setCancelModalBooking] = useState<any>(null);
-  const [cancelReason, setCancelReason] = useState('Change of event plans');
+  const [cancelReason, setCancelReason] = useState('');
 
   const [disputeModalBooking, setDisputeModalBooking] = useState<any>(null);
-  const [disputeReason, setDisputeReason] = useState('Service not as described');
+  const [disputeReason, setDisputeReason] = useState('');
   const [disputeStatement, setDisputeStatement] = useState('');
 
   const [reviewModalBooking, setReviewModalBooking] = useState<any>(null);
   const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState('Outstanding service! Highly recommended.');
+  const [reviewComment, setReviewComment] = useState('');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam && ['profile', 'preferences', 'matches', 'bookings', 'privacy', 'checklist'].includes(tabParam)) {
+      if (tabParam && ['profile', 'preferences', 'matches', 'search', 'saved_searches', 'bookings', 'privacy', 'checklist'].includes(tabParam)) {
         setActiveTab(tabParam as any);
       }
     }
@@ -271,6 +273,7 @@ export default function CustomerDashboardPage() {
               <label style={{ display: 'block', fontSize: '12px', color: '#e5c158', fontWeight: '600', marginBottom: '6px' }}>EMAIL ADDRESS</label>
               <input
                 type="email"
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', background: '#031710', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', outline: 'none' }}
@@ -280,6 +283,7 @@ export default function CustomerDashboardPage() {
               <label style={{ display: 'block', fontSize: '12px', color: '#e5c158', fontWeight: '600', marginBottom: '6px' }}>PASSWORD</label>
               <input
                 type="password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', background: '#031710', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', outline: 'none' }}
@@ -316,6 +320,8 @@ export default function CustomerDashboardPage() {
     { id: 'profile', label: 'My Matrimonial Profile', icon: '👤' },
     { id: 'preferences', label: 'Partner Preferences', icon: '❤️' },
     { id: 'matches', label: 'Matrimonial Matches', icon: '💍', count: matches.length },
+    { id: 'search', label: 'Search Profiles', icon: '🔍' },
+    { id: 'saved_searches', label: 'Saved Searches', icon: '💾' },
     { id: 'bookings', label: 'My Bookings & Escrow', icon: '🛎️', count: bookings.length },
     { id: 'checklist', label: 'Wedding Checklist', icon: '📋' },
     { id: 'privacy', label: 'Privacy & Data Rights', icon: '🔒' },
@@ -490,6 +496,8 @@ export default function CustomerDashboardPage() {
               {activeTab === 'profile' && '👤 My Matrimonial Profile & Personal Bio'}
               {activeTab === 'preferences' && '❤️ Section 6.3 Desired Partner Preferences'}
               {activeTab === 'matches' && '💍 AI-Matched Compatible Profiles'}
+              {activeTab === 'search' && '🔍 Advanced Matrimonial Profile Search'}
+              {activeTab === 'saved_searches' && '💾 My Saved Search Configurations'}
               {activeTab === 'bookings' && '🛎️ My Wedding Bookings & Platform Escrow'}
               {activeTab === 'checklist' && '📋 Wedding Planning Milestones'}
               {activeTab === 'privacy' && '🔒 Personal Data Privacy & Consents'}
@@ -559,79 +567,19 @@ export default function CustomerDashboardPage() {
 
           {/* ================= TAB 1: MATCHES ================= */}
           {activeTab === 'matches' && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-                <div>
-                  <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#fff' }}>Verified Matrimonial Matches</h2>
-                  <p style={{ fontSize: '13px', color: '#9cb1a6' }}>AI compatibility and Vedic Ashtakoota Kundali alignment</p>
-                </div>
-                <Link
-                  href="/matches"
-                  style={{
-                    padding: '8px 18px',
-                    borderRadius: '8px',
-                    background: 'linear-gradient(135deg, #ff2a73 0%, #e6005c 100%)',
-                    color: '#fff',
-                    fontWeight: '700',
-                    fontSize: '13px',
-                    textDecoration: 'none',
-                    boxShadow: '0 4px 12px rgba(230,0,92,0.35)',
-                  }}
-                >
-                  View All Discovery Matches →
-                </Link>
-              </div>
+            <CustomerMatchesSection
+              onNavigateToPreferences={() => setActiveTab('preferences')}
+            />
+          )}
 
-              {matches.length === 0 ? (
-                <div style={{ background: '#031710', border: '1px solid rgba(229,193,88,0.2)', borderRadius: '16px', padding: '40px', textAlign: 'center' }}>
-                  <p style={{ color: '#9cb1a6', fontSize: '15px' }}>No matches found in your immediate queue. Explore our verified matrimonial profiles directory.</p>
-                  <Link href="/matches" style={{ display: 'inline-block', marginTop: '14px', padding: '10px 22px', borderRadius: '8px', background: 'linear-gradient(135deg, #ff2a73 0%, #e6005c 100%)', color: '#fff', fontWeight: '700', textDecoration: 'none' }}>
-                    Browse Profiles
-                  </Link>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '22px' }}>
-                  {matches.map((m: any, idx: number) => (
-                    <div key={idx} style={{ background: '#031710', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(229,193,88,0.22)', boxShadow: '0 6px 20px rgba(0,0,0,0.3)' }}>
-                      <img src={m.photoUrl || m.photo_url || '/images/priya.jpg'} alt={m.name} style={{ width: '100%', height: '220px', objectFit: 'cover' }} />
-                      <div style={{ padding: '18px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff' }}>{m.name}</h3>
-                          <span style={{ fontSize: '11px', background: 'rgba(229,193,88,0.2)', color: '#e5c158', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
-                            {m.matchScore || `${m.compatibility_score || 90}% Match`}
-                          </span>
-                        </div>
-                        <p style={{ color: '#9cb1a6', fontSize: '13px', marginTop: '4px' }}>
-                          {m.age} yrs • {m.height} • {m.city}
-                        </p>
-                        <div style={{ fontSize: '13px', color: '#cbd5e0', marginTop: '8px' }}>
-                          {m.profession} • {m.education}
-                        </div>
-                        <Link
-                          href="/matches"
-                          style={{
-                            display: 'block',
-                            width: '100%',
-                            textAlign: 'center',
-                            marginTop: '14px',
-                            padding: '9px 0',
-                            borderRadius: '8px',
-                            background: 'linear-gradient(135deg, #ff2a73 0%, #e6005c 100%)',
-                            color: '#fff',
-                            fontWeight: '700',
-                            fontSize: '13px',
-                            textDecoration: 'none',
-                            boxShadow: '0 4px 12px rgba(230,0,92,0.35)',
-                          }}
-                        >
-                          Send Interest 💖
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          {/* ================= TAB 1.2: SEARCH PROFILES ================= */}
+          {activeTab === 'search' && (
+            <CustomerSearchSection initialSubTab="search" />
+          )}
+
+          {/* ================= TAB 1.4: SAVED SEARCHES ================= */}
+          {activeTab === 'saved_searches' && (
+            <CustomerSearchSection initialSubTab="saved" />
           )}
 
           {/* ================= TAB 2: BOOKINGS ================= */}
