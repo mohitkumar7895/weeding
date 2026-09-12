@@ -38,6 +38,25 @@ export async function GET(
     // Determine viewer relationship
     const isOwner = Boolean(session && (session.id === cand.user_id || session.profile_id === cand.id));
 
+    // Block enforcement: If either party has blocked the other, deny access
+    if (session && session.id !== cand.user_id) {
+      try {
+        const blocks = await query<any[]>(
+          `SELECT id FROM blocked_profiles 
+           WHERE (user_id = ? AND blocked_user_id = ?) 
+              OR (user_id = ? AND blocked_user_id = ?) 
+           LIMIT 1`,
+          [session.id, cand.user_id, cand.user_id, session.id]
+        );
+        if (blocks.length > 0) {
+          return NextResponse.json(
+            { success: false, message: 'This matrimonial profile is not available.' },
+            { status: 403 }
+          );
+        }
+      } catch {}
+    }
+
     // Profile Visibility Enforcement: If profile is Private and viewer is not the owner, block access
     if (!isOwner && cand.profile_visibility === 'PRIVATE') {
       return NextResponse.json(

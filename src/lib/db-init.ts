@@ -448,6 +448,33 @@ export async function initializeDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       INDEX idx_user_saved_searches (user_id, updated_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    `CREATE TABLE IF NOT EXISTS customer_reports (
+      id VARCHAR(36) PRIMARY KEY,
+      reporter_user_id VARCHAR(36) NOT NULL,
+      reported_user_id VARCHAR(36) NOT NULL,
+      reported_profile_id VARCHAR(36) NULL,
+      category ENUM('ABUSE', 'FRAUD', 'IMPERSONATION') NOT NULL,
+      description TEXT NULL,
+      status ENUM('PENDING', 'INVESTIGATING', 'RESOLVED', 'DISMISSED') DEFAULT 'PENDING',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (reporter_user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (reported_user_id) REFERENCES users(id) ON DELETE CASCADE,
+      INDEX idx_reports_reported (reported_user_id, status),
+      INDEX idx_reports_reporter (reporter_user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    `CREATE TABLE IF NOT EXISTS account_deletion_requests (
+      id VARCHAR(36) PRIMARY KEY,
+      user_id VARCHAR(36) NOT NULL,
+      reason TEXT NULL,
+      feedback TEXT NULL,
+      status ENUM('REQUESTED', 'PROCESSING', 'COMPLETED', 'CANCELLED') DEFAULT 'REQUESTED',
+      requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      scheduled_deletion_at DATETIME NULL,
+      processed_at DATETIME NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      INDEX idx_deletion_user (user_id, status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   ];
 
   for (let i = 0; i < tableDefinitions.length; i++) {
@@ -499,6 +526,33 @@ export async function initializeDatabase() {
       reason VARCHAR(255) NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE KEY uq_block (user_id, blocked_user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    `CREATE TABLE IF NOT EXISTS customer_reports (
+      id VARCHAR(36) PRIMARY KEY,
+      reporter_user_id VARCHAR(36) NOT NULL,
+      reported_user_id VARCHAR(36) NOT NULL,
+      reported_profile_id VARCHAR(36) NULL,
+      category ENUM('ABUSE', 'FRAUD', 'IMPERSONATION') NOT NULL,
+      description TEXT NULL,
+      status ENUM('PENDING', 'INVESTIGATING', 'RESOLVED', 'DISMISSED') DEFAULT 'PENDING',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (reporter_user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (reported_user_id) REFERENCES users(id) ON DELETE CASCADE,
+      INDEX idx_reports_reported (reported_user_id, status),
+      INDEX idx_reports_reporter (reporter_user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    `CREATE TABLE IF NOT EXISTS account_deletion_requests (
+      id VARCHAR(36) PRIMARY KEY,
+      user_id VARCHAR(36) NOT NULL,
+      reason TEXT NULL,
+      feedback TEXT NULL,
+      status ENUM('REQUESTED', 'PROCESSING', 'COMPLETED', 'CANCELLED') DEFAULT 'REQUESTED',
+      requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      scheduled_deletion_at DATETIME NULL,
+      processed_at DATETIME NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      INDEX idx_deletion_user (user_id, status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   ];
   for (const sql of migrations) {

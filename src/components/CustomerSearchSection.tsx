@@ -107,11 +107,80 @@ export default function CustomerSearchSection({ initialSubTab = 'search' }: { in
   const [modalLoading, setModalLoading] = useState(false);
   const [interestSentIds, setInterestSentIds] = useState<Set<string>>(new Set());
 
+  // Block & Report Modals
+  const [blockTarget, setBlockTarget] = useState<{ id: string; name: string; userId?: string } | null>(null);
+  const [blockReason, setBlockReason] = useState('Not a compatible match');
+  const [blockLoading, setBlockLoading] = useState(false);
+
+  const [reportTarget, setReportTarget] = useState<{ id: string; name: string; userId?: string } | null>(null);
+  const [reportCategory, setReportCategory] = useState<'ABUSE' | 'FRAUD' | 'IMPERSONATION'>('ABUSE');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reportLoading, setReportLoading] = useState(false);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
   const setToastMessage = (msg: string | null) => setToast(msg);
+
+  const handleConfirmBlock = async () => {
+    if (!blockTarget) return;
+    setBlockLoading(true);
+    try {
+      const res = await fetch('/api/customer/blocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_profile_id: blockTarget.id,
+          target_user_id: blockTarget.userId,
+          reason: blockReason,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`Blocked ${blockTarget.name}. They will no longer appear in your searches or matches.`);
+        setResults((prev) => prev.filter((m) => m.id !== blockTarget.id));
+        setBlockTarget(null);
+        setSelectedProfileId(null);
+      } else {
+        showToast(data.message || 'Failed to block member');
+      }
+    } catch {
+      showToast('Network error while blocking member.');
+    } finally {
+      setBlockLoading(false);
+    }
+  };
+
+  const handleConfirmReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportTarget) return;
+    setReportLoading(true);
+    try {
+      const res = await fetch('/api/customer/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reported_profile_id: reportTarget.id,
+          reported_user_id: reportTarget.userId,
+          category: reportCategory,
+          description: reportDescription,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Report submitted. Our Trust & Safety team will review this profile immediately.');
+        setReportTarget(null);
+        setReportDescription('');
+      } else {
+        showToast(data.message || 'Failed to submit report');
+      }
+    } catch {
+      showToast('Network error while submitting report.');
+    } finally {
+      setReportLoading(false);
+    }
+  };
 
   // Trigger search on filter / sort changes
   useEffect(() => {
@@ -1896,22 +1965,61 @@ export default function CustomerSearchSection({ initialSubTab = 'search' }: { in
 
                 {/* Modal Footer Actions */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleShortlist(profileModalData.id)}
-                    style={{
-                      padding: '11px 22px',
-                      borderRadius: '8px',
-                      background: profileModalData.is_shortlisted ? 'rgba(230,0,92,0.2)' : 'rgba(255,255,255,0.1)',
-                      border: profileModalData.is_shortlisted ? '1px solid #ff2a73' : '1px solid rgba(255,255,255,0.25)',
-                      color: '#fff',
-                      fontSize: '13px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {profileModalData.is_shortlisted ? '❤️ Shortlisted' : '🤍 Shortlist Profile'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleShortlist(profileModalData.id)}
+                      style={{
+                        padding: '11px 20px',
+                        borderRadius: '8px',
+                        background: profileModalData.is_shortlisted ? 'rgba(230,0,92,0.2)' : 'rgba(255,255,255,0.1)',
+                        border: profileModalData.is_shortlisted ? '1px solid #ff2a73' : '1px solid rgba(255,255,255,0.25)',
+                        color: '#fff',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {profileModalData.is_shortlisted ? '❤️ Shortlisted' : '🤍 Shortlist Profile'}
+                    </button>
+
+                    {!profileModalData.is_owner && (
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setReportTarget({ id: profileModalData.id, name: profileModalData.name, userId: profileModalData.userId })}
+                          style={{
+                            padding: '11px 14px',
+                            borderRadius: '8px',
+                            background: 'rgba(255,255,255,0.06)',
+                            border: '1px solid rgba(255,255,255,0.15)',
+                            color: '#cbd5e0',
+                            fontSize: '12.5px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ⚠️ Report
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBlockTarget({ id: profileModalData.id, name: profileModalData.name, userId: profileModalData.userId })}
+                          style={{
+                            padding: '11px 14px',
+                            borderRadius: '8px',
+                            background: 'rgba(230,0,92,0.12)',
+                            border: '1px solid rgba(255,42,115,0.3)',
+                            color: '#ff8099',
+                            fontSize: '12.5px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          🚫 Block
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button
@@ -1938,6 +2046,248 @@ export default function CustomerSearchSection({ initialSubTab = 'search' }: { in
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ================= BLOCK MEMBER MODAL ================= */}
+      {blockTarget && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            zIndex: 100001,
+          }}
+          onClick={() => setBlockTarget(null)}
+        >
+          <div
+            style={{
+              background: '#0a1611',
+              border: '1.5px solid rgba(255,42,115,0.6)',
+              borderRadius: '16px',
+              maxWidth: '460px',
+              width: '100%',
+              padding: '28px',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: '32px', marginBottom: '8px' }}>🚫</div>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', marginBottom: '8px' }}>
+              Block {blockTarget.name}?
+            </h3>
+            <p style={{ fontSize: '13px', color: '#cbd5e0', lineHeight: '1.5', marginBottom: '16px' }}>
+              When you block this member:
+            </p>
+            <ul style={{ fontSize: '12px', color: '#9cb1a6', paddingLeft: '20px', margin: '0 0 16px 0', lineHeight: '1.6' }}>
+              <li>Neither of you will be able to see each other's matrimonial profiles.</li>
+              <li>They will not appear in your search results or matches.</li>
+              <li>Any existing shortlisted records will be severed.</li>
+              <li>You can manage or unblock members anytime from Privacy & Security settings.</li>
+            </ul>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#e5c158', fontWeight: 700, marginBottom: '6px' }}>
+                REASON (CONFIDENTIAL)
+              </label>
+              <select
+                value={blockReason}
+                onChange={(e) => setBlockReason(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  background: '#031710',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '13px',
+                  outline: 'none',
+                }}
+              >
+                <option value="Not a compatible match">Not a compatible match</option>
+                <option value="Unwanted communication">Unwanted communication</option>
+                <option value="Inappropriate behavior">Inappropriate behavior</option>
+                <option value="Fake or suspicious profile">Fake or suspicious profile</option>
+                <option value="Other">Other reason</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setBlockTarget(null)}
+                style={{
+                  padding: '10px 18px',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '8px',
+                  color: '#cbd5e0',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBlock}
+                disabled={blockLoading}
+                style={{
+                  padding: '10px 20px',
+                  background: 'linear-gradient(135deg, #ff2a73 0%, #e6005c 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+              >
+                {blockLoading ? 'Blocking...' : 'Confirm Block'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= REPORT PROFILE MODAL ================= */}
+      {reportTarget && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            zIndex: 100001,
+          }}
+          onClick={() => setReportTarget(null)}
+        >
+          <div
+            style={{
+              background: '#0a1611',
+              border: '1.5px solid rgba(229,193,88,0.5)',
+              borderRadius: '16px',
+              maxWidth: '480px',
+              width: '100%',
+              padding: '28px',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: '30px', marginBottom: '8px' }}>⚠️</div>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', marginBottom: '6px' }}>
+              Report {reportTarget.name}'s Profile
+            </h3>
+            <p style={{ fontSize: '12.5px', color: '#9cb1a6', lineHeight: '1.5', marginBottom: '16px' }}>
+              Help us maintain a safe, trusted matrimonial community. Reports are strictly confidential and investigated by our Trust & Safety Team.
+            </p>
+
+            <form onSubmit={handleConfirmReport}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#e5c158', fontWeight: 700, marginBottom: '8px' }}>
+                  REASON FOR REPORT *
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[
+                    { val: 'ABUSE', label: 'Harassment or Inappropriate Behavior', desc: 'Offensive language, abusive messages, or misconduct' },
+                    { val: 'FRAUD', label: 'Financial Fraud or Solicitation', desc: 'Asking for money, commercial sales, or scam activities' },
+                    { val: 'IMPERSONATION', label: 'Fake Identity or Impersonation', desc: 'Stolen photographs, fake credentials, or false claims' },
+                  ].map((cat) => (
+                    <label
+                      key={cat.val}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '10px',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        background: reportCategory === cat.val ? 'rgba(229,193,88,0.1)' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${reportCategory === cat.val ? '#e5c158' : 'rgba(255,255,255,0.08)'}`,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="reportCategorySearch"
+                        value={cat.val}
+                        checked={reportCategory === cat.val}
+                        onChange={() => setReportCategory(cat.val as any)}
+                        style={{ marginTop: '3px' }}
+                      />
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#fff' }}>{cat.label}</div>
+                        <div style={{ fontSize: '11px', color: '#9cb1a6' }}>{cat.desc}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#e5c158', fontWeight: 700, marginBottom: '6px' }}>
+                  ADDITIONAL DETAILS (OPTIONAL)
+                </label>
+                <textarea
+                  rows={3}
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  placeholder="Provide any specific context, messages, or details that help our investigation..."
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    background: '#031710',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '13px',
+                    outline: 'none',
+                    resize: 'vertical',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setReportTarget(null)}
+                  style={{
+                    padding: '10px 18px',
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '8px',
+                    color: '#cbd5e0',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reportLoading}
+                  style={{
+                    padding: '10px 22px',
+                    background: 'linear-gradient(135deg, #ff2a73 0%, #e6005c 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {reportLoading ? 'Submitting...' : 'Submit Confidential Report'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
