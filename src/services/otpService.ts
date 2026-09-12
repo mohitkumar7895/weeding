@@ -55,16 +55,69 @@ async function ensureTableExists() {
 export async function createAndSendOtp(
   email: string,
   purpose: OtpPurpose,
-  userName?: string
-): Promise<{ success: boolean; message: string; cooldownSeconds?: number }> {
+  userName?: string,
+  isResend: boolean = false
+): Promise<{
+  success: boolean;
+  message: string;
+  cooldownSeconds?: number;
+  alreadyActive?: boolean;
+}> {
   const normalizedEmail = email.trim().toLowerCase();
   const cacheKey = getCacheKey(normalizedEmail, purpose);
   const now = Date.now();
+  const COOLDOWN_SECONDS = 45;
+  const COOLDOWN_MS = COOLDOWN_SECONDS * 1000;
 
-  // Check rate limit / cooldown (60 seconds)
+  // 1. Check in-memory store
   const existingMemory = inMemoryOtpStore.get(cacheKey);
-  if (existingMemory && now - existingMemory.lastSentAt < 60 * 1000) {
-    const remaining = Math.ceil((60 * 1000 - (now - existingMemory.lastSentAt)) / 1000);
+  let lastSentAt: number | null = existingMemory ? existingMemory.lastSentAt : null;
+  let hasValidActiveOtp = Boolean(
+    existingMemory && existingMemory.expiresAt > now && !existingMemory.verified
+  );
+
+  // 2. Check MySQL DB if in-memory store does not have record (e.g., fresh serverless container)
+  if (!lastSentAt) {
+    try {
+      await ensureTableExists();
+      const recentRows = await query<any[]>(
+        `SELECT TIMESTAMPDIFF(SECOND, created_at, NOW()) AS seconds_ago, expires_at, verified 
+         FROM email_otps 
+         WHERE email = ? AND purpose = ? AND verified = FALSE 
+         ORDER BY created_at DESC LIMIT 1`,
+        [normalizedEmail, purpose]
+      );
+      if (recentRows.length > 0) {
+        const row = recentRows[0];
+        if (row.seconds_ago !== null && row.seconds_ago < COOLDOWN_SECONDS) {
+          lastSentAt = now - row.seconds_ago * 1000;
+        }
+        const expiresAtTime = new Date(row.expires_at).getTime();
+        if (expiresAtTime > now && !row.verified) {
+          hasValidActiveOtp = true;
+        }
+      }
+    } catch (_) {
+      // Ignore db check error if offline
+    }
+  }
+
+  // 3. Evaluate cooldown
+  if (lastSentAt && now - lastSentAt < COOLDOWN_MS) {
+    const remaining = Math.ceil((COOLDOWN_MS - (now - lastSentAt)) / 1000);
+
+    // If an OTP is already active and the user is NOT requesting an explicit resend
+    // (e.g. they refreshed, reopened modal, or re-submitted form), seamlessly let them enter the OTP
+    if (!isResend && hasValidActiveOtp) {
+      return {
+        success: true,
+        message: `A verification code was already sent to ${normalizedEmail}. Please check your inbox or enter it below.`,
+        cooldownSeconds: remaining,
+        alreadyActive: true,
+      };
+    }
+
+    // Explicit resend requested before cooldown elapsed
     return {
       success: false,
       message: `Please wait ${remaining}s before requesting a new OTP`,
@@ -88,10 +141,11 @@ export async function createAndSendOtp(
     verified: false,
   });
 
+  const otpId = 'otp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+
   // Attempt to persist to MySQL
   try {
     await ensureTableExists();
-    const id = 'otp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
     // Invalidate prior pending OTPs for this email & purpose
     await query(
       `DELETE FROM email_otps WHERE email = ? AND purpose = ?`,
@@ -100,7 +154,7 @@ export async function createAndSendOtp(
     await query(
       `INSERT INTO email_otps (id, email, otp, purpose, expires_at, attempts, verified)
        VALUES (?, ?, ?, ?, ?, 0, FALSE)`,
-      [id, normalizedEmail, otp, purpose, expiresAtDate]
+      [otpId, normalizedEmail, otp, purpose, expiresAtDate]
     );
   } catch (dbErr: any) {
     // Memory store fallback already holds the OTP
@@ -121,6 +175,12 @@ export async function createAndSendOtp(
   });
 
   if (!emailResult.success && emailResult.error) {
+    // Rollback so the user isn't stuck with a rate-limit cooldown on an undelivered email
+    inMemoryOtpStore.delete(cacheKey);
+    try {
+      await query(`DELETE FROM email_otps WHERE id = ?`, [otpId]);
+    } catch (_) {}
+
     return {
       success: false,
       message: `Failed to send email: ${emailResult.error}`,
@@ -130,6 +190,7 @@ export async function createAndSendOtp(
   return {
     success: true,
     message: `Verification code sent to ${normalizedEmail}`,
+    cooldownSeconds: COOLDOWN_SECONDS,
   };
 }
 

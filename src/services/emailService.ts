@@ -23,6 +23,9 @@ function getTransporter(): Transporter {
         user: SMTP_EMAIL,
         pass: SMTP_PASSWORD,
       },
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 5000,
     });
   }
   return transporter;

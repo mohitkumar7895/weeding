@@ -5,7 +5,7 @@ import { createAndSendOtp, OtpPurpose } from '@/services/otpService';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, purpose } = body;
+    const { email, purpose, resend } = body;
 
     if (!email || !email.includes('@')) {
       return NextResponse.json(
@@ -59,18 +59,22 @@ export async function POST(req: Request) {
       console.warn('[api/auth/otp/send] DB check skipped (offline):', dbErr);
     }
 
-    const result = await createAndSendOtp(normalizedEmail, purpose as OtpPurpose, userName);
+    const isResend = Boolean(resend);
+    const result = await createAndSendOtp(normalizedEmail, purpose as OtpPurpose, userName, isResend);
 
     if (!result.success) {
+      const status = result.cooldownSeconds ? 429 : 500;
       return NextResponse.json(
         { success: false, message: result.message, cooldownSeconds: result.cooldownSeconds },
-        { status: 429 }
+        { status }
       );
     }
 
     return NextResponse.json({
       success: true,
       message: result.message,
+      cooldownSeconds: result.cooldownSeconds,
+      alreadyActive: result.alreadyActive,
     });
   } catch (error: any) {
     console.error('[api/auth/otp/send] Error:', error);

@@ -62,9 +62,14 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
   };
 
   // Dispatch OTP email to backend
-  const handleSendOtp = async (purpose: 'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD') => {
+  const handleSendOtp = async (purpose: 'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD', isResend = false) => {
     if (!email || !email.includes('@')) {
       setError('Please enter a valid email address first.');
+      return;
+    }
+
+    if (otpCooldown > 0 && isResend) {
+      setError(`Please wait ${otpCooldown}s before requesting a new code.`);
       return;
     }
 
@@ -75,17 +80,26 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
       const res = await fetch('/api/auth/otp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), purpose }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), purpose, resend: isResend }),
       });
 
       const data = await res.json();
-      if (!data.success) {
+
+      if (data.cooldownSeconds && data.cooldownSeconds > 0) {
+        setOtpCooldown(data.cooldownSeconds);
+      }
+
+      if (!res.ok || !data.success) {
+        // If an OTP was already sent or cooldown is active, let the user enter the code
+        if (data.cooldownSeconds || res.status === 429) {
+          setOtpSent(true);
+        }
         throw new Error(data.message || 'Failed to send verification code.');
       }
 
       setOtpSent(true);
-      setOtpCooldown(data.cooldownSeconds || 60);
-      setNotification(`Verification code sent to ${email.trim()}! 📩`);
+      setOtpCooldown(data.cooldownSeconds || 45);
+      setNotification(data.message || `Verification code sent to ${email.trim()}! 📩`);
       setTimeout(() => setNotification(null), 4000);
     } catch (err: any) {
       setError(err.message || 'Failed to dispatch email OTP.');
@@ -553,7 +567,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
                     <button
                       type="button"
                       disabled={otpCooldown > 0 || loading}
-                      onClick={() => handleSendOtp('LOGIN')}
+                      onClick={() => handleSendOtp('LOGIN', true)}
                       className="resend-link-btn"
                     >
                       {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend Code'}
@@ -651,7 +665,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
                   <button
                     type="button"
                     disabled={otpCooldown > 0 || loading}
-                    onClick={() => handleSendOtp('REGISTER')}
+                    onClick={() => handleSendOtp('REGISTER', true)}
                     className="resend-link-btn"
                   >
                     {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend Code'}
@@ -772,7 +786,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
                     <button
                       type="button"
                       disabled={otpCooldown > 0 || loading}
-                      onClick={() => handleSendOtp('FORGOT_PASSWORD')}
+                      onClick={() => handleSendOtp('FORGOT_PASSWORD', true)}
                       className="resend-link-btn"
                     >
                       {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend Code'}
