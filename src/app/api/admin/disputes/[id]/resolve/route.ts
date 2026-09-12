@@ -9,8 +9,8 @@ export async function POST(
 ) {
   try {
     const admin = await getSessionUser();
-    if (!admin || (admin.role !== 'SUPER_ADMIN' && admin.role !== 'ADMIN')) {
-      return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
+    if (!admin || (admin.role !== 'SUPER_ADMIN' && admin.role !== 'ADMIN' && admin.role !== 'SUPPORT')) {
+      return NextResponse.json({ success: false, message: 'Support or Admin access required to resolve disputes' }, { status: 403 });
     }
 
     const { id: disputeId } = await params;

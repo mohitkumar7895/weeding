@@ -5,8 +5,11 @@ import { getSessionUser } from '@/lib/auth';
 export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser();
-    if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN')) {
-      return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
+    if (!user || user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { success: false, message: 'Protected Action: Super Admin authorization required to access system audit trail logs.' },
+        { status: 403 }
+      );
     }
 
     const { searchParams } = new URL(req.url);

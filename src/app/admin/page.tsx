@@ -19,9 +19,10 @@ interface AdminStats {
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'onboarding' | 'commission' | 'payouts' | 'disputes' | 'reviews' | 'fraud' | 'weights' | 'logs'
+    'overview' | 'onboarding' | 'commission' | 'payouts' | 'disputes' | 'reviews' | 'fraud' | 'weights' | 'roles' | 'logs'
   >('overview');
 
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [vendors, setVendors] = useState<any[]>([]);
   const [commissionRules, setCommissionRules] = useState<any[]>([]);
@@ -31,6 +32,11 @@ export default function AdminDashboardPage() {
   const [fraudData, setFraudData] = useState<any>(null);
   const [weights, setWeights] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
+
+  // Section 5: Staff & Role Management State
+  const [staffMembers, setStaffMembers] = useState<any[]>([]);
+  const [staffLoading, setStaffLoading] = useState(false);
+  const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
 
   // Selected vendor modal for KYC inspection
   const [selectedVendorKYC, setSelectedVendorKYC] = useState<any>(null);
@@ -57,8 +63,17 @@ export default function AdminDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/stats');
+      const [res, meRes] = await Promise.all([
+        fetch('/api/admin/stats'),
+        fetch('/api/auth/me')
+      ]);
       const data = await res.json();
+      const meData = await meRes.json();
+
+      if (meData.success && meData.user) {
+        setCurrentUser(meData.user);
+      }
+
       if (data.success) {
         setStats(data.data);
         setAuthNeeded(false);
@@ -89,6 +104,11 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (data.success) {
         setAuthNeeded(false);
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json();
+        if (meData.success && meData.user) {
+          setCurrentUser(meData.user);
+        }
         fetchStats();
       } else {
         setError(data.message || 'Admin login failed');
@@ -97,6 +117,32 @@ export default function AdminDashboardPage() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateStaffRole = async (userId: string, newRole: string) => {
+    setUpdatingRoleId(userId);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      const res = await fetch('/api/admin/roles', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, new_role: newRole }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMsg(data.message || `Role updated successfully to ${newRole}`);
+        const refreshRes = await fetch('/api/admin/roles');
+        const refreshData = await refreshRes.json();
+        if (refreshData.success) setStaffMembers(refreshData.data);
+      } else {
+        setError(data.message || 'Failed to update role');
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setUpdatingRoleId(null);
     }
   };
 
@@ -133,6 +179,18 @@ export default function AdminDashboardPage() {
       const res = await fetch('/api/admin/weights');
       const data = await res.json();
       if (data.success) setWeights(data.data);
+    } else if (tab === 'roles') {
+      setStaffLoading(true);
+      try {
+        const res = await fetch('/api/admin/roles');
+        const data = await res.json();
+        if (data.success) setStaffMembers(data.data);
+        else setError(data.message || 'Failed to fetch staff members');
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setStaffLoading(false);
+      }
     } else if (tab === 'logs') {
       const res = await fetch('/api/admin/audit-logs');
       const data = await res.json();
@@ -363,7 +421,53 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const adminNavItems = [
+  const roleMetadata: Record<string, { label: string; badge: string; border: string; bg: string; color: string; desc: string }> = {
+    SUPER_ADMIN: {
+      label: 'Super Admin',
+      badge: '👑 ROOT PRIVILEGE',
+      border: 'rgba(229,193,88,0.4)',
+      bg: 'rgba(229,193,88,0.15)',
+      color: '#e5c158',
+      desc: 'Full platform configuration, roles, system settings, finance visibility, audit & escalation.'
+    },
+    ADMIN: {
+      label: 'Operations Admin',
+      badge: '🛡️ OPS PRIVILEGE',
+      border: 'rgba(72,187,120,0.4)',
+      bg: 'rgba(72,187,120,0.15)',
+      color: '#48bb78',
+      desc: 'Operational management of customers, vendors, profiles, bookings & marketplace controls.'
+    },
+    SUPPORT: {
+      label: 'Support Specialist',
+      badge: '🎧 SUPPORT DESK',
+      border: 'rgba(99,179,237,0.4)',
+      bg: 'rgba(99,179,237,0.15)',
+      color: '#63b3ed',
+      desc: 'Support cases, reports, disputes & customer assistance.'
+    },
+    FINANCE: {
+      label: 'Finance Controller',
+      badge: '💳 FINANCE DESK',
+      border: 'rgba(236,201,75,0.4)',
+      bg: 'rgba(236,201,75,0.15)',
+      color: '#ecc94b',
+      desc: 'Commission, payouts, refunds, settlements, invoices & reconciliation.'
+    },
+  };
+
+  const roleAllowedTabs: Record<string, string[]> = {
+    SUPER_ADMIN: ['overview', 'onboarding', 'commission', 'payouts', 'disputes', 'reviews', 'fraud', 'weights', 'roles', 'logs'],
+    ADMIN: ['overview', 'onboarding', 'disputes', 'reviews', 'fraud'],
+    SUPPORT: ['overview', 'disputes', 'reviews'],
+    FINANCE: ['overview', 'commission', 'payouts', 'disputes'],
+  };
+
+  const currentRole = currentUser?.role || 'SUPER_ADMIN';
+  const currentMeta = roleMetadata[currentRole] || roleMetadata.SUPER_ADMIN;
+  const allowedTabs = roleAllowedTabs[currentRole] || roleAllowedTabs.SUPER_ADMIN;
+
+  const allNavItems = [
     { id: 'overview', label: 'Overview & Analytics', icon: '📈' },
     { id: 'onboarding', label: 'Vendor KYC Review', icon: '🛡️', badge: (stats?.pending_vendors || 0) > 0 ? `${stats?.pending_vendors} PENDING` : undefined },
     { id: 'commission', label: 'Commission Engine', icon: '💰', count: commissionRules.length },
@@ -372,8 +476,11 @@ export default function AdminDashboardPage() {
     { id: 'reviews', label: 'Review Moderation', icon: '⭐', count: reviewReports.length },
     { id: 'fraud', label: 'Fraud & Risk Control', icon: '🚨' },
     { id: 'weights', label: 'Match Weights', icon: '🎯' },
+    { id: 'roles', label: 'Staff & Roles (RBAC)', icon: '👥', badge: 'SUPER ADMIN' },
     { id: 'logs', label: 'Audit Trail Logs', icon: '📋' },
   ];
+
+  const visibleNavItems = allNavItems.filter((item) => allowedTabs.includes(item.id));
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0d14', color: '#fff', display: 'flex' }}>
@@ -404,29 +511,29 @@ export default function AdminDashboardPage() {
             </svg>
             <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#e5c158', letterSpacing: '-0.5px' }}>WedWithMe</span>
           </Link>
-          <div style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', background: 'rgba(230,0,92,0.15)', color: '#ff6b9d', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(230,0,92,0.3)', fontWeight: 600 }}>
-            Super Admin Governance
+          <div style={{ display: 'inline-block', marginTop: '6px', fontSize: '11px', background: currentMeta.bg, color: currentMeta.color, padding: '3px 8px', borderRadius: '6px', border: `1px solid ${currentMeta.border}`, fontWeight: 600 }}>
+            {currentMeta.label} Console
           </div>
         </div>
 
         {/* Admin Profile Box */}
-        <div style={{ background: '#131724', border: '1px solid rgba(255, 42, 115, 0.2)', borderRadius: '12px', padding: '14px', marginBottom: '22px' }}>
+        <div style={{ background: '#131724', border: `1px solid ${currentMeta.border}`, borderRadius: '12px', padding: '14px', marginBottom: '22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #ff2a73, #e6005c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', color: '#fff', boxShadow: '0 3px 10px rgba(230,0,92,0.35)' }}>
-              A
+              {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'A'}
             </div>
             <div style={{ overflow: 'hidden', flex: 1 }}>
               <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#fff', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                Master Administrator
+                {currentUser?.name || 'Administrator'}
               </div>
-              <div style={{ fontSize: '11px', color: '#a0aec0' }}>
-                admin@wedwithme.com
+              <div style={{ fontSize: '11px', color: '#a0aec0', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                {currentUser?.email || 'admin@wedwithme.com'}
               </div>
             </div>
           </div>
           <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', background: 'rgba(56,161,105,0.2)', color: '#48bb78', border: '1px solid #48bb78' }}>
-              ROOT PRIVILEGE
+            <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', background: currentMeta.bg, color: currentMeta.color, border: `1px solid ${currentMeta.border}` }}>
+              {currentMeta.badge}
             </span>
             <span style={{ fontSize: '11px', color: '#ff6b9d' }}>
               Audited 256-bit
@@ -439,7 +546,7 @@ export default function AdminDashboardPage() {
           <div style={{ fontSize: '11px', fontWeight: 700, color: '#ff6b9d', letterSpacing: '0.8px', padding: '0 8px', marginBottom: '4px' }}>
             ADMINISTRATION CONSOLE
           </div>
-          {adminNavItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
               <button
@@ -467,7 +574,7 @@ export default function AdminDashboardPage() {
                   <span style={{ fontSize: '15px' }}>{item.icon}</span>
                   {item.label}
                 </span>
-                {item.count !== undefined && (
+                {item.count !== undefined && item.count > 0 && (
                   <span style={{
                     fontSize: '11px',
                     padding: '2px 7px',
@@ -481,7 +588,7 @@ export default function AdminDashboardPage() {
                 )}
                 {item.badge && (
                   <span style={{
-                    fontSize: '10px',
+                    fontSize: '9px',
                     padding: '2px 6px',
                     borderRadius: '4px',
                     background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(230, 0, 92, 0.25)',
@@ -553,6 +660,7 @@ export default function AdminDashboardPage() {
               {activeTab === 'reviews' && 'Customer Review Moderation Desk'}
               {activeTab === 'fraud' && 'Real-time Fraud & Risk Detection Hooks'}
               {activeTab === 'weights' && 'Dynamic Match Score Weight Matrix'}
+              {activeTab === 'roles' && 'Staff Administration & Role Permissions (RBAC)'}
               {activeTab === 'logs' && 'Immutable Administrative Audit Log'}
             </div>
             <div style={{ fontSize: '12px', color: '#a0aec0' }}>
@@ -585,26 +693,26 @@ export default function AdminDashboardPage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
                 <div style={{ background: '#121624', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ fontSize: '13px', color: '#a0aec0' }}>Gross Marketplace Volume (GMV)</div>
-                  <div style={{ fontSize: '26px', fontWeight: 'bold', color: '#48bb78', marginTop: '6px' }}>
-                    ₹{stats?.gmv?.toLocaleString('en-IN') || '0'}
+                  <div style={{ fontSize: stats?.gmv !== null && stats?.gmv !== undefined ? '26px' : '16px', fontWeight: 'bold', color: stats?.gmv !== null && stats?.gmv !== undefined ? '#48bb78' : '#e5c158', marginTop: '6px' }}>
+                    {stats?.gmv !== null && stats?.gmv !== undefined ? `₹${stats.gmv.toLocaleString('en-IN')}` : '🔒 Restricted (Finance Only)'}
                   </div>
                   <div style={{ fontSize: '12px', color: '#a0aec0', marginTop: '4px' }}>Escrow-backed confirmed bookings</div>
                 </div>
 
                 <div style={{ background: '#121624', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ fontSize: '13px', color: '#a0aec0' }}>Platform Commission Revenue</div>
-                  <div style={{ fontSize: '26px', fontWeight: 'bold', color: '#e5c158', marginTop: '6px' }}>
-                    ₹{stats?.commission_revenue?.toLocaleString('en-IN') || '0'}
+                  <div style={{ fontSize: stats?.commission_revenue !== null && stats?.commission_revenue !== undefined ? '26px' : '16px', fontWeight: 'bold', color: stats?.commission_revenue !== null && stats?.commission_revenue !== undefined ? '#e5c158' : '#e5c158', marginTop: '6px' }}>
+                    {stats?.commission_revenue !== null && stats?.commission_revenue !== undefined ? `₹${stats.commission_revenue.toLocaleString('en-IN')}` : '🔒 Restricted (Finance Only)'}
                   </div>
                   <div style={{ fontSize: '12px', color: '#a0aec0', marginTop: '4px' }}>Earned from booking commissions</div>
                 </div>
 
                 <div style={{ background: '#121624', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ fontSize: '13px', color: '#a0aec0' }}>Registered Marketplace Vendors</div>
-                  <div style={{ fontSize: '26px', fontWeight: 'bold', color: '#fff', marginTop: '6px' }}>
-                    {stats?.total_vendors || 0}
+                  <div style={{ fontSize: stats?.total_vendors !== null && stats?.total_vendors !== undefined ? '26px' : '16px', fontWeight: 'bold', color: '#fff', marginTop: '6px' }}>
+                    {stats?.total_vendors !== null && stats?.total_vendors !== undefined ? stats.total_vendors : '🔒 Operations Only'}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#48bb78', marginTop: '4px' }}>{stats?.verified_vendors || 0} Verified Partners</div>
+                  <div style={{ fontSize: '12px', color: '#48bb78', marginTop: '4px' }}>{stats?.verified_vendors !== null && stats?.verified_vendors !== undefined ? `${stats.verified_vendors} Verified Partners` : 'Partnership desk'}</div>
                 </div>
 
                 <div style={{ background: '#121624', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -616,22 +724,24 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Recent Audit Logs Strip */}
-              <div style={{ background: '#121624', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', padding: '24px' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff', marginBottom: '16px' }}>Recent System Security & Audit Events</h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {stats?.recent_logs?.map((l: any) => (
-                    <div key={l.id} style={{ background: '#181e30', padding: '12px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <span style={{ color: '#ff6b9d', fontWeight: 'bold', fontSize: '13px' }}>{l.action}</span>
-                        <span style={{ color: '#cbd5e0', fontSize: '13px', marginLeft: '12px' }}>Entity: {l.entity_type} ({l.entity_id})</span>
-                        <div style={{ fontSize: '11px', color: '#718096', marginTop: '2px' }}>By: {l.user_email || 'System'}</div>
+              {/* Recent Audit Logs Strip - Super Admin Only */}
+              {currentRole === 'SUPER_ADMIN' && stats?.recent_logs && stats.recent_logs.length > 0 && (
+                <div style={{ background: '#121624', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', padding: '24px' }}>
+                  <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff', marginBottom: '16px' }}>Recent System Security & Audit Events (Super Admin Audit)</h2>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {stats.recent_logs.map((l: any) => (
+                      <div key={l.id} style={{ background: '#181e30', padding: '12px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <span style={{ color: '#ff6b9d', fontWeight: 'bold', fontSize: '13px' }}>{l.action}</span>
+                          <span style={{ color: '#cbd5e0', fontSize: '13px', marginLeft: '12px' }}>Entity: {l.entity_type} ({l.entity_id})</span>
+                          <div style={{ fontSize: '11px', color: '#718096', marginTop: '2px' }}>By: {l.user_email || 'System'}</div>
+                        </div>
+                        <span style={{ fontSize: '12px', color: '#a0aec0' }}>{new Date(l.created_at).toLocaleString()}</span>
                       </div>
-                      <span style={{ fontSize: '12px', color: '#a0aec0' }}>{new Date(l.created_at).toLocaleString()}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -1049,6 +1159,243 @@ export default function AdminDashboardPage() {
                     <span style={{ fontSize: '11px', color: '#48bb78' }}>ACTIVE (v{w.version})</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* ================= TAB: STAFF & ROLES (RBAC) ================= */}
+          {activeTab === 'roles' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+              {/* Top Banner */}
+              <div style={{ background: '#121624', borderRadius: '16px', border: '1px solid rgba(229,193,88,0.25)', padding: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '20px' }}>👥</span>
+                      <h2 style={{ fontSize: '19px', fontWeight: 'bold', color: '#fff', margin: 0 }}>
+                        Administrative Staff & Role-Based Access Control (RBAC)
+                      </h2>
+                      <span style={{ fontSize: '10px', background: 'rgba(229,193,88,0.2)', color: '#e5c158', border: '1px solid rgba(229,193,88,0.4)', padding: '3px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                        SECTION 5 COMPLIANT
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '13px', color: '#a0aec0', margin: 0 }}>
+                      Manage administrative personnel, enforce role separation of duties, and audit staff authorizations.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,42,115,0.12)', border: '1px solid rgba(255,42,115,0.3)', padding: '8px 14px', borderRadius: '8px' }}>
+                    <span style={{ fontSize: '12px', color: '#ff6b9d', fontWeight: 600 }}>🔒 Protected Action:</span>
+                    <span style={{ fontSize: '12px', color: '#cbd5e0' }}>Only Super Admin can assign or alter staff roles</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Roles & Permissions Matrix Reference Card */}
+              <div style={{ background: '#121624', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', padding: '24px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#e5c158', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>🏛️</span> Section 5: Roles & Responsibilities Hierarchy
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                  {/* Super Admin */}
+                  <div style={{ background: '#171c2c', borderRadius: '12px', border: '1px solid rgba(229,193,88,0.3)', padding: '18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <div style={{ fontWeight: 'bold', color: '#e5c158', fontSize: '15px' }}>👑 Super Admin</div>
+                      <span style={{ fontSize: '10px', background: 'rgba(229,193,88,0.15)', color: '#e5c158', padding: '2px 7px', borderRadius: '4px', fontWeight: 700 }}>ROOT PRIVILEGE</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#cbd5e0', lineHeight: '1.6', marginBottom: '10px' }}>
+                      <strong>Key Responsibilities:</strong> Full platform configuration, roles, system settings, finance visibility, audit, escalation.
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#9cb1a6', background: 'rgba(0,0,0,0.25)', padding: '8px', borderRadius: '6px' }}>
+                      <strong>Protected Limit:</strong> Protected actions require Super Admin authorization.
+                    </div>
+                  </div>
+
+                  {/* Admin (Operations) */}
+                  <div style={{ background: '#171c2c', borderRadius: '12px', border: '1px solid rgba(72,187,120,0.3)', padding: '18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <div style={{ fontWeight: 'bold', color: '#48bb78', fontSize: '15px' }}>🛡️ Admin</div>
+                      <span style={{ fontSize: '10px', background: 'rgba(72,187,120,0.15)', color: '#48bb78', padding: '2px 7px', borderRadius: '4px', fontWeight: 700 }}>OPERATIONS</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#cbd5e0', lineHeight: '1.6', marginBottom: '10px' }}>
+                      <strong>Key Responsibilities:</strong> Operational management of customers, vendors, profiles, bookings, marketplace controls.
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#9cb1a6', background: 'rgba(0,0,0,0.25)', padding: '8px', borderRadius: '6px' }}>
+                      <strong>Protected Limit:</strong> Restricted from protected ownership/security settings.
+                    </div>
+                  </div>
+
+                  {/* Support */}
+                  <div style={{ background: '#171c2c', borderRadius: '12px', border: '1px solid rgba(99,179,237,0.3)', padding: '18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <div style={{ fontWeight: 'bold', color: '#63b3ed', fontSize: '15px' }}>🎧 Support</div>
+                      <span style={{ fontSize: '10px', background: 'rgba(99,179,237,0.15)', color: '#63b3ed', padding: '2px 7px', borderRadius: '4px', fontWeight: 700 }}>ARBITRATION</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#cbd5e0', lineHeight: '1.6', marginBottom: '10px' }}>
+                      <strong>Key Responsibilities:</strong> Support cases, reports, disputes, permitted booking/customer assistance.
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#9cb1a6', background: 'rgba(0,0,0,0.25)', padding: '8px', borderRadius: '6px' }}>
+                      <strong>Protected Limit:</strong> No unrestricted financial or role-administration access.
+                    </div>
+                  </div>
+
+                  {/* Finance */}
+                  <div style={{ background: '#171c2c', borderRadius: '12px', border: '1px solid rgba(236,201,75,0.3)', padding: '18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <div style={{ fontWeight: 'bold', color: '#ecc94b', fontSize: '15px' }}>💳 Finance</div>
+                      <span style={{ fontSize: '10px', background: 'rgba(236,201,75,0.15)', color: '#ecc94b', padding: '2px 7px', borderRadius: '4px', fontWeight: 700 }}>SETTLEMENT</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#cbd5e0', lineHeight: '1.6', marginBottom: '10px' }}>
+                      <strong>Key Responsibilities:</strong> Commission, payouts, refunds, settlements, invoices, reconciliation.
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#9cb1a6', background: 'rgba(0,0,0,0.25)', padding: '8px', borderRadius: '6px' }}>
+                      <strong>Protected Limit:</strong> No unnecessary access to unrelated system controls.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Administrative Staff Directory Table */}
+              <div style={{ background: '#121624', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', padding: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <div>
+                    <h3 style={{ fontSize: '17px', fontWeight: 'bold', color: '#fff', margin: 0 }}>
+                      Administrative Staff Directory ({staffMembers.length})
+                    </h3>
+                    <div style={{ fontSize: '12px', color: '#a0aec0', marginTop: '4px' }}>
+                      Active platform operators with RBAC credentials
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => loadTabData('roles')}
+                    disabled={staffLoading}
+                    style={{
+                      padding: '8px 16px',
+                      background: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: '8px',
+                      color: '#cbd5e0',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {staffLoading ? 'Refreshing...' : '↻ Refresh Staff List'}
+                  </button>
+                </div>
+
+                {staffLoading ? (
+                  <div style={{ padding: '32px', textAlign: 'center', color: '#a0aec0' }}>
+                    Loading administrative staff accounts...
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: '#181e30', color: '#ff6b9d' }}>
+                          <th style={{ padding: '14px 16px' }}>Staff Member</th>
+                          <th style={{ padding: '14px 16px' }}>Contact Email</th>
+                          <th style={{ padding: '14px 16px' }}>Assigned RBAC Role</th>
+                          <th style={{ padding: '14px 16px' }}>Role Management</th>
+                          <th style={{ padding: '14px 16px' }}>Status</th>
+                          <th style={{ padding: '14px 16px' }}>Created</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {staffMembers.map((staff) => {
+                          const meta = roleMetadata[staff.role] || {
+                            label: staff.role,
+                            badge: staff.role,
+                            border: 'rgba(255,255,255,0.2)',
+                            bg: 'rgba(255,255,255,0.1)',
+                            color: '#cbd5e0',
+                          };
+                          const isSelf = staff.id === currentUser?.id;
+                          const isSoleSuperAdmin = staff.role === 'SUPER_ADMIN' && staffMembers.filter((s) => s.role === 'SUPER_ADMIN').length <= 1;
+
+                          return (
+                            <tr key={staff.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                              <td style={{ padding: '14px 16px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'linear-gradient(135deg, #1f273d, #141a29)', border: `1px solid ${meta.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: meta.color, fontSize: '15px' }}>
+                                    {staff.name ? staff.name.charAt(0).toUpperCase() : 'U'}
+                                  </div>
+                                  <div>
+                                    <div style={{ fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      {staff.name}
+                                      {isSelf && (
+                                        <span style={{ fontSize: '10px', background: 'rgba(255,42,115,0.2)', color: '#ff6b9d', padding: '1px 5px', borderRadius: '4px' }}>
+                                          YOU
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#718096' }}>ID: {staff.id.slice(0, 8)}...</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td style={{ padding: '14px 16px', color: '#cbd5e0' }}>
+                                <div>{staff.email}</div>
+                                {staff.phone && <div style={{ fontSize: '11px', color: '#718096' }}>{staff.phone}</div>}
+                              </td>
+                              <td style={{ padding: '14px 16px' }}>
+                                <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, background: meta.bg, color: meta.color, border: `1px solid ${meta.border}` }}>
+                                  {meta.badge}
+                                </span>
+                              </td>
+                              <td style={{ padding: '14px 16px' }}>
+                                {currentRole === 'SUPER_ADMIN' ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <select
+                                      value={staff.role}
+                                      disabled={updatingRoleId === staff.id || (isSelf && staff.role === 'SUPER_ADMIN')}
+                                      onChange={(e) => handleUpdateStaffRole(staff.id, e.target.value)}
+                                      style={{
+                                        padding: '6px 10px',
+                                        background: '#181e30',
+                                        border: '1px solid rgba(255,255,255,0.15)',
+                                        borderRadius: '6px',
+                                        color: '#fff',
+                                        fontSize: '12px',
+                                        cursor: isSelf && staff.role === 'SUPER_ADMIN' ? 'not-allowed' : 'pointer',
+                                      }}
+                                    >
+                                      <option value="SUPER_ADMIN">👑 Super Admin</option>
+                                      <option value="ADMIN">🛡️ Operations Admin</option>
+                                      <option value="SUPPORT">🎧 Support Specialist</option>
+                                      <option value="FINANCE">💳 Finance Controller</option>
+                                    </select>
+                                    {updatingRoleId === staff.id && (
+                                      <span style={{ fontSize: '11px', color: '#e5c158' }}>Updating...</span>
+                                    )}
+                                    {isSelf && staff.role === 'SUPER_ADMIN' && (
+                                      <span style={{ fontSize: '10px', color: '#718096' }}>(Root owner)</span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span style={{ fontSize: '12px', color: '#718096' }}>Read-only</span>
+                                )}
+                              </td>
+                              <td style={{ padding: '14px 16px' }}>
+                                <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', background: 'rgba(56,161,105,0.15)', color: '#48bb78', border: '1px solid rgba(56,161,105,0.3)', fontWeight: 600 }}>
+                                  {staff.status}
+                                </span>
+                              </td>
+                              <td style={{ padding: '14px 16px', fontSize: '12px', color: '#a0aec0' }}>
+                                {new Date(staff.created_at).toLocaleDateString()}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div style={{ marginTop: '20px', padding: '14px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', fontSize: '12px', color: '#9cb1a6', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span>🛡️</span>
+                  <span>
+                    <strong>Security Policy:</strong> Demoting the sole active Super Admin is permanently rejected by backend validation. All role reassignments trigger an audit log with actor ID, IP, and timestamp.
+                  </span>
+                </div>
               </div>
             </div>
           )}

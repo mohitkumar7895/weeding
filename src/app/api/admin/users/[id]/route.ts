@@ -16,6 +16,14 @@ export async function PUT(
     const body = await req.json();
     const { status, role } = body;
 
+    // Protected Action: Only Super Admin can modify user roles
+    if (role && adminUser.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { success: false, message: 'Protected Action: Super Admin authorization required to modify roles.' },
+        { status: 403 }
+      );
+    }
+
     const existing = await query<any[]>(`SELECT * FROM users WHERE id = ?`, [id]);
     if (!existing.length) {
       return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });

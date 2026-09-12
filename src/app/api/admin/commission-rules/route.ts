@@ -6,8 +6,11 @@ import { randomUUID } from 'crypto';
 export async function GET(req: NextRequest) {
   try {
     const admin = await getSessionUser();
-    if (!admin || (admin.role !== 'SUPER_ADMIN' && admin.role !== 'ADMIN' && admin.role !== 'FINANCE')) {
-      return NextResponse.json({ success: false, message: 'Admin / Finance authorization required' }, { status: 403 });
+    if (!admin || (admin.role !== 'SUPER_ADMIN' && admin.role !== 'FINANCE')) {
+      return NextResponse.json(
+        { success: false, message: 'Finance or Super Admin authorization required to manage commission rules' },
+        { status: 403 }
+      );
     }
 
     const rules = await query<any[]>(`
@@ -27,8 +30,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const admin = await getSessionUser();
-    if (!admin || (admin.role !== 'SUPER_ADMIN' && admin.role !== 'ADMIN' && admin.role !== 'FINANCE')) {
-      return NextResponse.json({ success: false, message: 'Admin / Finance authorization required' }, { status: 403 });
+    if (!admin || (admin.role !== 'SUPER_ADMIN' && admin.role !== 'FINANCE')) {
+      return NextResponse.json(
+        { success: false, message: 'Finance or Super Admin authorization required to manage commission rules' },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();

@@ -20,8 +20,11 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const adminUser = await getSessionUser();
-    if (!adminUser || (adminUser.role !== 'SUPER_ADMIN' && adminUser.role !== 'ADMIN')) {
-      return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
+    if (!adminUser || adminUser.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { success: false, message: 'Protected Action: Super Admin authorization required to configure matching weights.' },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();

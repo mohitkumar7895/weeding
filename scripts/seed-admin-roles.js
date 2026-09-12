@@ -1,0 +1,85 @@
+const fs = require('fs');
+const path = require('path');
+const mysql = require('mysql2/promise');
+const bcrypt = require('bcryptjs');
+
+try {
+  const envContent = fs.readFileSync(path.resolve(process.cwd(), '.env'), 'utf8');
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const idx = trimmed.indexOf('=');
+      if (idx > 0) {
+        const key = trimmed.substring(0, idx).trim();
+        const val = trimmed.substring(idx + 1).trim();
+        if (!process.env[key]) process.env[key] = val;
+      }
+    }
+  });
+} catch {}
+
+async function main() {
+  const pool = mysql.createPool({
+    host: process.env.DB_HOST || '127.0.0.1',
+    port: parseInt(process.env.DB_PORT || '3306'),
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'wedwithme',
+  });
+
+  console.log('Seeding the 4 administrative accounts...');
+  const passwordHash = await bcrypt.hash('Password@123', 10);
+
+  const adminUsers = [
+    {
+      id: 'usr_super_admin_01',
+      email: 'admin@wedwithme.com',
+      name: 'Super Admin Governance',
+      phone: '+919999900001',
+      role: 'SUPER_ADMIN',
+    },
+    {
+      id: 'usr_admin_ops_01',
+      email: 'admin.ops@wedwithme.com',
+      name: 'Operations Manager',
+      phone: '+919999900002',
+      role: 'ADMIN',
+    },
+    {
+      id: 'usr_support_01',
+      email: 'support@wedwithme.com',
+      name: 'Customer Support Lead',
+      phone: '+919999900003',
+      role: 'SUPPORT',
+    },
+    {
+      id: 'usr_finance_01',
+      email: 'finance@wedwithme.com',
+      name: 'Finance & Accounts Controller',
+      phone: '+919999900004',
+      role: 'FINANCE',
+    },
+  ];
+
+  for (const u of adminUsers) {
+    await pool.query(
+      `INSERT INTO users (id, email, phone, password_hash, name, role, status, email_verified, phone_verified)
+       VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', true, true)
+       ON DUPLICATE KEY UPDATE 
+         role = VALUES(role),
+         password_hash = VALUES(password_hash),
+         name = VALUES(name),
+         status = 'ACTIVE'`,
+      [u.id, u.email, u.phone, passwordHash, u.name, u.role]
+    );
+    console.log(`  ✓ Seeded: ${u.name} (${u.role}) -> ${u.email}`);
+  }
+
+  await pool.end();
+  console.log('Administrative accounts seeded successfully!');
+}
+
+main().catch(err => {
+  console.error('Failed seeding admin accounts:', err);
+  process.exit(1);
+});

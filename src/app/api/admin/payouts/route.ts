@@ -6,8 +6,11 @@ import { randomUUID } from 'crypto';
 export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser();
-    if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN' && user.role !== 'FINANCE')) {
-      return NextResponse.json({ success: false, message: 'Finance or Admin authorization required' }, { status: 403 });
+    if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'FINANCE')) {
+      return NextResponse.json(
+        { success: false, message: 'Finance or Super Admin authorization required to manage payouts' },
+        { status: 403 }
+      );
     }
 
     const { searchParams } = new URL(req.url);
@@ -38,8 +41,11 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const user = await getSessionUser();
-    if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN' && user.role !== 'FINANCE')) {
-      return NextResponse.json({ success: false, message: 'Finance or Admin authorization required' }, { status: 403 });
+    if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'FINANCE')) {
+      return NextResponse.json(
+        { success: false, message: 'Finance or Super Admin authorization required to settle payouts' },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();

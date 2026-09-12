@@ -5,8 +5,8 @@ import { getSessionUser, logAudit } from '@/lib/auth';
 export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser();
-    if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN')) {
-      return NextResponse.json({ success: false, message: 'Admin authorization required' }, { status: 403 });
+    if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN' && user.role !== 'SUPPORT')) {
+      return NextResponse.json({ success: false, message: 'Support or Admin authorization required' }, { status: 403 });
     }
 
     const reports = await query<any[]>(`
@@ -34,8 +34,8 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const user = await getSessionUser();
-    if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN')) {
-      return NextResponse.json({ success: false, message: 'Admin authorization required' }, { status: 403 });
+    if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN' && user.role !== 'SUPPORT')) {
+      return NextResponse.json({ success: false, message: 'Support or Admin authorization required' }, { status: 403 });
     }
 
     const body = await req.json();
