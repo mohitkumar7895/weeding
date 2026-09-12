@@ -29,12 +29,17 @@ export interface WhatsAppMessage {
   parameters: string[];
 }
 
+import { sendEmail } from './emailService';
+
 // Provider Abstractions
 export class EmailProvider {
   async send(msg: EmailMessage): Promise<boolean> {
-    // Configurable SMTP / Provider abstraction
-    console.log(`[EmailProvider] Sent to ${msg.to}: "${msg.subject}"`);
-    return true;
+    const res = await sendEmail({
+      to: msg.to,
+      subject: msg.subject,
+      html: msg.html,
+    });
+    return res.success;
   }
 }
 

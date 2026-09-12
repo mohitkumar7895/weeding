@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/context';
 
 interface AuthModalProps {
@@ -9,82 +9,293 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
+type AuthMode = 'login' | 'register' | 'forgot' | 'email-otp';
+
 export default function AuthModal({ isOpen, initialMode = 'login', onClose }: AuthModalProps) {
-  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const { setUser } = useAppContext();
 
   // Form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
   const [role, setRole] = useState<'couple' | 'vendor' | 'guest'>('couple');
+  
+  // OTP & Reset states
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+
+  // Status states
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Sync mode if initialMode changes
+  useEffect(() => {
+    setMode(initialMode);
+    setError(null);
+    setNotification(null);
+    setOtpSent(false);
+  }, [initialMode, isOpen]);
+
+  // Cooldown countdown timer
+  useEffect(() => {
+    if (otpCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setOtpCooldown((prev) => (prev > 1 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [otpCooldown]);
+
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Clear transient states when switching modes
+  const switchMode = (newMode: AuthMode) => {
+    setMode(newMode);
+    setError(null);
+    setNotification(null);
+    setOtp('');
+    setOtpSent(false);
+  };
+
+  // Dispatch OTP email to backend
+  const handleSendOtp = async (purpose: 'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD') => {
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address first.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      if (mode === 'register') {
-        const mappedRole = role === 'vendor' ? 'VENDOR' : 'CUSTOMER';
-        const res = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name,
-            email,
-            password,
-            phone: phone || undefined,
-            role: mappedRole,
-            business_name: role === 'vendor' ? name + ' Studio' : undefined,
-            category_id: role === 'vendor' ? 'cat_photographers' : undefined,
-            city: 'Delhi'
-          })
-        });
+      const res = await fetch('/api/auth/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), purpose }),
+      });
 
-        const data = await res.json();
-        if (!data.success) {
-          throw new Error(data.message || 'Registration failed');
-        }
-
-        setUser(data.data.user);
-        setNotification(`Welcome to WedWithMe, ${data.data.user.name}! 🎉`);
-        setTimeout(() => {
-          setNotification(null);
-          onClose();
-        }, 1200);
-      } else {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-
-        const data = await res.json();
-        if (!data.success) {
-          throw new Error(data.message || 'Invalid email or password');
-        }
-
-        setUser(data.data.user);
-        setNotification(`Welcome back, ${data.data.user.name}! ✨`);
-        setTimeout(() => {
-          setNotification(null);
-          onClose();
-        }, 1200);
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to send verification code.');
       }
+
+      setOtpSent(true);
+      setOtpCooldown(data.cooldownSeconds || 60);
+      setNotification(`Verification code sent to ${email.trim()}! 📩`);
+      setTimeout(() => setNotification(null), 4000);
     } catch (err: any) {
-      setError(err.message || 'Authentication error');
+      setError(err.message || 'Failed to dispatch email OTP.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Handle Standard Password Login
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Invalid email or password.');
+      }
+
+      setUser(data.data?.user || data.user);
+      setNotification(`Welcome back, ${data.data?.user?.name || data.user?.name || 'Partner'}! ✨`);
+      setTimeout(() => {
+        setNotification(null);
+        onClose();
+      }, 1200);
+    } catch (err: any) {
+      setError(err.message || 'Authentication error.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Email OTP Direct Login
+  const handleEmailOtpLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpSent) {
+      await handleSendOtp('LOGIN');
+      return;
+    }
+
+    if (!otp || otp.length < 4) {
+      setError('Please enter the 6-digit verification code.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/auth/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          otp: otp.trim(),
+          purpose: 'LOGIN',
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Invalid or expired verification code.');
+      }
+
+      setUser(data.data?.user || data.user);
+      setNotification(`Signed in successfully! Welcome to WedWithMe 🎉`);
+      setTimeout(() => {
+        setNotification(null);
+        onClose();
+      }, 1200);
+    } catch (err: any) {
+      setError(err.message || 'OTP verification failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Registration with Email OTP
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!name.trim()) {
+      setError('Please enter your full name.');
+      return;
+    }
+
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    // Require OTP verification for registration
+    if (!otpSent) {
+      await handleSendOtp('REGISTER');
+      return;
+    }
+
+    if (!otp || otp.length < 4) {
+      setError('Please enter the 6-digit verification code sent to your email.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const mappedRole = role === 'vendor' ? 'VENDOR' : 'CUSTOMER';
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+          otp: otp.trim(),
+          role: mappedRole,
+          business_name: role === 'vendor' ? name + ' Studio' : undefined,
+          category_id: role === 'vendor' ? 'cat_photographers' : undefined,
+          city: 'Delhi',
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Registration failed.');
+      }
+
+      setUser(data.data?.user || data.user);
+      setNotification(`Welcome to WedWithMe, ${data.data?.user?.name || name}! 🎉`);
+      setTimeout(() => {
+        setNotification(null);
+        onClose();
+      }, 1200);
+    } catch (err: any) {
+      setError(err.message || 'Registration error.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Forgot Password Reset Flow
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!otpSent) {
+      await handleSendOtp('FORGOT_PASSWORD');
+      return;
+    }
+
+    if (!otp || otp.length < 4) {
+      setError('Please enter the 6-digit verification code.');
+      return;
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      setError('New password must be at least 6 characters long.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/auth/forgot-password/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          otp: otp.trim(),
+          newPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to reset password.');
+      }
+
+      setNotification('Password reset successfully! Please sign in with your new password. ✨');
+      setTimeout(() => {
+        switchMode('login');
+        setPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      }, 1800);
+    } catch (err: any) {
+      setError(err.message || 'Password reset failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mock Social Sign-in
   const handleSocialAuth = (provider: string) => {
     setLoading(true);
     setTimeout(() => {
@@ -116,7 +327,6 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
 
         {/* Header Branding */}
         <div className="auth-header">
-          {/* Logo SVG in Vibrant Pink per user requirement */}
           <div className="logo-svg-wrap">
             <svg width="52" height="38" viewBox="0 0 54 40" fill="none">
               <defs>
@@ -161,38 +371,51 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           </div>
 
           <h2 className="auth-title">
-            {mode === 'login' ? 'Welcome Back' : 'Create Your Account'}
+            {mode === 'login' && 'Welcome Back'}
+            {mode === 'email-otp' && 'Email OTP Login'}
+            {mode === 'register' && 'Create Your Account'}
+            {mode === 'forgot' && 'Reset Password'}
           </h2>
           <p className="auth-sub">
-            {mode === 'login'
-              ? 'Access your wedding planner, shortlisted vendors & verified matches'
-              : 'Begin your celebratory journey with AI-powered matchmaking and vendor escrow'}
+            {mode === 'login' && 'Access your wedding planner, shortlisted vendors & verified matches'}
+            {mode === 'email-otp' && 'Sign in instantly with a 6-digit code sent directly to your email'}
+            {mode === 'register' && 'Begin your celebratory journey with verified email and smart matchmaking'}
+            {mode === 'forgot' && 'Receive a secure verification code to reset your account password'}
           </p>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="auth-tabs">
-          <button
-            type="button"
-            className={`tab-btn ${mode === 'login' ? 'active-tab' : ''}`}
-            onClick={() => {
-              setMode('login');
-              setError(null);
-            }}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            className={`tab-btn ${mode === 'register' ? 'active-tab' : ''}`}
-            onClick={() => {
-              setMode('register');
-              setError(null);
-            }}
-          >
-            Register
-          </button>
-        </div>
+        {/* Tab Switcher (Visible on login & register) */}
+        {(mode === 'login' || mode === 'register') && (
+          <div className="auth-tabs">
+            <button
+              type="button"
+              className={`tab-btn ${mode === 'login' ? 'active-tab' : ''}`}
+              onClick={() => switchMode('login')}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${mode === 'register' ? 'active-tab' : ''}`}
+              onClick={() => switchMode('register')}
+            >
+              Register
+            </button>
+          </div>
+        )}
+
+        {/* Sub-mode Navigation Breadcrumb (for Forgot & Email OTP) */}
+        {(mode === 'forgot' || mode === 'email-otp') && (
+          <div className="submode-back-bar">
+            <button
+              type="button"
+              className="back-btn"
+              onClick={() => switchMode('login')}
+            >
+              ← Back to Sign In
+            </button>
+          </div>
+        )}
 
         {/* Notification Toast */}
         {notification && (
@@ -210,171 +433,413 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           </div>
         )}
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="auth-form">
-          {mode === 'register' && (
-            <>
-              {/* Role Selection */}
-              <div className="role-selector-wrap">
-                <label className="input-label">SELECT YOUR PROFILE TYPE</label>
-                <div className="role-selector">
-                  <button
-                    type="button"
-                    className={`role-chip ${role === 'couple' ? 'role-selected' : ''}`}
-                    onClick={() => setRole('couple')}
-                  >
-                    <span className="role-icon">💍</span>
-                    <span className="role-name">Bride / Groom</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`role-chip ${role === 'vendor' ? 'role-selected' : ''}`}
-                    onClick={() => setRole('vendor')}
-                  >
-                    <span className="role-icon">👑</span>
-                    <span className="role-name">Vendor</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`role-chip ${role === 'guest' ? 'role-selected' : ''}`}
-                    onClick={() => setRole('guest')}
-                  >
-                    <span className="role-icon">👥</span>
-                    <span className="role-name">Guest</span>
-                  </button>
-                </div>
+        {/* ---------------------------------------------------- */}
+        {/* MODE 1: Standard Password Sign In                   */}
+        {/* ---------------------------------------------------- */}
+        {mode === 'login' && (
+          <form onSubmit={handlePasswordLogin} className="auth-form">
+            <div className="input-group">
+              <label className="input-label" htmlFor="login-email">EMAIL ADDRESS</label>
+              <div className="input-field-wrap">
+                <span className="field-icon">✉️</span>
+                <input
+                  id="login-email"
+                  type="email"
+                  required
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="auth-input"
+                />
               </div>
-
-              {/* Full Name */}
-              <div className="input-group">
-                <label className="input-label" htmlFor="auth-name">FULL NAME</label>
-                <div className="input-field-wrap">
-                  <span className="field-icon">👤</span>
-                  <input
-                    id="auth-name"
-                    type="text"
-                    required
-                    placeholder="e.g. Mohit Kumar"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="auth-input"
-                  />
-                </div>
-              </div>
-
-              {/* Phone Number */}
-              <div className="input-group">
-                <label className="input-label" htmlFor="auth-phone">MOBILE NUMBER (WHATSAPP VERIFIED)</label>
-                <div className="input-field-wrap">
-                  <span className="field-icon">📱</span>
-                  <input
-                    id="auth-phone"
-                    type="tel"
-                    placeholder="+91 98765 43210"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="auth-input"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Email */}
-          <div className="input-group">
-            <label className="input-label" htmlFor="auth-email">EMAIL ADDRESS</label>
-            <div className="input-field-wrap">
-              <span className="field-icon">✉️</span>
-              <input
-                id="auth-email"
-                type="email"
-                required
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="auth-input"
-              />
             </div>
-          </div>
 
-          {/* Password */}
-          <div className="input-group">
-            <div className="password-label-row">
-              <label className="input-label" htmlFor="auth-password">PASSWORD</label>
-              {mode === 'login' && (
-                <a href="#forgot" className="forgot-link">
+            <div className="input-group">
+              <div className="password-label-row">
+                <label className="input-label" htmlFor="login-password">PASSWORD</label>
+                <button
+                  type="button"
+                  onClick={() => switchMode('forgot')}
+                  className="forgot-btn"
+                >
                   Forgot Password?
-                </a>
-              )}
+                </button>
+              </div>
+              <div className="input-field-wrap">
+                <span className="field-icon">🔒</span>
+                <input
+                  id="login-password"
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="auth-input"
+                />
+              </div>
             </div>
-            <div className="input-field-wrap">
-              <span className="field-icon">🔒</span>
-              <input
-                id="auth-password"
-                type="password"
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="auth-input"
-              />
-            </div>
-          </div>
 
-          {/* Submit Button (Vibrant Pink Gradient per requirement) */}
-          <button type="submit" disabled={loading} className="btn-submit-auth">
-            {loading ? (
-              <span className="spinner"></span>
-            ) : mode === 'login' ? (
-              'Sign In to WedWithMe'
+            <button type="submit" disabled={loading} className="btn-submit-auth">
+              {loading ? <span className="spinner"></span> : 'Sign In to WedWithMe'}
+            </button>
+
+            <div className="auth-divider">
+              <span>or sign in with</span>
+            </div>
+
+            <div className="social-auth-row">
+              <button
+                type="button"
+                className="social-auth-btn"
+                onClick={() => switchMode('email-otp')}
+              >
+                <span style={{ fontSize: '15px' }}>✉️</span>
+                <span>Email OTP</span>
+              </button>
+
+              <button
+                type="button"
+                className="social-auth-btn"
+                onClick={() => handleSocialAuth('Google')}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                  <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z" />
+                  <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z" />
+                  <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z" />
+                  <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z" />
+                </svg>
+                <span>Google</span>
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* ---------------------------------------------------- */}
+        {/* MODE 2: Email OTP Direct Sign-in                    */}
+        {/* ---------------------------------------------------- */}
+        {mode === 'email-otp' && (
+          <form onSubmit={handleEmailOtpLogin} className="auth-form">
+            <div className="input-group">
+              <label className="input-label" htmlFor="otp-login-email">REGISTERED EMAIL</label>
+              <div className="input-field-wrap">
+                <span className="field-icon">✉️</span>
+                <input
+                  id="otp-login-email"
+                  type="email"
+                  required
+                  disabled={otpSent}
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="auth-input"
+                />
+              </div>
+            </div>
+
+            {!otpSent ? (
+              <button
+                type="button"
+                onClick={() => handleSendOtp('LOGIN')}
+                disabled={loading}
+                className="btn-submit-auth"
+              >
+                {loading ? <span className="spinner"></span> : 'Send Verification OTP 📩'}
+              </button>
             ) : (
-              'Create Free Account'
+              <>
+                <div className="input-group">
+                  <div className="password-label-row">
+                    <label className="input-label" htmlFor="otp-login-code">6-DIGIT EMAIL CODE</label>
+                    <button
+                      type="button"
+                      disabled={otpCooldown > 0 || loading}
+                      onClick={() => handleSendOtp('LOGIN')}
+                      className="resend-link-btn"
+                    >
+                      {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend Code'}
+                    </button>
+                  </div>
+                  <div className="input-field-wrap">
+                    <span className="field-icon">🔢</span>
+                    <input
+                      id="otp-login-code"
+                      type="text"
+                      maxLength={6}
+                      required
+                      placeholder="e.g. 123456"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      className="auth-input otp-highlight-input"
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" disabled={loading} className="btn-submit-auth">
+                  {loading ? <span className="spinner"></span> : 'Verify & Sign In'}
+                </button>
+              </>
             )}
-          </button>
-
-          {/* Divider */}
-          <div className="auth-divider">
-            <span>or continue with</span>
-          </div>
-
-          {/* Social Auth Buttons */}
-          <div className="social-auth-row">
-            <button
-              type="button"
-              className="social-auth-btn"
-              onClick={() => handleSocialAuth('Google')}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24">
-                <path
-                  fill="#EA4335"
-                  d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"
-                />
-                <path
-                  fill="#4285F4"
-                  d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"
-                />
-              </svg>
-              <span>Google</span>
-            </button>
 
             <button
               type="button"
-              className="social-auth-btn"
-              onClick={() => handleSocialAuth('OTP')}
+              onClick={() => switchMode('login')}
+              className="switch-link-btn"
             >
-              <span style={{ fontSize: '15px' }}>📲</span>
-              <span>Phone OTP</span>
+              Prefer password? Sign in with password instead
             </button>
-          </div>
-        </form>
+          </form>
+        )}
+
+        {/* ---------------------------------------------------- */}
+        {/* MODE 3: Register with Email OTP                      */}
+        {/* ---------------------------------------------------- */}
+        {mode === 'register' && (
+          <form onSubmit={handleRegister} className="auth-form">
+            {/* Role Selection */}
+            <div className="role-selector-wrap">
+              <label className="input-label">SELECT YOUR PROFILE TYPE</label>
+              <div className="role-selector">
+                <button
+                  type="button"
+                  className={`role-chip ${role === 'couple' ? 'role-selected' : ''}`}
+                  onClick={() => setRole('couple')}
+                >
+                  <span className="role-icon">💍</span>
+                  <span className="role-name">Bride / Groom</span>
+                </button>
+                <button
+                  type="button"
+                  className={`role-chip ${role === 'vendor' ? 'role-selected' : ''}`}
+                  onClick={() => setRole('vendor')}
+                >
+                  <span className="role-icon">👑</span>
+                  <span className="role-name">Vendor</span>
+                </button>
+                <button
+                  type="button"
+                  className={`role-chip ${role === 'guest' ? 'role-selected' : ''}`}
+                  onClick={() => setRole('guest')}
+                >
+                  <span className="role-icon">👥</span>
+                  <span className="role-name">Guest</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Full Name */}
+            <div className="input-group">
+              <label className="input-label" htmlFor="reg-name">FULL NAME</label>
+              <div className="input-field-wrap">
+                <span className="field-icon">👤</span>
+                <input
+                  id="reg-name"
+                  type="text"
+                  required
+                  placeholder="e.g. Mohit Kumar"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="auth-input"
+                />
+              </div>
+            </div>
+
+            {/* Email Address with Send OTP inline */}
+            <div className="input-group">
+              <div className="password-label-row">
+                <label className="input-label" htmlFor="reg-email">EMAIL ADDRESS</label>
+                {otpSent && (
+                  <button
+                    type="button"
+                    disabled={otpCooldown > 0 || loading}
+                    onClick={() => handleSendOtp('REGISTER')}
+                    className="resend-link-btn"
+                  >
+                    {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend Code'}
+                  </button>
+                )}
+              </div>
+              <div className="input-field-wrap">
+                <span className="field-icon">✉️</span>
+                <input
+                  id="reg-email"
+                  type="email"
+                  required
+                  disabled={otpSent}
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="auth-input"
+                />
+                {!otpSent && (
+                  <button
+                    type="button"
+                    onClick={() => handleSendOtp('REGISTER')}
+                    disabled={loading || !email.includes('@')}
+                    className="inline-otp-btn"
+                  >
+                    {loading ? '...' : 'Verify Email'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* OTP Code (Revealed once sent) */}
+            {otpSent && (
+              <div className="input-group">
+                <label className="input-label" htmlFor="reg-otp">6-DIGIT EMAIL VERIFICATION CODE</label>
+                <div className="input-field-wrap">
+                  <span className="field-icon">🔢</span>
+                  <input
+                    id="reg-otp"
+                    type="text"
+                    maxLength={6}
+                    required
+                    placeholder="Enter 6-digit code"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                    className="auth-input otp-highlight-input"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Password */}
+            <div className="input-group">
+              <label className="input-label" htmlFor="reg-password">CREATE PASSWORD</label>
+              <div className="input-field-wrap">
+                <span className="field-icon">🔒</span>
+                <input
+                  id="reg-password"
+                  type="password"
+                  required
+                  placeholder="At least 6 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="auth-input"
+                />
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button type="submit" disabled={loading} className="btn-submit-auth">
+              {loading ? (
+                <span className="spinner"></span>
+              ) : !otpSent ? (
+                'Send Verification OTP & Register'
+              ) : (
+                'Verify & Complete Registration'
+              )}
+            </button>
+          </form>
+        )}
+
+        {/* ---------------------------------------------------- */}
+        {/* MODE 4: Forgot Password Flow                        */}
+        {/* ---------------------------------------------------- */}
+        {mode === 'forgot' && (
+          <form onSubmit={handleForgotPassword} className="auth-form">
+            <div className="input-group">
+              <label className="input-label" htmlFor="forgot-email">YOUR ACCOUNT EMAIL</label>
+              <div className="input-field-wrap">
+                <span className="field-icon">✉️</span>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  required
+                  disabled={otpSent}
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="auth-input"
+                />
+              </div>
+            </div>
+
+            {!otpSent ? (
+              <button
+                type="button"
+                onClick={() => handleSendOtp('FORGOT_PASSWORD')}
+                disabled={loading}
+                className="btn-submit-auth"
+              >
+                {loading ? <span className="spinner"></span> : 'Send Reset Code 📩'}
+              </button>
+            ) : (
+              <>
+                <div className="input-group">
+                  <div className="password-label-row">
+                    <label className="input-label" htmlFor="forgot-otp">6-DIGIT RESET CODE</label>
+                    <button
+                      type="button"
+                      disabled={otpCooldown > 0 || loading}
+                      onClick={() => handleSendOtp('FORGOT_PASSWORD')}
+                      className="resend-link-btn"
+                    >
+                      {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend Code'}
+                    </button>
+                  </div>
+                  <div className="input-field-wrap">
+                    <span className="field-icon">🔢</span>
+                    <input
+                      id="forgot-otp"
+                      type="text"
+                      maxLength={6}
+                      required
+                      placeholder="e.g. 123456"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      className="auth-input otp-highlight-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label" htmlFor="forgot-new-pwd">NEW PASSWORD</label>
+                  <div className="input-field-wrap">
+                    <span className="field-icon">🔒</span>
+                    <input
+                      id="forgot-new-pwd"
+                      type="password"
+                      required
+                      placeholder="At least 6 characters"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="auth-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label" htmlFor="forgot-confirm-pwd">CONFIRM NEW PASSWORD</label>
+                  <div className="input-field-wrap">
+                    <span className="field-icon">🔒</span>
+                    <input
+                      id="forgot-confirm-pwd"
+                      type="password"
+                      required
+                      placeholder="Re-type new password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="auth-input"
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" disabled={loading} className="btn-submit-auth">
+                  {loading ? <span className="spinner"></span> : 'Reset Password & Save'}
+                </button>
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={() => switchMode('login')}
+              className="switch-link-btn"
+            >
+              Remember your password? Back to Sign In
+            </button>
+          </form>
+        )}
 
         {/* Footer info */}
         <div className="auth-footer-note">
@@ -444,6 +909,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           color: #d1ded7;
           transition: all 0.2s ease;
           z-index: 2;
+          cursor: pointer;
         }
 
         .auth-close-btn:hover {
@@ -455,7 +921,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
 
         .auth-header {
           text-align: center;
-          margin-bottom: 20px;
+          margin-bottom: 18px;
           position: relative;
           z-index: 1;
         }
@@ -467,7 +933,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         }
 
         .brand-title-wrap {
-          margin-bottom: 10px;
+          margin-bottom: 8px;
         }
 
         .brand-name-text {
@@ -491,8 +957,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         }
 
         .auth-title {
-          font-family: var(--font-serif);
-          font-size: 22px;
+          font-size: 21px;
           font-weight: 700;
           color: #ffffff;
           margin-bottom: 4px;
@@ -517,6 +982,31 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           z-index: 1;
         }
 
+        .submode-back-bar {
+          margin-bottom: 16px;
+          display: flex;
+        }
+
+        .back-btn {
+          background: none;
+          border: none;
+          color: #fae8a4;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 8px;
+          border-radius: 6px;
+          transition: background 0.15s ease;
+        }
+
+        .back-btn:hover {
+          background: rgba(255, 255, 255, 0.08);
+          color: #ffffff;
+        }
+
         .tab-btn {
           flex: 1;
           padding: 9px 0;
@@ -526,6 +1016,9 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           border-radius: 9999px;
           transition: all 0.2s ease;
           text-align: center;
+          background: none;
+          border: none;
+          cursor: pointer;
         }
 
         .tab-btn:hover {
@@ -607,6 +1100,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           color: #d1ded7;
           border: 1px solid rgba(229, 193, 88, 0.18);
           transition: all 0.2s ease;
+          cursor: pointer;
         }
 
         .role-chip:hover {
@@ -656,6 +1150,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           font-size: 14px;
           pointer-events: none;
           opacity: 0.8;
+          z-index: 2;
         }
 
         .auth-input {
@@ -680,20 +1175,84 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           outline: none;
         }
 
+        .otp-highlight-input {
+          letter-spacing: 6px;
+          font-family: monospace;
+          font-size: 18px;
+          font-weight: 800;
+          color: #ff528c;
+          text-align: center;
+          padding-left: 14px;
+        }
+
+        .inline-otp-btn {
+          position: absolute;
+          right: 6px;
+          background: rgba(255, 42, 115, 0.2);
+          border: 1px solid #ff2a73;
+          color: #ffb3c6;
+          padding: 6px 12px;
+          border-radius: 8px;
+          font-size: 11.5px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .inline-otp-btn:hover:not(:disabled) {
+          background: #ff2a73;
+          color: #ffffff;
+        }
+
         .password-label-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
         }
 
-        .forgot-link {
+        .forgot-btn {
+          background: none;
+          border: none;
+          padding: 0;
           font-size: 11px;
           color: #fae8a4;
           font-weight: 600;
           text-decoration: underline;
+          cursor: pointer;
         }
 
-        .forgot-link:hover {
+        .forgot-btn:hover {
+          color: #ffffff;
+        }
+
+        .resend-link-btn {
+          background: none;
+          border: none;
+          font-size: 11px;
+          color: #ff80a6;
+          font-weight: 600;
+          cursor: pointer;
+          text-decoration: underline;
+        }
+
+        .resend-link-btn:disabled {
+          color: #667e72;
+          cursor: not-allowed;
+          text-decoration: none;
+        }
+
+        .switch-link-btn {
+          background: none;
+          border: none;
+          color: #9cb1a6;
+          font-size: 12px;
+          text-align: center;
+          cursor: pointer;
+          text-decoration: underline;
+          margin-top: 4px;
+        }
+
+        .switch-link-btn:hover {
           color: #ffffff;
         }
 
@@ -718,6 +1277,11 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           filter: brightness(1.08);
           transform: translateY(-1px);
           box-shadow: 0 6px 24px rgba(230, 0, 92, 0.6);
+        }
+
+        .btn-submit-auth:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
         .spinner {
@@ -768,6 +1332,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           font-weight: 700;
           color: #ffffff;
           transition: all 0.2s ease;
+          cursor: pointer;
         }
 
         .social-auth-btn:hover {

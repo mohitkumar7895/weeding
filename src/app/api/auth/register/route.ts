@@ -11,6 +11,7 @@ export async function POST(req: Request) {
       phone,
       password,
       role = 'CUSTOMER',
+      otp,
       businessName,
       business_name,
       categoryId,
@@ -29,14 +30,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: 'Password must be at least 6 characters' }, { status: 400 });
     }
 
+    // If OTP was provided, verify and consume it
+    if (otp) {
+      const { consumeOtp } = await import('@/services/otpService');
+      const consumeResult = await consumeOtp(email, otp, 'REGISTER');
+      if (!consumeResult.success) {
+        return NextResponse.json({ success: false, message: consumeResult.message }, { status: 400 });
+      }
+    }
+
     // Check if user already exists
     const existingUsers = await query<any[]>(
-      'SELECT id FROM users WHERE email = ? OR (phone IS NOT NULL AND phone = ?)',
-      [email.toLowerCase(), phone || '']
+      'SELECT id FROM users WHERE email = ?',
+      [email.toLowerCase()]
     );
 
     if (existingUsers.length > 0) {
-      return NextResponse.json({ success: false, message: 'An account with this email or phone already exists' }, { status: 409 });
+      return NextResponse.json({ success: false, message: 'An account with this email already exists' }, { status: 409 });
     }
 
     const userId = 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
