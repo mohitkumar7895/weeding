@@ -85,15 +85,27 @@ export async function initializeDatabase() {
       religion VARCHAR(50) NOT NULL,
       caste VARCHAR(50),
       sub_caste VARCHAR(50),
+      mother_tongue VARCHAR(50) DEFAULT 'Hindi',
       education VARCHAR(100) NOT NULL,
+      college VARCHAR(150),
       profession VARCHAR(100) NOT NULL,
+      company VARCHAR(150),
       annual_income DECIMAL(12, 2) NOT NULL,
       country VARCHAR(50) DEFAULT 'India',
       state VARCHAR(50) NOT NULL,
       city VARCHAR(50) NOT NULL,
       about_me TEXT,
       family_details TEXT,
+      family_type VARCHAR(50) DEFAULT 'Nuclear',
+      family_values VARCHAR(50) DEFAULT 'Moderate',
+      father_occupation VARCHAR(100),
+      mother_occupation VARCHAR(100),
+      siblings_details VARCHAR(255),
       hobbies TEXT,
+      diet VARCHAR(50) DEFAULT 'Vegetarian',
+      smoking VARCHAR(50) DEFAULT 'No',
+      drinking VARCHAR(50) DEFAULT 'No',
+      interests TEXT,
       verification_status ENUM('UNVERIFIED', 'PENDING', 'VERIFIED', 'REJECTED') DEFAULT 'UNVERIFIED',
       profile_visibility ENUM('PUBLIC', 'REGISTERED_ONLY', 'PRIVATE') DEFAULT 'PUBLIC',
       hide_phone BOOLEAN DEFAULT TRUE,
@@ -109,7 +121,7 @@ export async function initializeDatabase() {
     `CREATE TABLE IF NOT EXISTS profile_photos (
       id VARCHAR(36) PRIMARY KEY,
       profile_id VARCHAR(36) NOT NULL,
-      url VARCHAR(255) NOT NULL,
+      url MEDIUMTEXT NOT NULL,
       is_primary BOOLEAN DEFAULT FALSE,
       is_approved BOOLEAN DEFAULT TRUE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -123,13 +135,21 @@ export async function initializeDatabase() {
       max_age INT DEFAULT 32,
       min_height_cm INT DEFAULT 150,
       max_height_cm INT DEFAULT 190,
-      accepted_marital_status VARCHAR(255) DEFAULT 'NEVER_MARRIED',
+      accepted_marital_status VARCHAR(255) DEFAULT 'Any',
       preferred_religions VARCHAR(255) DEFAULT 'Hindu',
-      preferred_castes VARCHAR(255),
-      preferred_educations VARCHAR(255),
-      preferred_professions VARCHAR(255),
-      min_income DECIMAL(12, 2),
-      preferred_locations VARCHAR(255),
+      preferred_castes VARCHAR(255) DEFAULT 'Any',
+      preferred_sub_castes VARCHAR(255) DEFAULT 'Any',
+      preferred_educations VARCHAR(255) DEFAULT 'Any',
+      preferred_professions VARCHAR(255) DEFAULT 'Any',
+      min_income DECIMAL(12, 2) DEFAULT 0,
+      preferred_country VARCHAR(100) DEFAULT 'India',
+      preferred_state VARCHAR(100) DEFAULT 'Any',
+      preferred_city VARCHAR(100) DEFAULT 'Any',
+      preferred_locations VARCHAR(255) DEFAULT 'Any',
+      preferred_diet VARCHAR(100) DEFAULT 'Any',
+      preferred_manglik VARCHAR(50) DEFAULT 'Any',
+      preferred_smoking VARCHAR(50) DEFAULT 'No',
+      preferred_drinking VARCHAR(50) DEFAULT 'No',
       deal_breakers TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -414,6 +434,36 @@ export async function initializeDatabase() {
     await db.query(tableDefinitions[i]);
   }
   console.log(`Successfully verified ${tableDefinitions.length} tables.`);
+
+  // Safe incremental migrations for existing customer_profiles
+  const migrations = [
+    `ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS mother_tongue VARCHAR(50) DEFAULT 'Hindi'`,
+    `ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS college VARCHAR(150)`,
+    `ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS company VARCHAR(150)`,
+    `ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS diet VARCHAR(50) DEFAULT 'Vegetarian'`,
+    `ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS smoking VARCHAR(50) DEFAULT 'No'`,
+    `ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS drinking VARCHAR(50) DEFAULT 'No'`,
+    `ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS family_type VARCHAR(50) DEFAULT 'Nuclear'`,
+    `ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS family_values VARCHAR(50) DEFAULT 'Moderate'`,
+    `ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS father_occupation VARCHAR(100)`,
+    `ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS mother_occupation VARCHAR(100)`,
+    `ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS siblings_details VARCHAR(255)`,
+    `ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS interests TEXT`,
+    `ALTER TABLE profile_photos MODIFY COLUMN url MEDIUMTEXT NOT NULL`,
+    `ALTER TABLE partner_preferences ADD COLUMN IF NOT EXISTS preferred_sub_castes VARCHAR(255) DEFAULT 'Any'`,
+    `ALTER TABLE partner_preferences ADD COLUMN IF NOT EXISTS preferred_country VARCHAR(100) DEFAULT 'India'`,
+    `ALTER TABLE partner_preferences ADD COLUMN IF NOT EXISTS preferred_state VARCHAR(100) DEFAULT 'Any'`,
+    `ALTER TABLE partner_preferences ADD COLUMN IF NOT EXISTS preferred_city VARCHAR(100) DEFAULT 'Any'`,
+    `ALTER TABLE partner_preferences ADD COLUMN IF NOT EXISTS preferred_diet VARCHAR(100) DEFAULT 'Any'`,
+    `ALTER TABLE partner_preferences ADD COLUMN IF NOT EXISTS preferred_manglik VARCHAR(50) DEFAULT 'Any'`,
+    `ALTER TABLE partner_preferences ADD COLUMN IF NOT EXISTS preferred_smoking VARCHAR(50) DEFAULT 'No'`,
+    `ALTER TABLE partner_preferences ADD COLUMN IF NOT EXISTS preferred_drinking VARCHAR(50) DEFAULT 'No'`,
+  ];
+  for (const sql of migrations) {
+    try {
+      await db.query(sql);
+    } catch (_) {}
+  }
 
   // Step 4: Seed Initial Data
   await seedInitialData(db);

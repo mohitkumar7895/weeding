@@ -565,21 +565,6 @@ export default function VendorDashboardPage() {
               </button>
             );
           })}
-
-          <div style={{ height: '1px', background: 'rgba(229,193,88,0.15)', margin: '14px 0' }} />
-
-          <div style={{ fontSize: '11px', fontWeight: 700, color: '#e5c158', letterSpacing: '0.8px', padding: '0 8px', marginBottom: '4px' }}>
-            QUICK LINKS
-          </div>
-          <Link href="/vendors" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '8px', color: '#cbd5e0', fontSize: '13px', textDecoration: 'none' }}>
-            <span>🛍️</span> Public Marketplace
-          </Link>
-          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '8px', color: '#cbd5e0', fontSize: '13px', textDecoration: 'none' }}>
-            <span>👥</span> Customer Suite
-          </Link>
-          <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '8px', color: '#cbd5e0', fontSize: '13px', textDecoration: 'none' }}>
-            <span>🛡️</span> Admin Console
-          </Link>
         </div>
 
         {/* Bottom Sign Out Button */}

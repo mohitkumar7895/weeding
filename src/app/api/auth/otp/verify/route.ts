@@ -6,7 +6,7 @@ import { verifyOtp, consumeOtp, OtpPurpose } from '@/services/otpService';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, otp, purpose } = body;
+    const { email, otp, purpose, otpToken, directLogin } = body;
 
     if (!email || !otp) {
       return NextResponse.json(
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const normalizedOtp = otp.toString().trim();
 
     // 1. Verify OTP code
-    const verification = await verifyOtp(normalizedEmail, normalizedOtp, purpose as OtpPurpose);
+    const verification = await verifyOtp(normalizedEmail, normalizedOtp, purpose as OtpPurpose, otpToken);
     if (!verification.valid) {
       return NextResponse.json(
         { success: false, message: verification.message },
@@ -27,10 +27,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Handle Purpose: LOGIN (Direct sign-in with Email OTP)
-    if (purpose === 'LOGIN') {
+    // 2. Handle Purpose: LOGIN or Direct sign-in from FORGOT_PASSWORD
+    const isDirectSignIn = purpose === 'LOGIN' || (purpose === 'FORGOT_PASSWORD' && Boolean(directLogin));
+
+    if (isDirectSignIn) {
       // Consume the OTP so it cannot be reused
-      await consumeOtp(normalizedEmail, normalizedOtp, 'LOGIN');
+      await consumeOtp(normalizedEmail, normalizedOtp, purpose as OtpPurpose, otpToken);
 
       // Fetch user from DB
       let user: any = null;

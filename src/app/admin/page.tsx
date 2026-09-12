@@ -494,21 +494,6 @@ export default function AdminDashboardPage() {
               </button>
             );
           })}
-
-          <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '14px 0' }} />
-
-          <div style={{ fontSize: '11px', fontWeight: 700, color: '#ff6b9d', letterSpacing: '0.8px', padding: '0 8px', marginBottom: '4px' }}>
-            EXTERNAL SUITES
-          </div>
-          <Link href="/vendor" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '8px', color: '#cbd5e0', fontSize: '13px', textDecoration: 'none' }}>
-            <span>🏪</span> Vendor Partner Suite
-          </Link>
-          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '8px', color: '#cbd5e0', fontSize: '13px', textDecoration: 'none' }}>
-            <span>👥</span> Customer Dashboard
-          </Link>
-          <Link href="/vendors" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', borderRadius: '8px', color: '#cbd5e0', fontSize: '13px', textDecoration: 'none' }}>
-            <span>🛍️</span> Marketplace View
-          </Link>
         </div>
 
         {/* Bottom Sign Out Button */}

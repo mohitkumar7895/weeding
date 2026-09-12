@@ -19,14 +19,16 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState<'couple' | 'vendor' | 'guest'>('couple');
+  const [role, setRole] = useState<'customer' | 'vendor'>('customer');
   
   // OTP & Reset states
   const [otp, setOtp] = useState('');
+  const [otpToken, setOtpToken] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
+  const [forgotAction, setForgotAction] = useState<'login' | 'reset'>('login');
 
   // Status states
   const [loading, setLoading] = useState(false);
@@ -59,6 +61,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
     setNotification(null);
     setOtp('');
     setOtpSent(false);
+    setForgotAction('login');
   };
 
   // Dispatch OTP email to backend
@@ -84,6 +87,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
       });
 
       const data = await res.json();
+
+      if (data.otpToken) {
+        setOtpToken(data.otpToken);
+      }
 
       if (data.cooldownSeconds && data.cooldownSeconds > 0) {
         setOtpCooldown(data.cooldownSeconds);
@@ -163,6 +170,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           email: email.trim().toLowerCase(),
           otp: otp.trim(),
           purpose: 'LOGIN',
+          otpToken: otpToken || undefined,
         }),
       });
 
@@ -227,6 +235,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           email: email.trim().toLowerCase(),
           password,
           otp: otp.trim(),
+          otpToken: otpToken || undefined,
           role: mappedRole,
           business_name: role === 'vendor' ? name + ' Studio' : undefined,
           category_id: role === 'vendor' ? 'cat_photographers' : undefined,
@@ -247,6 +256,54 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
       }, 1200);
     } catch (err: any) {
       setError(err.message || 'Registration error.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Direct Sign-In without updating password (from Forgot Password flow)
+  const handleForgotDirectLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!otpSent) {
+      await handleSendOtp('FORGOT_PASSWORD');
+      return;
+    }
+
+    if (!otp || otp.length < 4) {
+      setError('Please enter the 6-digit verification code.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/auth/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          otp: otp.trim(),
+          purpose: 'FORGOT_PASSWORD',
+          directLogin: true,
+          otpToken: otpToken || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Direct sign-in failed.');
+      }
+
+      setUser(data.data?.user || data.user);
+      setNotification(`Welcome back, ${data.data?.user?.name || data.user?.name || 'Partner'}! Signed in successfully 🎉`);
+      setTimeout(() => {
+        setNotification(null);
+        onClose();
+      }, 1200);
+    } catch (err: any) {
+      setError(err.message || 'Verification error.');
     } finally {
       setLoading(false);
     }
@@ -287,6 +344,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           email: email.trim().toLowerCase(),
           otp: otp.trim(),
           newPassword,
+          otpToken: otpToken || undefined,
         }),
       });
 
@@ -295,13 +353,22 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         throw new Error(data.message || 'Failed to reset password.');
       }
 
-      setNotification('Password reset successfully! Please sign in with your new password. ✨');
-      setTimeout(() => {
-        switchMode('login');
-        setPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      }, 1800);
+      if (data.user) {
+        setUser(data.data?.user || data.user);
+        setNotification(`Password updated! Welcome back, ${data.data?.user?.name || data.user?.name || 'Partner'}! ✨`);
+        setTimeout(() => {
+          setNotification(null);
+          onClose();
+        }, 1200);
+      } else {
+        setNotification('Password reset successfully! Please sign in with your new password. ✨');
+        setTimeout(() => {
+          switchMode('login');
+          setPassword('');
+          setNewPassword('');
+          setConfirmPassword('');
+        }, 1800);
+      }
     } catch (err: any) {
       setError(err.message || 'Password reset failed.');
     } finally {
@@ -615,11 +682,11 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
               <div className="role-selector">
                 <button
                   type="button"
-                  className={`role-chip ${role === 'couple' ? 'role-selected' : ''}`}
-                  onClick={() => setRole('couple')}
+                  className={`role-chip ${role === 'customer' ? 'role-selected' : ''}`}
+                  onClick={() => setRole('customer')}
                 >
-                  <span className="role-icon">💍</span>
-                  <span className="role-name">Bride / Groom</span>
+                  <span className="role-icon">👤</span>
+                  <span className="role-name">Customer</span>
                 </button>
                 <button
                   type="button"
@@ -628,14 +695,6 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
                 >
                   <span className="role-icon">👑</span>
                   <span className="role-name">Vendor</span>
-                </button>
-                <button
-                  type="button"
-                  className={`role-chip ${role === 'guest' ? 'role-selected' : ''}`}
-                  onClick={() => setRole('guest')}
-                >
-                  <span className="role-icon">👥</span>
-                  <span className="role-name">Guest</span>
                 </button>
               </div>
             </div>
@@ -807,41 +866,76 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
                   </div>
                 </div>
 
-                <div className="input-group">
-                  <label className="input-label" htmlFor="forgot-new-pwd">NEW PASSWORD</label>
-                  <div className="input-field-wrap">
-                    <span className="field-icon">🔒</span>
-                    <input
-                      id="forgot-new-pwd"
-                      type="password"
-                      required
-                      placeholder="At least 6 characters"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="auth-input"
-                    />
-                  </div>
+                {/* Action Selector: Direct Login OR Update Password */}
+                <div className="forgot-action-selector">
+                  <button
+                    type="button"
+                    className={`forgot-action-chip ${forgotAction === 'login' ? 'active' : ''}`}
+                    onClick={() => { setForgotAction('login'); setError(null); }}
+                  >
+                    <span className="chip-icon">⚡</span>
+                    <span className="chip-label">Direct Sign In</span>
+                    <span className="chip-sub">Keep existing password</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`forgot-action-chip ${forgotAction === 'reset' ? 'active' : ''}`}
+                    onClick={() => { setForgotAction('reset'); setError(null); }}
+                  >
+                    <span className="chip-icon">🔒</span>
+                    <span className="chip-label">Update Password</span>
+                    <span className="chip-sub">Set a new password</span>
+                  </button>
                 </div>
 
-                <div className="input-group">
-                  <label className="input-label" htmlFor="forgot-confirm-pwd">CONFIRM NEW PASSWORD</label>
-                  <div className="input-field-wrap">
-                    <span className="field-icon">🔒</span>
-                    <input
-                      id="forgot-confirm-pwd"
-                      type="password"
-                      required
-                      placeholder="Re-type new password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="auth-input"
-                    />
-                  </div>
-                </div>
+                {forgotAction === 'login' ? (
+                  <button
+                    type="button"
+                    onClick={handleForgotDirectLogin}
+                    disabled={loading || otp.length < 4}
+                    className="btn-submit-auth btn-direct-login"
+                  >
+                    {loading ? <span className="spinner"></span> : 'Sign In Directly Without Updating Password 🚀'}
+                  </button>
+                ) : (
+                  <>
+                    <div className="input-group">
+                      <label className="input-label" htmlFor="forgot-new-pwd">NEW PASSWORD</label>
+                      <div className="input-field-wrap">
+                        <span className="field-icon">🔒</span>
+                        <input
+                          id="forgot-new-pwd"
+                          type="password"
+                          required
+                          placeholder="At least 6 characters"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="auth-input"
+                        />
+                      </div>
+                    </div>
 
-                <button type="submit" disabled={loading} className="btn-submit-auth">
-                  {loading ? <span className="spinner"></span> : 'Reset Password & Save'}
-                </button>
+                    <div className="input-group">
+                      <label className="input-label" htmlFor="forgot-confirm-pwd">CONFIRM NEW PASSWORD</label>
+                      <div className="input-field-wrap">
+                        <span className="field-icon">🔒</span>
+                        <input
+                          id="forgot-confirm-pwd"
+                          type="password"
+                          required
+                          placeholder="Re-type new password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="auth-input"
+                        />
+                      </div>
+                    </div>
+
+                    <button type="submit" disabled={loading || otp.length < 4} className="btn-submit-auth">
+                      {loading ? <span className="spinner"></span> : 'Update Password & Sign In 🔐'}
+                    </button>
+                  </>
+                )}
               </>
             )}
 
@@ -1136,6 +1230,61 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           border-color: #ff2a73 !important;
           color: #ffffff !important;
           box-shadow: 0 0 14px rgba(255, 42, 115, 0.3) !important;
+        }
+
+        .forgot-action-selector {
+          display: flex;
+          gap: 8px;
+          margin: 6px 0 10px;
+        }
+
+        .forgot-action-chip {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          gap: 3px;
+          padding: 10px 8px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.05);
+          color: #d1ded7;
+          border: 1px solid rgba(229, 193, 88, 0.2);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .forgot-action-chip:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(229, 193, 88, 0.45);
+        }
+
+        .forgot-action-chip.active {
+          background: rgba(229, 193, 88, 0.18) !important;
+          border-color: #e5c158 !important;
+          color: #ffffff !important;
+          box-shadow: 0 0 12px rgba(229, 193, 88, 0.25) !important;
+        }
+
+        .forgot-action-chip .chip-icon {
+          font-size: 16px;
+        }
+
+        .forgot-action-chip .chip-label {
+          font-size: 11.5px;
+          font-weight: 700;
+          letter-spacing: 0.3px;
+        }
+
+        .forgot-action-chip .chip-sub {
+          font-size: 9.5px;
+          opacity: 0.75;
+        }
+
+        .btn-direct-login {
+          background: linear-gradient(135deg, #e5c158 0%, #d4a733 100%) !important;
+          color: #042217 !important;
+          font-weight: 700 !important;
         }
 
         .input-group {

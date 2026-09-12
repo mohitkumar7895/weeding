@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import CustomerProfileEditor from '@/components/CustomerProfileEditor';
+import PartnerPreferencesEditor from '@/components/PartnerPreferencesEditor';
 
 export default function CustomerDashboardPage() {
-  const [activeTab, setActiveTab] = useState<'matches' | 'bookings' | 'privacy' | 'checklist'>('matches');
+  const [activeTab, setActiveTab] = useState<'profile' | 'preferences' | 'matches' | 'bookings' | 'privacy' | 'checklist'>('profile');
   const [user, setUser] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
@@ -32,6 +34,13 @@ export default function CustomerDashboardPage() {
   const [reviewComment, setReviewComment] = useState('Outstanding service! Highly recommended.');
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['profile', 'preferences', 'matches', 'bookings', 'privacy', 'checklist'].includes(tabParam)) {
+        setActiveTab(tabParam as any);
+      }
+    }
     loadCustomerData();
   }, []);
 
@@ -304,6 +313,8 @@ export default function CustomerDashboardPage() {
   }
 
   const sidebarNavItems = [
+    { id: 'profile', label: 'My Matrimonial Profile', icon: '👤' },
+    { id: 'preferences', label: 'Partner Preferences', icon: '❤️' },
     { id: 'matches', label: 'Matrimonial Matches', icon: '💍', count: matches.length },
     { id: 'bookings', label: 'My Bookings & Escrow', icon: '🛎️', count: bookings.length },
     { id: 'checklist', label: 'Wedding Checklist', icon: '📋' },
@@ -366,8 +377,13 @@ export default function CustomerDashboardPage() {
             fontWeight: '800',
             fontSize: '16px',
             boxShadow: '0 4px 10px rgba(230,0,92,0.3)',
+            overflow: 'hidden',
           }}>
-            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+            {user?.photo_url ? (
+              <img src={user.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              user?.name?.charAt(0)?.toUpperCase() || 'U'
+            )}
           </div>
           <div style={{ overflow: 'hidden' }}>
             <div style={{ fontSize: '14px', fontWeight: '700', color: '#fff', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
@@ -426,64 +442,6 @@ export default function CustomerDashboardPage() {
               </button>
             );
           })}
-
-          <div style={{ fontSize: '10px', color: '#9cb1a6', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', padding: '16px 10px 6px' }}>
-            Marketplace
-          </div>
-          <Link
-            href="/vendors"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '11px 14px',
-              borderRadius: '10px',
-              color: '#9cb1a6',
-              textDecoration: 'none',
-              fontSize: '13.5px',
-              fontWeight: '600',
-              transition: 'background 0.2s ease',
-            }}
-          >
-            <span>🛍️</span>
-            <span>Browse All Vendors</span>
-          </Link>
-          <Link
-            href="/matches"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '11px 14px',
-              borderRadius: '10px',
-              color: '#9cb1a6',
-              textDecoration: 'none',
-              fontSize: '13.5px',
-              fontWeight: '600',
-              transition: 'background 0.2s ease',
-            }}
-          >
-            <span>✨</span>
-            <span>Browse Profiles</span>
-          </Link>
-          <Link
-            href="/"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '11px 14px',
-              borderRadius: '10px',
-              color: '#9cb1a6',
-              textDecoration: 'none',
-              fontSize: '13.5px',
-              fontWeight: '600',
-              transition: 'background 0.2s ease',
-            }}
-          >
-            <span>🏠</span>
-            <span>Back to Home</span>
-          </Link>
         </nav>
 
         {/* Sidebar Footer with Pink Logout Button */}
@@ -529,6 +487,8 @@ export default function CustomerDashboardPage() {
         }}>
           <div>
             <h1 style={{ fontSize: '18px', fontWeight: '800', color: '#fff', margin: 0 }}>
+              {activeTab === 'profile' && '👤 My Matrimonial Profile & Personal Bio'}
+              {activeTab === 'preferences' && '❤️ Section 6.3 Desired Partner Preferences'}
               {activeTab === 'matches' && '💍 AI-Matched Compatible Profiles'}
               {activeTab === 'bookings' && '🛎️ My Wedding Bookings & Platform Escrow'}
               {activeTab === 'checklist' && '📋 Wedding Planning Milestones'}
@@ -569,6 +529,32 @@ export default function CustomerDashboardPage() {
             <div style={{ background: 'rgba(56,161,105,0.15)', border: '1px solid #38a169', color: '#9ae6b4', padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', fontSize: '14px' }}>
               ✓ {successMsg}
             </div>
+          )}
+
+          {/* ================= TAB 0: PROFILE ================= */}
+          {activeTab === 'profile' && (
+            <CustomerProfileEditor
+              user={user}
+              onProfileUpdated={(updated) => {
+                if (updated) {
+                  setUser((prev: any) => ({
+                    ...prev,
+                    name: updated.name || prev?.name,
+                    photo_url: updated.photo_url !== undefined ? updated.photo_url : prev?.photo_url,
+                  }));
+                }
+              }}
+            />
+          )}
+
+          {/* ================= TAB 0.5: PARTNER PREFERENCES ================= */}
+          {activeTab === 'preferences' && (
+            <PartnerPreferencesEditor
+              user={user}
+              onSaved={() => {
+                setSuccessMsg('Partner preferences saved! Matrimonial compatibility scores will now reflect your criteria.');
+              }}
+            />
           )}
 
           {/* ================= TAB 1: MATCHES ================= */}

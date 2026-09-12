@@ -75,6 +75,7 @@ export async function POST(req: Request) {
       message: result.message,
       cooldownSeconds: result.cooldownSeconds,
       alreadyActive: result.alreadyActive,
+      otpToken: result.otpToken,
     });
   } catch (error: any) {
     console.error('[api/auth/otp/send] Error:', error);
