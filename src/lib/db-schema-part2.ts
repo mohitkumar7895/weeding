@@ -53,6 +53,18 @@ export async function runPart2Migrations() {
       INDEX idx_vendor_docs (vendor_id, doc_type)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
+    // 2b. Vendor Multi-Category Mappings
+    `CREATE TABLE IF NOT EXISTS vendor_categories (
+      id VARCHAR(36) PRIMARY KEY,
+      vendor_id VARCHAR(36) NOT NULL,
+      category_id VARCHAR(36) NOT NULL,
+      is_primary BOOLEAN DEFAULT FALSE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_vendor_category (vendor_id, category_id),
+      FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE,
+      FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
     // 3. Package Items & Add-ons
     `CREATE TABLE IF NOT EXISTS vendor_package_items (
       id VARCHAR(36) PRIMARY KEY,
@@ -317,10 +329,29 @@ export async function runPart2Migrations() {
     await db.query(`ALTER TABLE vendor_packages ADD COLUMN is_published BOOLEAN DEFAULT TRUE`);
   } catch {}
   try {
-    await db.query(`ALTER TABLE vendor_services ADD COLUMN moderation_status ENUM('PENDING_REVIEW', 'APPROVED', 'REJECTED') DEFAULT 'APPROVED'`);
+    await db.query(`ALTER TABLE vendor_services ADD COLUMN IF NOT EXISTS category_id VARCHAR(36) NULL`);
+    await db.query(`ALTER TABLE vendor_services ADD COLUMN IF NOT EXISTS service_location VARCHAR(191) NULL`);
+    await db.query(`ALTER TABLE vendor_services ADD COLUMN IF NOT EXISTS rejection_reason TEXT NULL`);
+    await db.query(`ALTER TABLE vendor_services ADD COLUMN IF NOT EXISTS updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
+    await db.query(`ALTER TABLE vendor_services ADD COLUMN moderation_status ENUM('DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED') DEFAULT 'PENDING_REVIEW'`);
   } catch {}
   try {
     await db.query(`ALTER TABLE reviews ADD COLUMN moderation_status ENUM('APPROVED', 'FLAGGED', 'REMOVED') DEFAULT 'APPROVED'`);
+  } catch {}
+  try {
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS state VARCHAR(50) DEFAULT 'Rajasthan'`);
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS country VARCHAR(50) DEFAULT 'India'`);
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS pincode VARCHAR(20) DEFAULT NULL`);
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS service_area_cities TEXT DEFAULT NULL`);
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS service_radius_km INT DEFAULT 50`);
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS travels_to_venue BOOLEAN DEFAULT TRUE`);
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS experience_years INT DEFAULT 1`);
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS year_established INT DEFAULT NULL`);
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS business_phone VARCHAR(50) DEFAULT NULL`);
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS business_email VARCHAR(100) DEFAULT NULL`);
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS website_url VARCHAR(255) DEFAULT NULL`);
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS instagram_handle VARCHAR(100) DEFAULT NULL`);
+    await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS profile_status ENUM('DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED', 'SUSPENDED') DEFAULT 'APPROVED'`);
   } catch {}
 
   // Seed default commission rules & retention policies

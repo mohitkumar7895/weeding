@@ -21,6 +21,7 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
     { name: 'Vendors', href: '/vendors' },
     { name: 'Matches', href: '/matches' },
     { name: 'Bookings', href: '/bookings' },
+    { name: 'Join as Vendor', href: '/vendor/register' },
     { name: 'About Us', href: '/about' },
   ];
 

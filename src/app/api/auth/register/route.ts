@@ -18,13 +18,27 @@ export async function POST(req: Request) {
       categoryId,
       category_id,
       city = 'Delhi NCR',
+      address,
+      description,
+      starting_price,
+      startingPrice,
     } = body;
 
     const finalBusinessName = business_name || businessName || name;
     const finalCategoryId = category_id || categoryId || 'cat_photographers';
+    const finalStartingPrice = parseFloat(starting_price || startingPrice || '15000') || 15000.00;
 
     if (!name || !email || !password) {
       return NextResponse.json({ success: false, message: 'Name, email, and password are required' }, { status: 400 });
+    }
+
+    if (role === 'VENDOR') {
+      if (!phone) {
+        return NextResponse.json({ success: false, message: 'Mobile number is required for vendor registration' }, { status: 400 });
+      }
+      if (!finalBusinessName || finalBusinessName.trim().length < 2) {
+        return NextResponse.json({ success: false, message: 'Valid business name is required' }, { status: 400 });
+      }
     }
 
     if (password.length < 6) {
@@ -100,12 +114,21 @@ export async function POST(req: Request) {
         } else if (userRole === 'VENDOR') {
           assignedVendorId = `ven_${userId}`;
           await conn.query(
-            `INSERT INTO vendors (id, user_id, business_name, category_id, city, starting_price, verification_status)
-             VALUES (?, ?, ?, ?, ?, 15000.00, 'PENDING')`,
-            [assignedVendorId, userId, finalBusinessName, finalCategoryId, city]
+            `INSERT INTO vendors (id, user_id, business_name, category_id, city, address, description, starting_price, verification_status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')`,
+            [
+              assignedVendorId,
+              userId,
+              finalBusinessName,
+              finalCategoryId,
+              city,
+              address || null,
+              description || null,
+              finalStartingPrice,
+            ]
           );
 
-          // Initialize Vendor Onboarding Record
+          // Initialize Vendor Onboarding Record with structured checklist
           await conn.query(
             `INSERT INTO vendor_onboarding (id, vendor_id, status, checklist_json)
              VALUES (?, ?, 'DRAFT', ?)`,
@@ -114,11 +137,20 @@ export async function POST(req: Request) {
               assignedVendorId,
               JSON.stringify({
                 business_profile: true,
+                documents_uploaded: false,
                 pan_uploaded: false,
                 bank_details: false,
                 packages_configured: false,
               }),
             ]
+          );
+
+          // Synchronize primary category into vendor_categories mapping
+          const vcId = 'vc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+          await conn.query(
+            `INSERT IGNORE INTO vendor_categories (id, vendor_id, category_id, is_primary)
+             VALUES (?, ?, ?, TRUE)`,
+            [vcId, assignedVendorId, finalCategoryId]
           );
         }
       });

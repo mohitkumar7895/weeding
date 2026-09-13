@@ -23,6 +23,23 @@ export async function PUT(
 
     if (status) {
       await query(`UPDATE vendors SET verification_status = ? WHERE id = ?`, [status, id]);
+
+      let onboardingStatus = 'UNDER_REVIEW';
+      if (status === 'VERIFIED') onboardingStatus = 'APPROVED';
+      else if (status === 'REJECTED') onboardingStatus = 'REJECTED';
+      else if (status === 'SUSPENDED') onboardingStatus = 'SUSPENDED';
+
+      const approvedAt = status === 'VERIFIED' ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
+      await query(
+        `UPDATE vendor_onboarding SET 
+          status = ?, 
+          rejection_reason = ?,
+          admin_reviewer_id = ?,
+          approved_at = COALESCE(?, approved_at),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE vendor_id = ?`,
+        [onboardingStatus, body.rejection_reason || null, adminUser.id, approvedAt, id]
+      );
     }
     if (is_featured !== undefined) {
       await query(`UPDATE vendors SET is_featured = ? WHERE id = ?`, [is_featured ? 1 : 0, id]);

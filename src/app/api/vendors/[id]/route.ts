@@ -32,9 +32,33 @@ export async function GET(
 
     const vendor = vendors[0];
 
-    // Fetch services
+    // Sanitize sensitive vendor details and enforce public access gating
+    const { getSessionUser } = await import('@/lib/auth');
+    const sessionUser = await getSessionUser();
+    const isAuthorized = sessionUser && (
+      sessionUser.role === 'SUPER_ADMIN' ||
+      sessionUser.role === 'ADMIN' ||
+      sessionUser.id === vendor.user_id
+    );
+
+    // Unapproved/rejected/suspended vendors cannot be viewed publicly
+    if (!isAuthorized && vendor.verification_status !== 'VERIFIED') {
+      return NextResponse.json(
+        { success: false, message: 'Vendor profile is pending verification or not publicly active' },
+        { status: 404 }
+      );
+    }
+
+    // Fetch services (for public, require is_active = TRUE and moderation_status = 'APPROVED')
     const services = await query<any[]>(
-      `SELECT * FROM vendor_services WHERE vendor_id = ? AND is_active = TRUE ORDER BY starting_price ASC`,
+      `SELECT 
+        vs.*,
+        c.name AS category_name,
+        c.slug AS category_slug
+      FROM vendor_services vs
+      LEFT JOIN categories c ON vs.category_id = c.id
+      WHERE vs.vendor_id = ? ${!isAuthorized ? "AND vs.is_active = TRUE AND vs.moderation_status = 'APPROVED'" : ''}
+      ORDER BY vs.starting_price ASC`,
       [vendor.id]
     );
 
@@ -69,14 +93,26 @@ export async function GET(
       [vendor.id]
     );
 
-    // Sanitize sensitive vendor details for public users
-    const { getSessionUser } = await import('@/lib/auth');
-    const sessionUser = await getSessionUser();
-    const isAuthorized = sessionUser && (
-      sessionUser.role === 'SUPER_ADMIN' ||
-      sessionUser.role === 'ADMIN' ||
-      sessionUser.id === vendor.user_id
+    // Fetch multi-categories
+    const vendorCategories = await query<any[]>(
+      `SELECT c.id, c.name, c.slug, c.description, vc.is_primary
+       FROM vendor_categories vc
+       JOIN categories c ON vc.category_id = c.id
+       WHERE vc.vendor_id = ?
+       ORDER BY vc.is_primary DESC, c.display_order ASC`,
+      [vendor.id]
     );
+
+    // Parse service area cities safely
+    let serviceAreaCities: string[] = [];
+    if (vendor.service_area_cities) {
+      try {
+        const parsed = JSON.parse(vendor.service_area_cities);
+        serviceAreaCities = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        serviceAreaCities = vendor.service_area_cities.split(',').map((c: string) => c.trim()).filter(Boolean);
+      }
+    }
 
     const safeVendor = { ...vendor };
     if (!isAuthorized) {
@@ -90,6 +126,9 @@ export async function GET(
       success: true,
       data: {
         ...safeVendor,
+        is_verified: safeVendor.verification_status === 'VERIFIED',
+        categories: vendorCategories,
+        service_area_cities: serviceAreaCities,
         services,
         packages,
         portfolios,
