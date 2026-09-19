@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { getSessionUser, logAudit } from '@/lib/auth';
+import { verifyAdminRole } from '@/lib/rbac';
 
 export async function GET(req: NextRequest) {
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
+    if (!authResult.ok) return authResult.response;
+
   try {
     const weights = await query<any[]>(
       `SELECT id, factor_name, weight_percent, is_active, version, updated_at
@@ -18,6 +22,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
+    if (!authResult.ok) return authResult.response;
+
   try {
     const adminUser = await getSessionUser();
     if (!adminUser || adminUser.role !== 'SUPER_ADMIN') {

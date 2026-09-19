@@ -1,0 +1,171 @@
+openapi: 3.0.3
+info:
+  title: WedWithMe API
+  version: 1.0.0
+  description: REST API specification for the WedWithMe platform. Covers Authentication, Vendor and Booking flows.
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate User
+      description: Logs in a user and returns a session cookie (`wwm_auth_token`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: wwm_auth_token=abcde12345; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+  
+  /auth/register:
+    post:
+      summary: Register User
+      description: Creates a new Customer or Vendor account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - role
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 6
+                role:
+                  type: string
+                  enum: [CUSTOMER, VENDOR]
+                phone:
+                  type: string
+                  description: Required if role is VENDOR
+                business_name:
+                  type: string
+                  description: Required if role is VENDOR
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vendor/profile:
+    get:
+      summary: Get Vendor Profile
+      description: Retrieves the authenticated vendor's business profile.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Profile retrieved successfully
+        '403':
+          description: Unauthorized (User is not a vendor)
+
+  /bookings:
+    post:
+      summary: Create Booking
+      description: Creates a new booking request.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - vendor_id
+                - package_id
+                - event_date
+              properties:
+                vendor_id:
+                  type: string
+                package_id:
+                  type: string
+                event_date:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Booking created
+        '403':
+          description: Unauthorized (User is not a customer)
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: wwm_auth_token
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: object
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        issues:
+          type: array
+          items:
+            type: object
+            description: Zod validation error format

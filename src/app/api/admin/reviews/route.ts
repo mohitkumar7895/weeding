@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { getSessionUser, logAudit } from '@/lib/auth';
+import { verifyAdminRole } from '@/lib/rbac';
 
 export async function GET(req: NextRequest) {
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
+    if (!authResult.ok) return authResult.response;
+
   try {
     const user = await getSessionUser();
     if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN' && user.role !== 'SUPPORT')) {
@@ -32,6 +36,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
+    if (!authResult.ok) return authResult.response;
+
   try {
     const user = await getSessionUser();
     if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN' && user.role !== 'SUPPORT')) {

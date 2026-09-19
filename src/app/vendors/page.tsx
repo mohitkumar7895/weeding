@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
+import PackageComparisonModal, { ComparedPackage, PackageAddOn } from '@/components/PackageComparisonModal';
 import { useAppContext } from '@/context';
 
 interface Vendor {
@@ -19,6 +20,9 @@ interface Vendor {
   starting_price?: number | string;
   cover_image?: string;
   is_verified?: boolean;
+  verification_status?: string;
+  is_sponsored?: boolean;
+  is_featured?: boolean;
   bio?: string;
   description?: string;
 }
@@ -26,9 +30,14 @@ interface Vendor {
 interface Package {
   id: string;
   name: string;
-  tier: string;
+  package_tier?: 'BASIC' | 'STANDARD' | 'PREMIUM' | 'CUSTOM' | string;
+  tier?: string;
   price: number;
   description: string;
+  guest_capacity?: number;
+  service_id?: string;
+  service_title?: string;
+  inclusions?: string[] | string;
   deliverables?: string[];
 }
 
@@ -45,6 +54,9 @@ export default function VendorsPage() {
   // Booking / Package Modal state
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [vendorPackages, setVendorPackages] = useState<Package[]>([]);
+  const [vendorAddOns, setVendorAddOns] = useState<PackageAddOn[]>([]);
+  const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
   const [loadingPackages, setLoadingPackages] = useState(false);
   const [bookingDate, setBookingDate] = useState('');
   const [guestCount, setGuestCount] = useState(250);
@@ -70,76 +82,38 @@ export default function VendorsPage() {
 
   const cities = ['ALL', 'Delhi NCR', 'Mumbai', 'Jaipur', 'Bengaluru', 'Lucknow', 'Udaipur', 'Goa', 'Chandigarh'];
 
-  useEffect(() => {
-    fetchVendors();
-  }, []);
-
   const fetchVendors = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/vendors');
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
+      if (selectedCategory && selectedCategory !== 'ALL') params.append('category', selectedCategory);
+      if (selectedCity && selectedCity !== 'ALL') params.append('city', selectedCity);
+      // Pass radius if needed
+      params.append('radius', '50');
+
+      const res = await fetch(`/api/vendors?${params.toString()}`);
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
-        setVendors(data.data);
+        let fetchedVendors = data.data;
+        if (onlyVerified) {
+          fetchedVendors = fetchedVendors.filter((v: any) => v.is_verified || v.verification_status === 'VERIFIED');
+        }
+        setVendors(fetchedVendors);
       } else {
-        // Fallback default sample vendors if database is newly initialized
-        setVendors([
-          {
-            id: '1',
-            business_name: 'Royal Palace & Banquets',
-            category: 'Venue',
-            city: 'Delhi NCR',
-            rating: 4.9,
-            review_count: 142,
-            starting_price: 150000,
-            cover_image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80',
-            is_verified: true,
-            description: 'Opulent wedding ballrooms, outdoor lawn gardens, and 5-star hospitality for grand Indian weddings.'
-          },
-          {
-            id: '2',
-            business_name: 'Shubh Shringaar Floral Decor',
-            category: 'Decorator',
-            city: 'Jaipur',
-            rating: 4.8,
-            review_count: 88,
-            starting_price: 75000,
-            cover_image: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
-            is_verified: true,
-            description: 'Custom thematic stage backdrops, exotic floral Mandaps, and whimsical fairy lighting.'
-          },
-          {
-            id: '3',
-            business_name: 'Kismet Cinematic Memories',
-            category: 'Photographer',
-            city: 'Mumbai',
-            rating: 5.0,
-            review_count: 64,
-            starting_price: 95000,
-            cover_image: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=800&q=80',
-            is_verified: true,
-            description: 'Candid wedding photography, cinematic 4K drone cinematography, and heirloom coffee table albums.'
-          },
-          {
-            id: '4',
-            business_name: 'Maharaja Gourmet Caterers',
-            category: 'Caterer',
-            city: 'Delhi NCR',
-            rating: 4.7,
-            review_count: 110,
-            starting_price: 1800,
-            cover_image: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=80',
-            is_verified: true,
-            description: 'Exquisite multi-cuisine royal banqueting, live Chaat & Teppanyaki counters, and artisanal desserts.'
-          }
-        ]);
+        setVendors([]);
       }
     } catch (err) {
       console.error('Error fetching vendors:', err);
+      setVendors([]);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchVendors();
+  }, [selectedCategory, selectedCity, onlyVerified]); // Fetch when these change
 
   const handleOpenBookingModal = async (vendor: Vendor) => {
     setSelectedVendor(vendor);
@@ -148,40 +122,54 @@ export default function VendorsPage() {
     setBookingSuccessMsg('');
     setBookingErrorMsg('');
     setSelectedPackageId('');
+    setSelectedAddOnIds([]);
     setLoadingPackages(true);
 
     try {
-      const res = await fetch(`/api/vendor/packages?vendor_id=${vendor.id}`);
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-        setVendorPackages(data.data);
-        setSelectedPackageId(data.data[0].id);
+      const [pkgRes, addOnRes] = await Promise.all([
+        fetch(`/api/vendor/packages?vendor_id=${vendor.id}`),
+        fetch(`/api/vendor/add-ons?vendor_id=${vendor.id}`).catch(() => null)
+      ]);
+
+      const pkgData = await pkgRes.json();
+      if (pkgData.success && Array.isArray(pkgData.data) && pkgData.data.length > 0) {
+        setVendorPackages(pkgData.data);
+        setSelectedPackageId(pkgData.data[0].id);
       } else {
-        // Sample standard packages
-        setVendorPackages([
-          {
-            id: 'pkg-silver',
-            name: 'Essential Silver Package',
-            tier: 'SILVER',
-            price: Number(vendor.starting_price) || 50000,
-            description: 'Core ceremony coverage, essential equipment, professional crew of 3, full-day service.'
-          },
-          {
-            id: 'pkg-gold',
-            name: 'Royal Gold Package',
-            tier: 'GOLD',
-            price: Math.round((Number(vendor.starting_price) || 50000) * 1.8),
-            description: 'Complete 2-day wedding celebration coverage, premium styling, dedicated coordinator, priority fulfillment.'
-          }
-        ]);
-        setSelectedPackageId('pkg-silver');
+        setVendorPackages([]);
+      }
+
+      if (addOnRes && addOnRes.ok) {
+        const addOnData = await addOnRes.json();
+        if (addOnData.success && Array.isArray(addOnData.data)) {
+          setVendorAddOns(addOnData.data);
+        } else {
+          setVendorAddOns([]);
+        }
+      } else {
+        setVendorAddOns([]);
       }
     } catch (err) {
-      console.error('Error loading vendor packages:', err);
+      console.error('Error loading vendor packages and add-ons:', err);
+      setVendorPackages([]);
+      setVendorAddOns([]);
     } finally {
       setLoadingPackages(false);
     }
   };
+
+  const handleToggleAddOn = (addonId: string) => {
+    setSelectedAddOnIds(prev =>
+      prev.includes(addonId) ? prev.filter(id => id !== addonId) : [...prev, addonId]
+    );
+  };
+
+  const selectedPkg = vendorPackages.find(p => p.id === selectedPackageId);
+  const selectedPkgPrice = selectedPkg ? Number(selectedPkg.price) : 0;
+  const selectedAddOnsTotal = vendorAddOns
+    .filter(a => selectedAddOnIds.includes(a.id))
+    .reduce((acc, a) => acc + Number(a.price || 0), 0);
+  const grandTotal = selectedPkgPrice + selectedAddOnsTotal;
 
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,16 +189,21 @@ export default function VendorsPage() {
 
     setBookingSubmitting(true);
     try {
-      const selectedPkg = vendorPackages.find(p => p.id === selectedPackageId);
+      const chosenAddOns = vendorAddOns.filter(a => selectedAddOnIds.includes(a.id));
+      let inquiryNotes = bookingNotes || `Booking inquiry for ${selectedPkg?.name || 'Tailored Package'}`;
+      if (chosenAddOns.length > 0) {
+        inquiryNotes += `\nSelected Add-ons: ` + chosenAddOns.map(a => `${a.name} (+₹${Number(a.price).toLocaleString('en-IN')})`).join(', ');
+      }
+
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vendor_id: selectedVendor?.id,
-          package_id: selectedPackageId.startsWith('pkg-') ? null : selectedPackageId,
+          package_id: selectedPackageId || null,
           event_date: bookingDate,
           guest_count: Number(guestCount),
-          notes: bookingNotes || `Booking inquiry for ${selectedPkg?.name || 'Standard Package'}`
+          notes: inquiryNotes
         })
       });
 
@@ -227,26 +220,14 @@ export default function VendorsPage() {
     }
   };
 
-  // Filter vendors
-  const filteredVendors = vendors.filter(v => {
-    const vCat = (v.category || v.category_name || '').toLowerCase();
-    const vCity = (v.city || '').toLowerCase();
-    const vName = (v.business_name || '').toLowerCase();
-    const query = searchQuery.toLowerCase();
-
-    const matchesQuery = !query || vName.includes(query) || vCat.includes(query) || vCity.includes(query);
-    const matchesCategory = selectedCategory === 'ALL' || vCat.includes(selectedCategory.toLowerCase());
-    const matchesCity = selectedCity === 'ALL' || vCity.includes(selectedCity.toLowerCase());
-    const matchesVerified = !onlyVerified || v.is_verified;
-
-    return matchesQuery && matchesCategory && matchesCity && matchesVerified;
-  }).sort((a, b) => {
+  // Sort vendors (filtering is now mostly backend-driven, but we keep sort local for fast UI interaction if needed, though backend sorts by rank by default)
+  const filteredVendors = [...vendors].sort((a, b) => {
     const ratingA = Number(a.rating) || 0;
     const ratingB = Number(b.rating) || 0;
     const priceA = Number(a.starting_price) || 0;
     const priceB = Number(b.starting_price) || 0;
 
-    if (sortBy === 'rating') return ratingB - ratingA;
+    if (sortBy === 'rating') return ratingB - ratingA; // Or fallback to organic_score if backend does it
     if (sortBy === 'price_asc') return priceA - priceB;
     if (sortBy === 'price_desc') return priceB - priceA;
     return 0;
@@ -298,7 +279,7 @@ export default function VendorsPage() {
                   </select>
                 </div>
 
-                <button className="btn-search-primary" onClick={() => {}}>
+                <button className="btn-search-primary" onClick={fetchVendors}>
                   Find Vendors
                 </button>
               </div>
@@ -426,7 +407,7 @@ export default function VendorsPage() {
 
                   return (
                     <div key={vendor.id} className="vendor-item-card">
-                      <div className="vendor-card-media">
+                      <div className="vendor-card-media" onClick={() => window.location.href = `/vendors/${vendor.id}`} style={{ cursor: 'pointer' }}>
                         <img
                           src={vendor.cover_image || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80'}
                           alt={vendor.business_name}
@@ -434,14 +415,20 @@ export default function VendorsPage() {
                         />
                         <div className="card-top-badges">
                           <span className="vendor-cat-badge">{vendor.category || vendor.category_name || 'Vendor'}</span>
-                          {vendor.is_verified !== false && (
-                            <span className="verified-gold-badge">✓ Verified</span>
+                          {vendor.is_sponsored && (
+                            <span className="sponsored-badge" style={{ marginLeft: '8px', background: 'rgba(255, 215, 0, 0.9)', color: '#000', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>Sponsored</span>
+                          )}
+                          {vendor.is_featured && !vendor.is_sponsored && (
+                            <span className="featured-badge" style={{ marginLeft: '8px', background: 'rgba(255, 105, 180, 0.9)', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>Featured</span>
+                          )}
+                          {(vendor.is_verified || vendor.verification_status === 'VERIFIED') && (
+                            <span className="verified-gold-badge" style={{ marginLeft: 'auto' }}>✓ Verified</span>
                           )}
                         </div>
                       </div>
 
                       <div className="vendor-card-body">
-                        <div className="card-header-row">
+                        <div className="card-header-row" onClick={() => window.location.href = `/vendors/${vendor.id}`} style={{ cursor: 'pointer' }}>
                           <h3 className="vendor-name-title">{vendor.business_name}</h3>
                           <div className="rating-pill">
                             <span className="star-icon">★</span>
@@ -518,27 +505,141 @@ export default function VendorsPage() {
                   )}
 
                   <div className="form-section">
-                    <label className="form-label">1. Choose Service Package</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <label className="form-label" style={{ margin: 0 }}>1. Choose Service Package</label>
+                      {vendorPackages.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowCompareModal(true)}
+                          className="compare-btn-inline"
+                        >
+                          ⚖️ Compare Packages Side-by-Side
+                        </button>
+                      )}
+                    </div>
+
                     {loadingPackages ? (
-                      <div className="p-4 text-center">Loading packages...</div>
+                      <div className="p-4 text-center" style={{ color: '#888', padding: '24px' }}>Loading packages...</div>
+                    ) : vendorPackages.length === 0 ? (
+                      <div className="custom-consultation-banner">
+                        <div style={{ fontSize: '15px', fontWeight: 700, color: '#1a202c', marginBottom: '4px' }}>
+                          ✨ Tailored Packages Upon Consultation
+                        </div>
+                        <p style={{ margin: 0, fontSize: '13px', color: '#718096' }}>
+                          This vendor crafts bespoke packages tailored to your ceremony and guest requirements. Starting from ₹{Number(selectedVendor?.starting_price || 15000).toLocaleString('en-IN')}.
+                        </p>
+                      </div>
                     ) : (
                       <div className="packages-selection-grid">
-                        {vendorPackages.map(pkg => (
-                          <div
-                            key={pkg.id}
-                            onClick={() => setSelectedPackageId(pkg.id)}
-                            className={`package-radio-card ${selectedPackageId === pkg.id ? 'selected' : ''}`}
-                          >
-                            <div className="pkg-header">
-                              <strong>{pkg.name}</strong>
-                              <span className="pkg-price">₹{Number(pkg.price).toLocaleString('en-IN')}</span>
+                        {vendorPackages.map(pkg => {
+                          const isSelected = selectedPackageId === pkg.id;
+                          const tier = pkg.package_tier || pkg.tier || 'STANDARD';
+                          const inclusionsList = Array.isArray(pkg.inclusions)
+                            ? pkg.inclusions
+                            : (typeof pkg.inclusions === 'string'
+                                ? pkg.inclusions.split(',').map(s => s.trim()).filter(Boolean)
+                                : (pkg.deliverables || []));
+                          return (
+                            <div
+                              key={pkg.id}
+                              onClick={() => setSelectedPackageId(pkg.id)}
+                              className={`package-radio-card ${isSelected ? 'selected' : ''}`}
+                            >
+                              <div className="pkg-header">
+                                <div>
+                                  <span className={`tier-badge ${tier}`}>
+                                    {tier}
+                                  </span>
+                                  <strong style={{ display: 'block', marginTop: '4px', fontSize: '15px', color: '#1a202c' }}>
+                                    {pkg.name}
+                                  </strong>
+                                </div>
+                                <span className="pkg-price">₹{Number(pkg.price).toLocaleString('en-IN')}</span>
+                              </div>
+                              <p className="pkg-desc">{pkg.description}</p>
+                              {inclusionsList.length > 0 && (
+                                <div className="pkg-inclusions-mini">
+                                  {inclusionsList.slice(0, 3).map((item: string, idx: number) => (
+                                    <span key={idx} className="inclusion-pill">✓ {item}</span>
+                                  ))}
+                                  {inclusionsList.length > 3 && (
+                                    <span className="inclusion-pill more">+{inclusionsList.length - 3} more</span>
+                                  )}
+                                </div>
+                              )}
+                              {pkg.guest_capacity && (
+                                <div style={{ fontSize: '11px', color: '#718096', marginTop: '6px' }}>
+                                  👥 Capacity: Up to {pkg.guest_capacity} guests
+                                </div>
+                              )}
                             </div>
-                            <p className="pkg-desc">{pkg.description}</p>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
+
+                  {/* Optional Add-ons Section */}
+                  {vendorAddOns.length > 0 && (
+                    <div className="form-section add-ons-section" style={{ marginTop: '20px', marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <label className="form-label" style={{ margin: 0 }}>✨ Optional Enhancements & Add-ons</label>
+                        <span style={{ fontSize: '12px', color: '#718096' }}>Select any to include</span>
+                      </div>
+                      <div className="addons-grid">
+                        {vendorAddOns.map(addon => {
+                          const isChecked = selectedAddOnIds.includes(addon.id);
+                          return (
+                            <div
+                              key={addon.id}
+                              onClick={() => handleToggleAddOn(addon.id)}
+                              className={`addon-choice-card ${isChecked ? 'checked' : ''}`}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {}}
+                                  style={{ accentColor: '#ff2a73', marginTop: '3px', cursor: 'pointer' }}
+                                />
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <strong style={{ fontSize: '13px', color: '#1a202c' }}>{addon.name}</strong>
+                                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#ff2a73' }}>
+                                      +₹{Number(addon.price).toLocaleString('en-IN')}
+                                    </span>
+                                  </div>
+                                  {addon.description && (
+                                    <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#718096', lineHeight: 1.4 }}>
+                                      {addon.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pricing Summary Bar */}
+                  {(selectedPkg || selectedAddOnIds.length > 0) && (
+                    <div className="pricing-summary-bar">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: '12px', color: '#718096', fontWeight: 600 }}>Estimated Total</div>
+                          <div style={{ fontSize: '11px', color: '#a0aec0' }}>
+                            {selectedPkg ? selectedPkg.name : 'Custom Consultation'}
+                            {selectedAddOnIds.length > 0 && ` + ${selectedAddOnIds.length} add-on${selectedAddOnIds.length > 1 ? 's' : ''}`}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#031710' }}>
+                          ₹{grandTotal.toLocaleString('en-IN')}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="form-row-2">
                     <div className="form-group">
@@ -615,6 +716,24 @@ export default function VendorsPage() {
         initialMode={authMode}
         onClose={() => setAuthModalOpen(false)}
       />
+
+      {/* Package Comparison Modal */}
+      {selectedVendor && (
+        <PackageComparisonModal
+          isOpen={showCompareModal}
+          vendorId={selectedVendor.id}
+          serviceId={selectedPkg?.service_id}
+          initialPackageId={selectedPackageId}
+          onClose={() => setShowCompareModal(false)}
+          onSelectPackage={(pkg, addOns) => {
+            setSelectedPackageId(pkg.id);
+            if (addOns && addOns.length > 0) {
+              setSelectedAddOnIds(addOns.map(a => a.id));
+            }
+            setShowCompareModal(false);
+          }}
+        />
+      )}
 
       <Footer />
 
@@ -1076,6 +1195,23 @@ export default function VendorsPage() {
           margin-bottom: 8px;
         }
 
+        .compare-btn-inline {
+          background: rgba(229, 193, 88, 0.12);
+          color: #8c6d1f;
+          border: 1px solid rgba(229, 193, 88, 0.4);
+          padding: 5px 12px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .compare-btn-inline:hover {
+          background: #e5c158;
+          color: #031710;
+        }
+
         .packages-selection-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -1088,17 +1224,54 @@ export default function VendorsPage() {
           padding: 14px;
           cursor: pointer;
           transition: all 0.2s ease;
+          background: #fff;
+        }
+
+        .package-radio-card:hover {
+          border-color: #cbd5e0;
         }
 
         .package-radio-card.selected {
           border-color: #e5c158;
           background: rgba(229, 193, 88, 0.08);
+          box-shadow: 0 4px 14px rgba(229, 193, 88, 0.18);
+        }
+
+        .tier-badge {
+          display: inline-block;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          padding: 2px 6px;
+          border-radius: 4px;
+        }
+
+        .tier-badge.BASIC {
+          background: #edf2f7;
+          color: #4a5568;
+        }
+
+        .tier-badge.STANDARD {
+          background: rgba(229, 193, 88, 0.2);
+          color: #8c6d1f;
+        }
+
+        .tier-badge.PREMIUM {
+          background: linear-gradient(135deg, rgba(229, 193, 88, 0.3) 0%, rgba(255, 42, 115, 0.2) 100%);
+          color: #9b2c2c;
+          border: 1px solid rgba(229, 193, 88, 0.5);
+        }
+
+        .tier-badge.CUSTOM {
+          background: #e2e8f0;
+          color: #2d3748;
         }
 
         .pkg-header {
           display: flex;
           justify-content: space-between;
-          align-items: center;
+          align-items: flex-start;
           margin-bottom: 6px;
         }
 
@@ -1112,6 +1285,70 @@ export default function VendorsPage() {
           font-size: 12px;
           color: #666;
           line-height: 1.4;
+          margin: 0;
+        }
+
+        .pkg-inclusions-mini {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+          margin-top: 8px;
+        }
+
+        .inclusion-pill {
+          font-size: 10.5px;
+          background: #f7fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 4px;
+          padding: 2px 6px;
+          color: #4a5568;
+        }
+
+        .inclusion-pill.more {
+          background: rgba(229, 193, 88, 0.15);
+          color: #8c6d1f;
+          font-weight: 600;
+          border-color: rgba(229, 193, 88, 0.3);
+        }
+
+        .addons-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .addon-choice-card {
+          border: 1.5px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 10px 12px;
+          background: #fff;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .addon-choice-card:hover {
+          border-color: #cbd5e0;
+        }
+
+        .addon-choice-card.checked {
+          border-color: #ff2a73;
+          background: rgba(255, 42, 115, 0.03);
+          box-shadow: 0 2px 8px rgba(255, 42, 115, 0.12);
+        }
+
+        .pricing-summary-bar {
+          background: linear-gradient(135deg, rgba(3, 23, 16, 0.04) 0%, rgba(229, 193, 88, 0.12) 100%);
+          border: 1.5px solid rgba(229, 193, 88, 0.35);
+          border-radius: 10px;
+          padding: 12px 16px;
+          margin-bottom: 16px;
+        }
+
+        .custom-consultation-banner {
+          padding: 16px;
+          background: #f7fafc;
+          border: 1.5px dashed #cbd5e0;
+          border-radius: 10px;
         }
 
         .form-row-2 {

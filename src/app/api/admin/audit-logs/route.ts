@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
+import { verifyAdminRole } from '@/lib/rbac';
 
 export async function GET(req: NextRequest) {
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
+    if (!authResult.ok) return authResult.response;
+
   try {
     const user = await getSessionUser();
     if (!user || user.role !== 'SUPER_ADMIN') {
@@ -15,6 +19,10 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const action = searchParams.get('action');
     const entity = searchParams.get('entity');
+    const actor = searchParams.get('actor');
+    const role = searchParams.get('role');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const offset = (page - 1) * limit;
@@ -38,6 +46,22 @@ export async function GET(req: NextRequest) {
     if (entity) {
       sql += ` AND al.entity_type = ?`;
       params.push(entity);
+    }
+    if (actor) {
+      sql += ` AND al.user_id = ?`;
+      params.push(actor);
+    }
+    if (role) {
+      sql += ` AND al.role = ?`;
+      params.push(role);
+    }
+    if (startDate) {
+      sql += ` AND al.created_at >= ?`;
+      params.push(startDate);
+    }
+    if (endDate) {
+      sql += ` AND al.created_at <= ?`;
+      params.push(endDate);
     }
 
     sql += ` ORDER BY al.created_at DESC LIMIT ? OFFSET ?`;

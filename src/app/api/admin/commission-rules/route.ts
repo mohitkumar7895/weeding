@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSessionUser, logAudit } from '@/lib/auth';
 import { randomUUID } from 'crypto';
+import { verifyAdminRole } from '@/lib/rbac';
 
 export async function GET(req: NextRequest) {
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
+    if (!authResult.ok) return authResult.response;
+
   try {
     const admin = await getSessionUser();
     if (!admin || (admin.role !== 'SUPER_ADMIN' && admin.role !== 'FINANCE')) {
@@ -28,6 +32,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
+    if (!authResult.ok) return authResult.response;
+
   try {
     const admin = await getSessionUser();
     if (!admin || (admin.role !== 'SUPER_ADMIN' && admin.role !== 'FINANCE')) {
@@ -84,6 +91,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
+    if (!authResult.ok) return authResult.response;
+
   try {
     const admin = await getSessionUser();
     if (!admin || (admin.role !== 'SUPER_ADMIN' && admin.role !== 'ADMIN' && admin.role !== 'FINANCE')) {

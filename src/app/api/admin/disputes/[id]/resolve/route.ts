@@ -1,87 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { getSessionUser, logAudit } from '@/lib/auth';
-import { randomUUID } from 'crypto';
+import { verifyAdminRole } from '@/lib/rbac';
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest, { params }: any) {
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
+    if (!authResult.ok) return authResult.response;
+
   try {
-    const admin = await getSessionUser();
-    if (!admin || (admin.role !== 'SUPER_ADMIN' && admin.role !== 'ADMIN' && admin.role !== 'SUPPORT')) {
-      return NextResponse.json({ success: false, message: 'Support or Admin access required to resolve disputes' }, { status: 403 });
+    const user = await getSessionUser();
+    if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'FINANCE')) {
+      return NextResponse.json({ success: false, message: 'Finance or Super Admin authorization required' }, { status: 403 });
     }
 
-    const { id: disputeId } = await params;
+    const disputeId = params.id;
     const body = await req.json();
-    const { resolution_decision, resolution_notes } = body;
-    // resolution_decision: 'REFUND_CUSTOMER' | 'PAYOUT_VENDOR' | 'SPLIT' | 'REJECT_COMPLAINT'
+    const { status, resolution_notes, issue_refund_amount } = body;
 
-    if (!resolution_decision || !resolution_notes) {
-      return NextResponse.json({ success: false, message: 'Resolution decision and notes are required' }, { status: 400 });
-    }
-
-    const disputes = await query<any[]>(`SELECT * FROM disputes WHERE id = ?`, [disputeId]);
-    if (!disputes.length) {
-      return NextResponse.json({ success: false, message: 'Dispute not found' }, { status: 404 });
-    }
-    const dispute = disputes[0];
-
-    const bookings = await query<any[]>(`SELECT * FROM bookings WHERE id = ?`, [dispute.booking_id]);
-    const booking = bookings.length ? bookings[0] : null;
+    const [dispute] = await query<any[]>(`SELECT * FROM disputes WHERE id = ?`, [disputeId]);
+    if (!dispute) return NextResponse.json({ success: false, message: 'Dispute not found' }, { status: 404 });
 
     await transaction(async (conn) => {
-      // 1. Update dispute status
       await conn.execute(
-        `UPDATE disputes SET 
-          status = 'RESOLVED',
-          resolution = ?,
-          resolved_at = CURRENT_TIMESTAMP
-        WHERE id = ?`,
-        [JSON.stringify({ decision: resolution_decision, notes: resolution_notes, resolved_by: admin.id }), disputeId]
+        `UPDATE disputes SET status = ?, resolution = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        [status, resolution_notes, disputeId]
       );
 
-      // 2. Financial settlement based on decision
-      if (booking) {
-        if (resolution_decision === 'REFUND_CUSTOMER') {
-          // Refund full amount to customer, cancel vendor payout
-          await conn.execute(
-            `INSERT INTO refunds (id, booking_id, amount, reason, status)
-             VALUES (?, ?, ?, ?, 'COMPLETED')`,
-            [randomUUID(), booking.id, booking.total_amount, `Dispute ${disputeId} resolved: Customer refund.`]
-          );
-          await conn.execute(`UPDATE bookings SET status = 'REFUNDED', updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [booking.id]);
-          await conn.execute(`UPDATE payouts SET status = 'CANCELLED' WHERE booking_id = ?`, [booking.id]);
-        } else if (resolution_decision === 'PAYOUT_VENDOR') {
-          // Release vendor payout
-          await conn.execute(`UPDATE bookings SET status = 'COMPLETED', updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [booking.id]);
-          await conn.execute(`UPDATE payouts SET status = 'ELIGIBLE' WHERE booking_id = ?`, [booking.id]);
-        } else {
-          // Reject complaint
-          await conn.execute(`UPDATE bookings SET status = 'COMPLETED', updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [booking.id]);
-        }
-
-        // Record status history
-        await conn.execute(
-          `INSERT INTO booking_status_history (id, booking_id, from_status, to_status, changed_by, reason)
-           VALUES (?, ?, 'DISPUTED', ?, ?, ?)`,
-          [randomUUID(), booking.id, resolution_decision === 'REFUND_CUSTOMER' ? 'REFUNDED' : 'COMPLETED', admin.id, `Dispute Resolution: ${resolution_decision}`]
-        );
+      // If resolving requires a refund adjustment
+      if (issue_refund_amount > 0) {
+         // Create a refund record securely linked to this dispute (or update an existing)
+         // Assuming we create a new one to track the admin adjustment
+         const { randomUUID } = require('crypto');
+         await conn.execute(
+           `INSERT INTO refunds (id, booking_id, amount, reason, status, original_amount)
+            VALUES (?, ?, ?, ?, 'COMPLETED', ?)`,
+           [randomUUID(), dispute.booking_id, issue_refund_amount, 'Admin Dispute Resolution', dispute.amount_under_dispute || 0]
+         );
       }
     });
 
-    await logAudit(admin.id, 'RESOLVE_DISPUTE', 'disputes', disputeId, {
-      decision: resolution_decision,
-      notes: resolution_notes,
-    });
+    await logAudit(user.id, 'RESOLVE_DISPUTE', 'disputes', disputeId, { status, refund: issue_refund_amount });
 
-    return NextResponse.json({
-      success: true,
-      message: `Dispute resolved successfully with decision: ${resolution_decision}`,
-    });
+    return NextResponse.json({ success: true, message: 'Dispute resolved' });
+
   } catch (error: any) {
-    console.error('Resolve dispute error:', error);
+    console.error('Dispute resolve error:', error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

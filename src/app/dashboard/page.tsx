@@ -243,10 +243,10 @@ export default function CustomerDashboardPage() {
   const handleCancelBooking = async () => {
     if (!cancelModalBooking) return;
     try {
-      const res = await fetch(`/api/bookings/${cancelModalBooking.id}/cancel`, {
+      const res = await fetch(`/api/cancellations/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: cancelReason }),
+        body: JSON.stringify({ booking_id: cancelModalBooking.id, reason: cancelReason }),
       });
       const data = await res.json();
       if (data.success) {

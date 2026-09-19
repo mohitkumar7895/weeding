@@ -23,100 +23,92 @@ export async function POST(
     }
     const booking = bookings[0];
 
+    const { defaultPaymentProvider } = await import('@/services/paymentProvider');
+
+    // Make sure booking is in an eligible state
+    if (!['REQUESTED', 'PENDING_VENDOR', 'ACCEPTED', 'PAYMENT_PENDING'].includes(booking.status)) {
+      return NextResponse.json({ success: false, message: 'Booking is not in a valid state for payment initiation' }, { status: 400 });
+    }
+
+    // --- RETRY SAFETY & DUPLICATE PREVENTION ---
+    const existingTxns = await query<any[]>(
+      `SELECT id, status, created_at FROM payment_transactions WHERE booking_id = ? ORDER BY created_at DESC`,
+      [id]
+    );
+
+    const hasSuccess = existingTxns.some(t => t.status === 'SUCCESS');
+    if (hasSuccess) {
+      return NextResponse.json({ success: false, message: 'A successful payment already exists for this booking. Duplicate charge prevented.' }, { status: 400 });
+    }
+
+    const recentPending = existingTxns.find(t => t.status === 'PENDING' && (new Date().getTime() - new Date(t.created_at).getTime()) < 15 * 60 * 1000);
+    if (recentPending) {
+      return NextResponse.json({ success: false, message: 'A payment is currently processing. Please wait a few minutes before retrying to prevent double-charging.' }, { status: 409 });
+    }
+    // -------------------------------------------
+
     const paymentId = randomUUID();
-    const txnRef = `TXN_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+    const receiptNumber = `RCPT_${booking.booking_number}_${Date.now()}`;
+
+    // 1. Create order with payment provider
+    const order = await defaultPaymentProvider.createOrder({
+      amount: booking.total_amount,
+      currency: 'INR',
+      bookingId: id,
+      receiptNumber
+    });
 
     await transaction(async (conn) => {
-      // 1. Record payment transaction
+      // 2. Record payment transaction as PENDING
       await conn.execute(
         `INSERT INTO payment_transactions (
           id, booking_id, transaction_ref, amount, currency, provider, status, payment_details
-        ) VALUES (?, ?, ?, ?, 'INR', ?, 'SUCCESS', ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?)`,
         [
           paymentId,
           id,
-          txnRef,
+          order.orderId,
           booking.total_amount,
-          provider,
+          order.currency,
+          order.provider,
           JSON.stringify({
-            gateway: provider,
-            paid_at: new Date().toISOString(),
+            receipt: receiptNumber,
+            initiated_at: new Date().toISOString(),
             payer_user_id: user.id
           })
         ]
       );
 
-      // 2. Update booking status to CONFIRMED
-      await conn.execute(
-        `UPDATE bookings SET status = 'CONFIRMED', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-        [id]
-      );
-
-      // 3. Lock vendor date in vendor_availability
-      await conn.execute(
-        `INSERT INTO vendor_availability (id, vendor_id, date, is_booked, notes)
-         VALUES (?, ?, ?, TRUE, ?)
-         ON DUPLICATE KEY UPDATE is_booked = TRUE, notes = VALUES(notes)`,
-        [randomUUID(), booking.vendor_id, booking.event_date, `Locked by Confirmed Booking ${booking.booking_number}`]
-      );
-
-      // 4. Record in booking_status_history
-      await conn.execute(
-        `INSERT INTO booking_status_history (id, booking_id, from_status, to_status, changed_by, reason)
-         VALUES (?, ?, ?, 'CONFIRMED', ?, ?)`,
-        [randomUUID(), id, booking.status, user.id, `Payment confirmed via ${provider} (Txn: ${txnRef})`]
-      );
-
-      // 5. Create payout record for the vendor (status PENDING)
-      await conn.execute(
-        `INSERT INTO payouts (
-          id, vendor_id, booking_id, amount, status, reference_id
-        ) VALUES (?, ?, ?, ?, 'PENDING', ?)`,
-        [
-          randomUUID(),
-          booking.vendor_id,
-          id,
-          booking.vendor_payout_amount,
-          `PAYOUT_REF_${Date.now()}`
-        ]
-      );
+      // 3. Update booking status to PAYMENT_PENDING if not already
+      if (booking.status !== 'PAYMENT_PENDING') {
+        await conn.execute(
+          `UPDATE bookings SET status = 'PAYMENT_PENDING', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+          [id]
+        );
+        
+        await conn.execute(
+          `INSERT INTO booking_status_history (id, booking_id, from_status, to_status, changed_by, reason)
+           VALUES (?, ?, ?, 'PAYMENT_PENDING', ?, ?)`,
+          [randomUUID(), id, booking.status, user.id, `Payment initiated via ${order.provider}`]
+        );
+      }
     });
 
-    // Notify parties
-    try {
-      const { sendNotification } = await import('@/services/notificationService');
-      const vendorUser = await query<any[]>(`SELECT user_id FROM vendors WHERE id = ?`, [booking.vendor_id]);
-      if (vendorUser.length > 0) {
-        await sendNotification({
-          userId: vendorUser[0].user_id,
-          type: 'PAYMENT',
-          title: 'Booking Confirmed & Escrow Funded',
-          message: `Payment of ₹${parseFloat(booking.total_amount).toLocaleString('en-IN')} confirmed for booking ${booking.booking_number}. Event date ${booking.event_date} is now officially locked!`,
-          deepLink: '/vendor',
-        });
-      }
-      await sendNotification({
-        userId: user.id,
-        type: 'PAYMENT',
-        title: 'Payment Successful',
-        message: `Your booking ${booking.booking_number} is confirmed! ₹${parseFloat(booking.total_amount).toLocaleString('en-IN')} is safely secured in WedWithMe Escrow protection.`,
-        deepLink: '/dashboard',
-      });
-    } catch {}
-
-    await logAudit(user.id, 'RECORD_PAYMENT', 'payment_transactions', paymentId, {
+    await logAudit(user.id, 'INITIATE_PAYMENT', 'payment_transactions', paymentId, {
       booking_id: id,
       amount: booking.total_amount,
-      txn_ref: txnRef
+      order_id: order.orderId
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Payment recorded successfully. Booking is now CONFIRMED.',
+      message: 'Payment initiated successfully.',
       data: {
-        transaction_ref: txnRef,
+        order_id: order.orderId,
         amount: booking.total_amount,
-        status: 'CONFIRMED'
+        currency: order.currency,
+        provider: order.provider,
+        payment_transaction_id: paymentId
       }
     });
   } catch (error: any) {

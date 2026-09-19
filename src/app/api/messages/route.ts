@@ -15,7 +15,19 @@ export async function GET(req: NextRequest) {
     let convId = conversationId;
     if (!convId && bookingId) {
       const convRows = await query<any[]>(`SELECT id FROM conversations WHERE booking_id = ?`, [bookingId]);
-      if (convRows.length) convId = convRows[0].id;
+      if (convRows.length) {
+        convId = convRows[0].id;
+      } else {
+        const bRows = await query<any[]>(`SELECT customer_id, vendor_id FROM bookings WHERE id = ?`, [bookingId]);
+        if (bRows.length > 0) {
+          convId = randomUUID();
+          await query(
+            `INSERT INTO conversations (id, booking_id, customer_id, vendor_id, status)
+             VALUES (?, ?, ?, ?, 'ACTIVE')`,
+            [convId, bookingId, bRows[0].customer_id, bRows[0].vendor_id]
+          );
+        }
+      }
     }
 
     if (!convId) {
@@ -23,15 +35,20 @@ export async function GET(req: NextRequest) {
     }
 
     const messages = await query<any[]>(
-      `SELECT cm.*, u.name as sender_name, u.role as sender_role
+      `SELECT cm.*, cm.message as body, u.name as sender_name, u.role as sender_role
        FROM conversation_messages cm
        JOIN users u ON cm.sender_id = u.id
        WHERE cm.conversation_id = ?
-       ORDER BY cm.created_at ASC`,
+       ORDER BY cm.created_at ASC, cm.id ASC`,
       [convId]
     );
 
-    return NextResponse.json({ success: true, data: messages, conversation_id: convId });
+    return NextResponse.json({
+      success: true,
+      data: messages,
+      messages: messages,
+      conversation_id: convId,
+    });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
@@ -43,22 +60,31 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { booking_id, vendor_id, message } = body;
+    const { booking_id, vendor_id } = body;
+    const messageText = (body.message || body.body || '').trim();
 
-    if (!message || (!booking_id && !vendor_id)) {
-      return NextResponse.json({ success: false, message: 'Message and booking/vendor context required' }, { status: 400 });
+    if (!messageText || (!booking_id && !vendor_id)) {
+      return NextResponse.json({ success: false, message: 'Message text and booking/vendor context required' }, { status: 400 });
     }
 
     // Determine customer and vendor IDs
     let customerId = user.id;
     let targetVendorId = vendor_id;
 
-    if (user.role === 'CUSTOMER') {
-      const cust = await query<any[]>(`SELECT id FROM customer_profiles WHERE user_id = ?`, [user.id]);
-      if (cust.length) customerId = cust[0].id;
-    } else if (user.role === 'VENDOR') {
-      const v = await query<any[]>(`SELECT id FROM vendors WHERE user_id = ?`, [user.id]);
-      if (v.length) targetVendorId = v[0].id;
+    if (booking_id) {
+      const bRows = await query<any[]>(`SELECT customer_id, vendor_id FROM bookings WHERE id = ?`, [booking_id]);
+      if (bRows.length > 0) {
+        customerId = bRows[0].customer_id;
+        targetVendorId = bRows[0].vendor_id;
+      }
+    } else {
+      if (user.role === 'CUSTOMER') {
+        const cust = await query<any[]>(`SELECT id FROM customer_profiles WHERE user_id = ?`, [user.id]);
+        if (cust.length) customerId = cust[0].id;
+      } else if (user.role === 'VENDOR') {
+        const v = await query<any[]>(`SELECT id FROM vendors WHERE user_id = ?`, [user.id]);
+        if (v.length) targetVendorId = v[0].id;
+      }
     }
 
     // Find or create conversation
@@ -80,15 +106,25 @@ export async function POST(req: NextRequest) {
     }
 
     const msgId = randomUUID();
+    const createdAt = new Date().toISOString();
     await query(
       `INSERT INTO conversation_messages (id, conversation_id, sender_id, message, is_read)
        VALUES (?, ?, ?, ?, FALSE)`,
-      [msgId, convId, user.id, message]
+      [msgId, convId, user.id, messageText]
     );
 
     return NextResponse.json({
       success: true,
-      data: { id: msgId, conversation_id: convId, message, sender_id: user.id }
+      data: {
+        id: msgId,
+        conversation_id: convId,
+        message: messageText,
+        body: messageText,
+        sender_id: user.id,
+        sender_name: user.name,
+        sender_role: user.role,
+        created_at: createdAt,
+      }
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSessionUser, logAudit } from '@/lib/auth';
 import { randomUUID } from 'crypto';
+import { detectDuplicateProfile } from '@/lib/fraud-service';
 
 interface ProfileFields {
   gender?: string;
@@ -556,6 +557,13 @@ export async function PUT(req: NextRequest) {
         entityType: 'CustomerProfile',
         entityId: profileId,
       });
+
+      // Background duplicate profile detection
+      detectDuplicateProfile(session.id, profileId, {
+        name: name || '',
+        gender: finalGender || '',
+        date_of_birth: finalDob || '',
+      }).catch(err => console.error('[Fraud Service bg error]', err));
 
       return NextResponse.json({
         success: true,

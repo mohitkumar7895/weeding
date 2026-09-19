@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { getSessionUser, logAudit } from '@/lib/auth';
 import { randomUUID } from 'crypto';
+import { verifyAdminRole } from '@/lib/rbac';
 
 export async function GET(req: NextRequest) {
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
+    if (!authResult.ok) return authResult.response;
+
   try {
     const user = await getSessionUser();
     if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'FINANCE')) {
@@ -39,6 +43,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
+    if (!authResult.ok) return authResult.response;
+
   try {
     const user = await getSessionUser();
     if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'FINANCE')) {
@@ -49,23 +56,23 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { payout_id, status = 'PAID', reference_id } = body;
+    const { payout_id, status = 'PAID', reference_id, error_message } = body;
 
     if (!payout_id) return NextResponse.json({ success: false, message: 'payout_id required' }, { status: 400 });
 
-    const ref = reference_id || `SETTLE_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+    const ref = reference_id || (status === 'PAID' ? `SETTLE_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}` : null);
 
     await transaction(async (conn) => {
       await conn.execute(
-        `UPDATE payouts SET status = ?, reference_id = ?, payout_date = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        `UPDATE payouts SET status = ?, reference_id = COALESCE(?, reference_id), updated_at = CURRENT_TIMESTAMP ${status === 'PAID' ? ', payout_date = CURRENT_TIMESTAMP' : ''} WHERE id = ?`,
         [status, ref, payout_id]
       );
 
       // Record payout attempt
       await conn.execute(
-        `INSERT INTO payout_attempts (id, payout_id, attempt_number, status, response_payload)
-         VALUES (?, ?, 1, 'SUCCESS', ?)`,
-        [randomUUID(), payout_id, JSON.stringify({ reference_id: ref, settled_by: user.id })]
+        `INSERT INTO payout_attempts (id, payout_id, attempt_number, status, response_payload, error_message)
+         VALUES (?, ?, 1, ?, ?, ?)`,
+        [randomUUID(), payout_id, status === 'PAID' ? 'SUCCESS' : (status === 'FAILED' ? 'FAILED' : 'MANUAL_REVIEW'), JSON.stringify({ reference_id: ref, resolved_by: user.id }), error_message || null]
       );
     });
 

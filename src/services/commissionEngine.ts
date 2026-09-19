@@ -58,12 +58,31 @@ export async function calculateCommission(
 
 function applyRule(rule: any, totalAmount: number): CommissionCalculationResult {
   let commission = 0;
-  const value = parseFloat(rule.commission_value);
+  let appliedValue = parseFloat(rule.commission_value);
+
+  if (rule.tiers_json) {
+    try {
+      const tiers = typeof rule.tiers_json === 'string' ? JSON.parse(rule.tiers_json) : rule.tiers_json;
+      if (Array.isArray(tiers) && tiers.length > 0) {
+        // Find matching tier
+        for (const tier of tiers) {
+          const min = parseFloat(tier.min_amount) || 0;
+          const max = tier.max_amount ? parseFloat(tier.max_amount) : Infinity;
+          if (totalAmount >= min && totalAmount <= max) {
+             appliedValue = parseFloat(tier.commission_value);
+             break;
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing commission rule tiers JSON', e);
+    }
+  }
 
   if (rule.commission_type === 'PERCENTAGE') {
-    commission = (totalAmount * value) / 100;
+    commission = (totalAmount * appliedValue) / 100;
   } else {
-    commission = value;
+    commission = appliedValue;
   }
 
   if (rule.min_fee && commission < parseFloat(rule.min_fee)) {
@@ -77,7 +96,7 @@ function applyRule(rule: any, totalAmount: number): CommissionCalculationResult 
     ruleId: rule.id,
     ruleName: rule.rule_name,
     commissionType: rule.commission_type,
-    commissionValue: value,
+    commissionValue: appliedValue,
     totalAmount,
     commissionAmount: Math.round(commission * 100) / 100,
     vendorPayoutAmount: Math.round((totalAmount - commission) * 100) / 100,

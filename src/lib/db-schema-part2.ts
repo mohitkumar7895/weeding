@@ -1,5 +1,8 @@
 import mysql from 'mysql2/promise';
-
+// @ts-ignore
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+dotenv.config();
 const DB_HOST = process.env.DB_HOST || '127.0.0.1';
 const DB_USER = process.env.DB_USER || 'root';
 const DB_PASSWORD = process.env.DB_PASSWORD || '';
@@ -75,6 +78,44 @@ export async function runPart2Migrations() {
       add_on_price DECIMAL(10, 2) DEFAULT 0.00,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (package_id) REFERENCES vendor_packages(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+    // 3b. Vendor Add-ons
+    `CREATE TABLE IF NOT EXISTS vendor_add_ons (
+      id VARCHAR(36) PRIMARY KEY,
+      vendor_id VARCHAR(36) NOT NULL,
+      service_id VARCHAR(36) NULL,
+      package_id VARCHAR(36) NULL,
+      name VARCHAR(191) NOT NULL,
+      description TEXT NULL,
+      price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE,
+      FOREIGN KEY (service_id) REFERENCES vendor_services(id) ON DELETE CASCADE,
+      FOREIGN KEY (package_id) REFERENCES vendor_packages(id) ON DELETE SET NULL,
+      INDEX idx_addon_vendor (vendor_id),
+      INDEX idx_addon_service (service_id),
+      INDEX idx_addon_package (package_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+    // 3c. Vendor Booking Locks (Anti-Double-Booking foundation)
+    `CREATE TABLE IF NOT EXISTS vendor_booking_locks (
+      id VARCHAR(64) PRIMARY KEY,
+      vendor_id VARCHAR(64) NOT NULL,
+      service_id VARCHAR(64) NOT NULL DEFAULT 'ALL',
+      booking_id VARCHAR(64) NULL,
+      lock_token VARCHAR(64) NOT NULL UNIQUE,
+      event_date DATE NOT NULL,
+      status ENUM('LOCKED', 'CONFIRMED', 'RELEASED', 'EXPIRED') NOT NULL DEFAULT 'LOCKED',
+      locked_by_user_id VARCHAR(64) NOT NULL,
+      expires_at DATETIME NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_vbl_vendor_date (vendor_id, event_date, status),
+      INDEX idx_vbl_expires (expires_at),
+      FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
     // 4. Booking Status History
@@ -323,8 +364,194 @@ export async function runPart2Migrations() {
 
   // Optional Safe Column Alterations
   try {
-    await db.query(`ALTER TABLE vendor_packages ADD COLUMN moderation_status ENUM('PENDING_REVIEW', 'APPROVED', 'REJECTED') DEFAULT 'APPROVED'`);
-  } catch {}
+    // Commissions & Payouts Updates
+    await db.query(`ALTER TABLE commission_rules ADD COLUMN IF NOT EXISTS tiers_json JSON NULL`);
+    await db.query(`ALTER TABLE commission_records ADD COLUMN IF NOT EXISTS gross_amount DECIMAL(12, 2) DEFAULT 0.00`);
+    await db.query(`ALTER TABLE commission_records ADD COLUMN IF NOT EXISTS vendor_net_amount DECIMAL(12, 2) DEFAULT 0.00`);
+    await db.query(`ALTER TABLE commission_records ADD COLUMN IF NOT EXISTS rule_id VARCHAR(36) NULL`);
+    await db.query(`ALTER TABLE commission_records ADD COLUMN IF NOT EXISTS rule_version INT DEFAULT 1`);
+    await db.query(`ALTER TABLE payouts MODIFY COLUMN status ENUM('PENDING', 'PROCESSING', 'PAID', 'FAILED', 'MANUAL_REVIEW') DEFAULT 'PENDING'`);
+    await db.query(`ALTER TABLE payout_attempts MODIFY COLUMN status ENUM('PENDING', 'SUCCESS', 'FAILED', 'MANUAL_REVIEW') DEFAULT 'PENDING'`);
+    
+    // Cancellation, Refunds, Disputes, and Reviews Updates
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS cancellation_rules (
+        id VARCHAR(36) PRIMARY KEY,
+        initiator_role ENUM('CUSTOMER', 'VENDOR', 'ADMIN') NOT NULL,
+        days_before_event_min INT NOT NULL,
+        days_before_event_max INT NULL,
+        refund_percentage DECIMAL(5,2) NOT NULL,
+        penalty_percentage DECIMAL(5,2) DEFAULT 0.00,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    // Seed default cancellation rules
+    try {
+      await db.query(`INSERT IGNORE INTO cancellation_rules (id, initiator_role, days_before_event_min, days_before_event_max, refund_percentage, penalty_percentage) VALUES 
+        ('cr_cus_1', 'CUSTOMER', 30, NULL, 100.00, 0.00),
+        ('cr_cus_2', 'CUSTOMER', 15, 29, 50.00, 0.00),
+        ('cr_cus_3', 'CUSTOMER', 0, 14, 0.00, 0.00),
+        ('cr_ven_1', 'VENDOR', 0, NULL, 100.00, 10.00)
+      `);
+    } catch {}
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS cancellations (
+        id VARCHAR(36) PRIMARY KEY,
+        booking_id VARCHAR(36) NOT NULL,
+        cancelled_by_role ENUM('CUSTOMER', 'VENDOR', 'ADMIN') NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        reason TEXT,
+        rule_applied_id VARCHAR(36) NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (booking_id) REFERENCES bookings(id),
+        FOREIGN KEY (rule_applied_id) REFERENCES cancellation_rules(id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await db.query(`ALTER TABLE refunds ADD COLUMN IF NOT EXISTS original_amount DECIMAL(12, 2) DEFAULT 0.00`);
+    await db.query(`ALTER TABLE refunds ADD COLUMN IF NOT EXISTS deduction_amount DECIMAL(12, 2) DEFAULT 0.00`);
+    await db.query(`ALTER TABLE refunds ADD COLUMN IF NOT EXISTS cancellation_id VARCHAR(36) NULL`);
+    await db.query(`ALTER TABLE refunds ADD COLUMN IF NOT EXISTS rule_applied_id VARCHAR(36) NULL`);
+    await db.query(`ALTER TABLE refunds MODIFY COLUMN status ENUM('REQUESTED', 'PENDING', 'PROCESSING', 'APPROVED', 'PROCESSED', 'REJECTED', 'COMPLETED', 'FAILED', 'MANUAL_REVIEW') DEFAULT 'PENDING'`);
+    
+    await db.query(`ALTER TABLE disputes ADD COLUMN IF NOT EXISTS payment_id VARCHAR(36) NULL`);
+    await db.query(`ALTER TABLE disputes ADD COLUMN IF NOT EXISTS amount_under_dispute DECIMAL(12, 2) NULL`);
+    await db.query(`ALTER TABLE disputes ADD COLUMN IF NOT EXISTS evidence_json JSON NULL`);
+    await db.query(`ALTER TABLE disputes ADD COLUMN IF NOT EXISTS escalation_deadline DATETIME NULL`);
+    await db.query(`ALTER TABLE disputes MODIFY COLUMN status ENUM('OPEN', 'EVIDENCE_REQUIRED', 'UNDER_REVIEW', 'ESCALATED', 'RESOLVED', 'REJECTED', 'CLOSED') DEFAULT 'OPEN'`);
+
+    await db.query(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS moderation_status ENUM('PENDING', 'PUBLISHED', 'REJECTED', 'HIDDEN') DEFAULT 'PUBLISHED'`);
+    await db.query(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS booking_id VARCHAR(36) NULL`);
+    try { await db.query(`ALTER TABLE reviews ADD UNIQUE INDEX idx_reviews_booking (booking_id)`); } catch {}
+
+    await db.query(`ALTER TABLE vendor_packages ADD COLUMN IF NOT EXISTS service_id VARCHAR(36) NULL`);
+    await db.query(`ALTER TABLE vendor_packages ADD COLUMN IF NOT EXISTS package_tier ENUM('BASIC', 'STANDARD', 'PREMIUM', 'CUSTOM') DEFAULT 'STANDARD'`);
+    await db.query(`ALTER TABLE vendor_packages ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
+    await db.query(`ALTER TABLE vendor_packages ADD COLUMN IF NOT EXISTS rejection_reason TEXT NULL`);
+    await db.query(`ALTER TABLE vendor_packages ADD COLUMN IF NOT EXISTS updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
+    await db.query(`ALTER TABLE vendor_packages MODIFY COLUMN moderation_status ENUM('DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED') DEFAULT 'PENDING_REVIEW'`);
+
+    // Booking Chat Schema
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS booking_messages (
+        id VARCHAR(36) PRIMARY KEY,
+        booking_id VARCHAR(36) NOT NULL,
+        sender_id VARCHAR(36) NOT NULL,
+        sender_role ENUM('CUSTOMER', 'VENDOR', 'ADMIN') NOT NULL,
+        message_type ENUM('TEXT', 'IMAGE', 'DOCUMENT') DEFAULT 'TEXT',
+        content TEXT NULL,
+        attachment_url VARCHAR(255) NULL,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (booking_id) REFERENCES bookings(id),
+        INDEX idx_bm_booking (booking_id, created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS message_reports (
+        id VARCHAR(36) PRIMARY KEY,
+        message_id VARCHAR(36) NOT NULL,
+        reporter_id VARCHAR(36) NOT NULL,
+        reason VARCHAR(191) NOT NULL,
+        description TEXT NULL,
+        status ENUM('PENDING', 'REVIEWED', 'ACTION_TAKEN', 'DISMISSED') DEFAULT 'PENDING',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (message_id) REFERENCES booking_messages(id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Notifications & Preferences Schema
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS notification_preferences (
+        user_id VARCHAR(36) NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        in_app_enabled BOOLEAN DEFAULT TRUE,
+        email_enabled BOOLEAN DEFAULT TRUE,
+        sms_enabled BOOLEAN DEFAULT FALSE,
+        push_enabled BOOLEAN DEFAULT FALSE,
+        whatsapp_enabled BOOLEAN DEFAULT FALSE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, category),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    
+    // In case table already existed before our modification script, alter it:
+    await db.query(`ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS whatsapp_enabled BOOLEAN DEFAULT FALSE`);
+
+    await db.query(`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'SYSTEM'`);
+    await db.query(`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS metadata_json JSON NULL`);
+    await db.query(`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(50) DEFAULT 'DELIVERED'`);
+
+    // WhatsApp Tracking Schema
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS whatsapp_deliveries (
+        id VARCHAR(36) PRIMARY KEY,
+        notification_id VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36) NOT NULL,
+        provider VARCHAR(50) DEFAULT 'UNCONFIGURED',
+        provider_reference_id VARCHAR(191) NULL,
+        status ENUM('PENDING', 'SENT', 'DELIVERED', 'FAILED') DEFAULT 'PENDING',
+        error_metadata JSON NULL,
+        retry_count INT DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE,
+        INDEX idx_wa_user (user_id),
+        INDEX idx_wa_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Sagun AI Schema
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS sagun_sessions (
+        id VARCHAR(36) PRIMARY KEY,
+        user_id VARCHAR(36) NOT NULL,
+        context_type ENUM('GENERAL', 'VENDOR_DISCOVERY', 'MATRIMONIAL', 'BOOKING') DEFAULT 'GENERAL',
+        context_id VARCHAR(36) NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS sagun_messages (
+        id VARCHAR(36) PRIMARY KEY,
+        session_id VARCHAR(36) NOT NULL,
+        role ENUM('USER', 'ASSISTANT', 'SYSTEM') NOT NULL,
+        content TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (session_id) REFERENCES sagun_sessions(id) ON DELETE CASCADE,
+        INDEX idx_sm_session (session_id, created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Vendor Reels Schema
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS vendor_reels (
+        id VARCHAR(36) PRIMARY KEY,
+        vendor_id VARCHAR(36) NOT NULL,
+        video_url VARCHAR(1024) NOT NULL,
+        thumbnail_url VARCHAR(1024) NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NULL,
+        status ENUM('PENDING', 'APPROVED', 'REJECTED', 'UNPUBLISHED') DEFAULT 'PENDING',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE,
+        INDEX idx_vr_vendor (vendor_id),
+        INDEX idx_vr_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+  } catch (err) {
+    console.error(err);
+  }
   try {
     await db.query(`ALTER TABLE vendor_packages ADD COLUMN is_published BOOLEAN DEFAULT TRUE`);
   } catch {}
@@ -352,6 +579,33 @@ export async function runPart2Migrations() {
     await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS website_url VARCHAR(255) DEFAULT NULL`);
     await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS instagram_handle VARCHAR(100) DEFAULT NULL`);
     await db.query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS profile_status ENUM('DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED', 'SUSPENDED') DEFAULT 'APPROVED'`);
+  } catch {}
+  try {
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS media_type ENUM('IMAGE', 'VIDEO') NOT NULL DEFAULT 'IMAGE'`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS media_url VARCHAR(500) NULL`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS thumbnail_url VARCHAR(500) NULL`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS title VARCHAR(191) NULL`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS description TEXT NULL`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS file_size INT UNSIGNED DEFAULT 0`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS mime_type VARCHAR(100) NULL`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS storage_provider VARCHAR(50) DEFAULT 'LOCAL'`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS moderation_status ENUM('PENDING_REVIEW', 'APPROVED', 'REJECTED', 'INACTIVE') NOT NULL DEFAULT 'PENDING_REVIEW'`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS rejection_reason TEXT NULL`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS is_active TINYINT(1) NOT NULL DEFAULT 1`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS display_order INT DEFAULT 0`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS service_id VARCHAR(64) NULL`);
+    await db.query(`ALTER TABLE vendor_portfolios ADD COLUMN IF NOT EXISTS updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
+  } catch {}
+  try {
+    await db.query(`ALTER TABLE vendor_availability ADD COLUMN IF NOT EXISTS service_id VARCHAR(64) NOT NULL DEFAULT 'ALL'`);
+    await db.query(`ALTER TABLE vendor_availability ADD COLUMN IF NOT EXISTS status ENUM('AVAILABLE', 'BLOCKED', 'BOOKING_LOCKED', 'CONFIRMED') NOT NULL DEFAULT 'BLOCKED'`);
+    await db.query(`ALTER TABLE vendor_availability ADD COLUMN IF NOT EXISTS reason VARCHAR(255) NULL`);
+    await db.query(`ALTER TABLE vendor_availability ADD COLUMN IF NOT EXISTS created_at DATETIME DEFAULT CURRENT_TIMESTAMP`);
+  } catch {}
+  try {
+    await db.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS event_location VARCHAR(255) NULL`);
+    await db.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS special_instructions TEXT NULL`);
+    await db.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS add_ons_json JSON NULL`);
   } catch {}
 
   // Seed default commission rules & retention policies

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSessionUser, logAudit } from '@/lib/auth';
 import { storageService } from '@/services/storageService';
+import { checkRateLimit, getClientIp, safeErrorResponse } from '@/lib/security';
 import { randomUUID } from 'crypto';
 
 export async function GET(req: NextRequest) {
@@ -24,13 +25,21 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: docs });
   } catch (error: any) {
-    console.error('API /api/vendor/documents GET Error:', error);
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    return safeErrorResponse(error, 'Failed to fetch documents');
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    // Rate limit: max 10 uploads per hour
+    if (!checkRateLimit(`upload_${ip}`, 10, 3600000)) {
+      return NextResponse.json(
+        { success: false, message: 'Upload rate limit exceeded. Try again later.' },
+        { status: 429 }
+      );
+    }
+
     const user = await getSessionUser();
     if (!user || user.role !== 'VENDOR') {
       return NextResponse.json({ success: false, message: 'Vendor authorization required' }, { status: 403 });
@@ -150,7 +159,6 @@ export async function POST(req: NextRequest) {
       },
     }, { status: 201 });
   } catch (error: any) {
-    console.error('API /api/vendor/documents POST Error:', error);
-    return NextResponse.json({ success: false, message: error.message || 'Failed to upload document' }, { status: 500 });
+    return safeErrorResponse(error, 'Failed to upload document');
   }
 }

@@ -21,6 +21,7 @@ interface Booking {
   package_name?: string;
   service_name?: string;
   created_at: string;
+  refund_status?: string;
 }
 
 export default function BookingsPage() {
@@ -42,6 +43,17 @@ export default function BookingsPage() {
   const [disputeReason, setDisputeReason] = useState('');
   const [disputeAmount, setDisputeAmount] = useState('');
   const [disputeSubmitting, setDisputeSubmitting] = useState(false);
+
+  // Payment Modal state
+  const [paymentModalConfig, setPaymentModalConfig] = useState<{
+    isOpen: boolean;
+    order_id: string;
+    payment_transaction_id: string;
+    booking_id: string;
+    amount: number;
+    provider: string;
+  } | null>(null);
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
 
   // Auth Modal
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -87,24 +99,68 @@ export default function BookingsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          payment_method: 'RAZORPAY_SIMULATION',
-          amount: booking.total_amount
+          provider: 'mock_provider',
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setNotificationMsg({
-          type: 'success',
-          text: `🎉 Payment confirmed! ₹${Number(booking.total_amount).toLocaleString('en-IN')} held securely in platform escrow. The vendor date is now locked.`
+        setPaymentModalConfig({
+          isOpen: true,
+          order_id: data.data.order_id,
+          payment_transaction_id: data.data.payment_transaction_id,
+          booking_id: booking.id,
+          amount: data.data.amount,
+          provider: data.data.provider
         });
-        fetchBookings();
       } else {
-        setNotificationMsg({ type: 'error', text: data.message || 'Payment simulation failed.' });
+        setNotificationMsg({ type: 'error', text: data.message || 'Payment initiation failed.' });
       }
     } catch (err: any) {
       setNotificationMsg({ type: 'error', text: err.message });
     } finally {
       setStatusActionLoading(null);
+    }
+  };
+
+  const handleVerifyPayment = async (success: boolean | 'UNKNOWN') => {
+    if (!paymentModalConfig) return;
+    setPaymentSubmitting(true);
+    setNotificationMsg(null);
+    try {
+      const res = await fetch('/api/payments/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payment_transaction_id: paymentModalConfig.payment_transaction_id,
+          order_id: paymentModalConfig.order_id,
+          booking_id: paymentModalConfig.booking_id,
+          success,
+          simulated_error: success === true ? undefined : (success === 'UNKNOWN' ? undefined : 'User cancelled payment or bank rejected it.')
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (data.data?.status === 'PAYMENT_PENDING') {
+           setNotificationMsg({
+             type: 'success',
+             text: `⏳ Payment is checking/processing. Please check back later. (This allows us to test the webhook reconciliation later).`
+           });
+        } else {
+           setNotificationMsg({
+            type: 'success',
+            text: `🎉 Payment confirmed! ₹${Number(paymentModalConfig.amount).toLocaleString('en-IN')} held securely in platform escrow. The vendor date is now locked.`
+          });
+        }
+      } else {
+         setNotificationMsg({ type: 'error', text: data.message || data.error || 'Payment failed.' });
+      }
+      setPaymentModalConfig(null);
+      fetchBookings();
+    } catch (err: any) {
+      setNotificationMsg({ type: 'error', text: err.message });
+      setPaymentModalConfig(null);
+    } finally {
+      setPaymentSubmitting(false);
     }
   };
 
@@ -347,7 +403,13 @@ export default function BookingsPage() {
 
                           {isCancelled && (
                             <div className="cancelled-banner">
-                              <span>⚠️ This booking was cancelled. Date reservation released back to marketplace.</span>
+                              <span style={{ display: 'block', fontWeight: 'bold' }}>⚠️ This booking was cancelled.</span>
+                              <span style={{ fontSize: '13px', display: 'block', marginTop: '4px' }}>Date reservation released back to marketplace.</span>
+                              {b.refund_status && (
+                                <div style={{ marginTop: '8px', padding: '6px 10px', background: 'rgba(0,0,0,0.05)', borderRadius: '6px', fontSize: '12px' }}>
+                                  Refund Status: <strong style={{ color: ['COMPLETED', 'PROCESSED'].includes(b.refund_status) ? '#38a169' : '#d69e2e' }}>{b.refund_status}</strong>
+                                </div>
+                              )}
                             </div>
                           )}
 
@@ -377,13 +439,33 @@ export default function BookingsPage() {
                           <div className="card-actions-row">
                             {/* Pay Escrow Action */}
                             {(b.status === 'ACCEPTED' || b.status === 'PAYMENT_PENDING' || b.status === 'REQUESTED') && (
+                              <>
                               <button
-                                className="btn-action-primary"
-                                disabled={statusActionLoading === b.id}
                                 onClick={() => handlePayEscrow(b)}
+                                disabled={statusActionLoading === b.id}
+                                style={{
+                                  padding: '8px 16px',
+                                  background: 'linear-gradient(135deg, #ff2a73 0%, #e6005c 100%)',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  cursor: statusActionLoading === b.id ? 'wait' : 'pointer',
+                                  fontSize: '13px',
+                                  fontWeight: 700,
+                                  boxShadow: '0 2px 10px rgba(230,0,92,0.4)',
+                                  opacity: statusActionLoading === b.id ? 0.7 : 1,
+                                }}
                               >
-                                {statusActionLoading === b.id ? 'Processing...' : '💳 Pay Advance into Escrow'}
+                                {statusActionLoading === b.id ? 'Processing...' : (b.status === 'PAYMENT_PENDING' ? 'Retry Payment / Check Status' : 'Pay Advance & Lock Date')}
                               </button>
+                              <button
+                                onClick={() => handleCancelBooking(b)}
+                                disabled={statusActionLoading === b.id}
+                                className="btn-action-cancel"
+                              >
+                                Cancel Booking
+                              </button>
+                              </>
                             )}
 
                             {/* Review Action (Only for COMPLETED) */}
@@ -396,8 +478,11 @@ export default function BookingsPage() {
                               </button>
                             )}
 
-                            {/* Dispute Action (For Confirmed or In Progress) */}
-                            {(b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS') && (
+                            {/* State Machine Permitted Actions */}
+                            {/* Handled by conditional rules below according to role permissions */}
+                            
+                            {/* Dispute Action (For Confirmed, In Progress, Completed) */}
+                            {['CONFIRMED', 'IN_PROGRESS', 'COMPLETED'].includes(b.status) && (
                               <button
                                 className="btn-action-dispute"
                                 onClick={() => setDisputeModalBooking(b)}
@@ -406,8 +491,8 @@ export default function BookingsPage() {
                               </button>
                             )}
 
-                            {/* Cancel Action */}
-                            {b.status !== 'COMPLETED' && b.status !== 'CANCELLED' && (
+                            {/* Cancel Action (Customer allowed to cancel REQUESTED, PENDING_VENDOR, ACCEPTED, PAYMENT_PENDING, CONFIRMED) */}
+                            {['REQUESTED', 'PENDING_VENDOR', 'ACCEPTED', 'PAYMENT_PENDING', 'CONFIRMED'].includes(b.status) && (
                               <button
                                 className="btn-action-cancel"
                                 disabled={statusActionLoading === b.id}
@@ -526,6 +611,52 @@ export default function BookingsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Mock Payment Gateway Modal */}
+      {paymentModalConfig?.isOpen && (
+        <div className="modal-backdrop" onClick={() => setPaymentModalConfig(null)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <h3>{paymentModalConfig.provider === 'mock_provider' ? 'Secure Payment Checkout' : paymentModalConfig.provider}</h3>
+              <button className="btn-close" onClick={() => setPaymentModalConfig(null)}>✕</button>
+            </div>
+            <div className="modal-body" style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '32px', marginBottom: '10px' }}>🔒</div>
+              <p>You are paying an advance for Booking <strong>#{bookings.find(b => b.id === paymentModalConfig.booking_id)?.booking_number}</strong></p>
+              <h2 style={{ fontSize: '28px', color: '#ff2a73', margin: '15px 0' }}>
+                ₹{Number(paymentModalConfig.amount).toLocaleString('en-IN')}
+              </h2>
+              <p style={{ fontSize: '13px', color: '#666', marginBottom: '20px' }}>
+                Order ID: {paymentModalConfig.order_id}<br/>
+                This is a simulated payment gateway. In a real environment, this would be Razorpay/Stripe UI.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', flexDirection: 'column' }}>
+                <button 
+                  disabled={paymentSubmitting}
+                  onClick={() => handleVerifyPayment(true)}
+                  style={{ padding: '12px', background: '#38a169', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  {paymentSubmitting ? 'Verifying...' : 'Simulate Successful Payment'}
+                </button>
+                <button 
+                  disabled={paymentSubmitting}
+                  onClick={() => handleVerifyPayment('UNKNOWN')}
+                  style={{ padding: '12px', background: '#d69e2e', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                   Simulate Unknown/Delayed (Test Webhook)
+                </button>
+                <button 
+                  disabled={paymentSubmitting}
+                  onClick={() => handleVerifyPayment(false)}
+                  style={{ padding: '12px', background: '#fc8181', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                   Simulate Payment Failure
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

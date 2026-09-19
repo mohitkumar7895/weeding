@@ -42,11 +42,25 @@ export async function GET(
     );
 
     // Unapproved/rejected/suspended vendors cannot be viewed publicly
-    if (!isAuthorized && vendor.verification_status !== 'VERIFIED') {
+    if (!isAuthorized && vendor.verification_status !== 'VERIFIED' && vendor.verification_status !== 'APPROVED') {
       return NextResponse.json(
         { success: false, message: 'Vendor profile is pending verification or not publicly active' },
         { status: 404 }
       );
+    }
+
+    // Log profile view in analytics_events for real vendor performance tracking
+    if (!isAuthorized) {
+      try {
+        const { randomUUID } = await import('crypto');
+        const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+        const userAgent = req.headers.get('user-agent') || 'browser';
+        await query(
+          `INSERT INTO analytics_events (id, user_id, event_name, entity_type, entity_id, properties_json, ip_address, user_agent)
+           VALUES (?, ?, 'vendor_profile_view', 'vendor', ?, ?, ?, ?)`,
+          [randomUUID(), sessionUser?.id || null, vendor.id, JSON.stringify({ business_name: vendor.business_name }), ip, userAgent]
+        );
+      } catch {}
     }
 
     // Fetch services (for public, require is_active = TRUE and moderation_status = 'APPROVED')
@@ -62,15 +76,48 @@ export async function GET(
       [vendor.id]
     );
 
-    // Fetch packages
+    // Fetch packages (for public, require is_published = TRUE, is_active = TRUE and moderation_status = 'APPROVED')
     const packages = await query<any[]>(
-      `SELECT * FROM vendor_packages WHERE vendor_id = ? ORDER BY price ASC`,
+      `SELECT * FROM vendor_packages 
+       WHERE vendor_id = ? ${!isAuthorized ? "AND is_published = TRUE AND is_active = TRUE AND moderation_status = 'APPROVED'" : ''} 
+       ORDER BY 
+        CASE package_tier 
+          WHEN 'BASIC' THEN 1 
+          WHEN 'STANDARD' THEN 2 
+          WHEN 'PREMIUM' THEN 3 
+          ELSE 4 
+        END ASC, price ASC`,
       [vendor.id]
     );
 
-    // Fetch portfolios
+    // Fetch add-ons
+    const addOns = await query<any[]>(
+      `SELECT * FROM vendor_add_ons 
+       WHERE vendor_id = ? ${!isAuthorized ? "AND is_active = TRUE" : ''}
+       ORDER BY price ASC`,
+      [vendor.id]
+    );
+
+    // Fetch portfolios: public visitors only see approved and active media
     const portfolios = await query<any[]>(
-      `SELECT * FROM vendor_portfolios WHERE vendor_id = ? ORDER BY is_cover DESC, created_at DESC`,
+      `SELECT 
+        id, 
+        vendor_id, 
+        service_id, 
+        media_type, 
+        image_url, 
+        COALESCE(media_url, image_url) AS media_url, 
+        thumbnail_url, 
+        title, 
+        caption, 
+        description, 
+        is_cover, 
+        display_order, 
+        created_at 
+       FROM vendor_portfolios 
+       WHERE vendor_id = ? 
+         ${!isAuthorized ? "AND is_active = TRUE AND moderation_status = 'APPROVED'" : ''} 
+       ORDER BY is_cover DESC, display_order ASC, created_at DESC`,
       [vendor.id]
     );
 
@@ -131,6 +178,7 @@ export async function GET(
         service_area_cities: serviceAreaCities,
         services,
         packages,
+        add_ons: addOns,
         portfolios,
         reviews
       }

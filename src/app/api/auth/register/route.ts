@@ -1,16 +1,35 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { hashPassword, signToken, logAudit } from '@/lib/auth';
+import { AuthRegisterSchema } from '@/lib/validation';
+import { checkRateLimit, getClientIp, safeErrorResponse } from '@/lib/security';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    // Rate limit: 3 registration attempts per 5 minutes
+    if (!checkRateLimit(`register_${ip}`, 3, 300000)) {
+      return NextResponse.json(
+        { success: false, message: 'Too many registration attempts. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
+    
+    // Partially validate with Zod
+    const parsed = AuthRegisterSchema.parse({
+      email: body.email,
+      password: body.password,
+      name: body.name,
+      role: body.role || 'CUSTOMER',
+    });
+
+    const { name, email, password, role } = parsed;
+    
+    // Extract rest of body manually
     const {
-      name,
-      email,
       phone,
-      password,
-      role = 'CUSTOMER',
       otp,
       otpToken,
       businessName,
@@ -28,10 +47,6 @@ export async function POST(req: Request) {
     const finalCategoryId = category_id || categoryId || 'cat_photographers';
     const finalStartingPrice = parseFloat(starting_price || startingPrice || '15000') || 15000.00;
 
-    if (!name || !email || !password) {
-      return NextResponse.json({ success: false, message: 'Name, email, and password are required' }, { status: 400 });
-    }
-
     if (role === 'VENDOR') {
       if (!phone) {
         return NextResponse.json({ success: false, message: 'Mobile number is required for vendor registration' }, { status: 400 });
@@ -39,10 +54,6 @@ export async function POST(req: Request) {
       if (!finalBusinessName || finalBusinessName.trim().length < 2) {
         return NextResponse.json({ success: false, message: 'Valid business name is required' }, { status: 400 });
       }
-    }
-
-    if (password.length < 6) {
-      return NextResponse.json({ success: false, message: 'Password must be at least 6 characters' }, { status: 400 });
     }
 
     // If OTP was provided, verify and consume it
@@ -201,7 +212,6 @@ export async function POST(req: Request) {
 
     return response;
   } catch (error: any) {
-    console.error('Registration API Error:', error);
-    return NextResponse.json({ success: false, message: error.message || 'Internal server error' }, { status: 500 });
+    return safeErrorResponse(error, 'Registration failed');
   }
 }

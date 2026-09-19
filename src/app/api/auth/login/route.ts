@@ -1,18 +1,25 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyPassword, signToken, logAudit } from '@/lib/auth';
+import { AuthLoginSchema } from '@/lib/validation';
+import { checkRateLimit, getClientIp, safeErrorResponse } from '@/lib/security';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { email, password } = body;
-
-    if (!email || !password) {
+    const ip = getClientIp(req);
+    // Rate limit: 5 login attempts per 1 minute
+    if (!checkRateLimit(`login_${ip}`, 5, 60000)) {
       return NextResponse.json(
-        { success: false, message: 'Email and password are required' },
-        { status: 400 }
+        { success: false, message: 'Too many login attempts. Please try again later.' },
+        { status: 429 }
       );
     }
+
+    const body = await req.json();
+    
+    // Zod validation
+    const parsed = AuthLoginSchema.parse(body);
+    const { email, password } = parsed;
 
     // Lookup user in MySQL
     const users = await query<any[]>(
@@ -100,10 +107,6 @@ export async function POST(req: Request) {
 
     return response;
   } catch (error: any) {
-    console.error('Login API Error:', error);
-    return NextResponse.json(
-      { success: false, message: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, 'Login failed');
   }
 }
