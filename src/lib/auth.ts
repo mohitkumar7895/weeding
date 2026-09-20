@@ -64,6 +64,11 @@ export async function requireAuth(roles?: string[]) {
   return user;
 }
 
+export async function verifyAuth() {
+  const user = await getSessionUser();
+  return { user };
+}
+
 /**
  * Log action into immutable audit_logs table
  */

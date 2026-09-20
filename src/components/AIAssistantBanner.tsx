@@ -1,12 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface AIAssistantBannerProps {
   onOpenSagun: () => void;
 }
 
+const SAGUN_TYPEWRITER =
+  'नमस्ते! मैं हूँ शगुन, आपकी AI वेडिंग असिस्टेंट! आप कैसे मदद कर सकती हूँ?';
+
 export default function AIAssistantBanner({ onOpenSagun }: AIAssistantBannerProps) {
+  const [typewriterReady, setTypewriterReady] = useState(false);
+
+  useEffect(() => {
+    setTypewriterReady(true);
+  }, []);
+
   return (
     <section className="assistant-section">
       <div className="container-custom">
@@ -75,7 +84,9 @@ export default function AIAssistantBanner({ onOpenSagun }: AIAssistantBannerProp
               <div className="speech-bubble-card" onClick={onOpenSagun}>
                 <div
                   className="hindi-message"
-                  data-typewriter="नमस्ते! मैं हूँ शगुन, आपकी AI वेडिंग असिस्टेंट! आप कैसे मदद कर सकती हूँ?"
+                  {...(typewriterReady
+                    ? { 'data-typewriter': SAGUN_TYPEWRITER }
+                    : {})}
                 >
                   नमस्ते! मैं हूँ शगुन,<br />
                   आपकी AI वेडिंग असिस्टेंट!<br />

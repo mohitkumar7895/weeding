@@ -12,6 +12,28 @@ export interface LocationProvider {
  * Mock provider for development and testing.
  * In a real application, this would be replaced with a Google Maps or Mapbox provider.
  */
+class GoogleMapsLocationProvider implements LocationProvider {
+  constructor(private apiKey: string, private fallback: LocationProvider) {}
+
+  async getCoordinates(city: string): Promise<Coordinates | null> {
+    if (!city) return null;
+    try {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(city)}&key=${this.apiKey}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const loc = data.results?.[0]?.geometry?.location;
+      if (loc?.lat && loc?.lng) return { lat: loc.lat, lng: loc.lng };
+    } catch (err) {
+      console.warn('[LocationService] Google geocode failed, using fallback', err);
+    }
+    return this.fallback.getCoordinates(city);
+  }
+
+  calculateDistance(coord1: Coordinates, coord2: Coordinates): number {
+    return this.fallback.calculateDistance(coord1, coord2);
+  }
+}
+
 class MockLocationProvider implements LocationProvider {
   // Simple mock coordinates for popular Indian cities
   private cityCoordinates: Record<string, Coordinates> = {
@@ -64,7 +86,10 @@ class LocationService {
   constructor() {
     // Configurable provider based on environment variables
     // e.g., if (process.env.GOOGLE_MAPS_API_KEY) { this.provider = new GoogleMapsProvider(); }
-    this.provider = new MockLocationProvider();
+    const mock = new MockLocationProvider();
+    this.provider = process.env.GOOGLE_MAPS_API_KEY
+      ? new GoogleMapsLocationProvider(process.env.GOOGLE_MAPS_API_KEY, mock)
+      : mock;
   }
 
   async getDistanceBetweenCities(city1: string, city2: string): Promise<number | null> {

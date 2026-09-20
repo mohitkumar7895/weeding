@@ -42,12 +42,10 @@ export default function AdminRolesGovernance() {
     fetchRoles();
   }, []);
 
-  const hasPermission = (roleId: string, permissionId: string) => {
-    // Check pending changes first
+  const hasPermission = (roleId: string, permissionId: string): boolean => {
     if (pendingChanges.has(roleId)) {
-      return pendingChanges.get(roleId)?.includes(permissionId);
+      return pendingChanges.get(roleId)?.includes(permissionId) ?? false;
     }
-    // Fallback to saved mappings
     return mappings.some(m => m.role_id === roleId && m.permission_id === permissionId);
   };
 
@@ -134,7 +132,7 @@ export default function AdminRolesGovernance() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100 text-sm">
-              {Object.entries(groupedPermissions).map(([module, perms]) => (
+              {(Object.entries(groupedPermissions) as [string, any[]][]).map(([module, perms]) => (
                 <React.Fragment key={module}>
                   <tr className="bg-gray-50/50">
                     <td colSpan={roles.length + 1} className="px-6 py-2 font-bold text-gray-700 uppercase text-xs tracking-wider border-y">

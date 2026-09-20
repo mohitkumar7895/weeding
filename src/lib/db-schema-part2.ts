@@ -611,9 +611,15 @@ export async function runPart2Migrations() {
   // Seed default commission rules & retention policies
   try {
     await db.query(`
-      INSERT IGNORE INTO commission_rules (id, rule_name, category_id, vendor_id, commission_type, commission_value, min_fee, effective_from)
+      INSERT IGNORE INTO commission_rules (id, rule_name, category_id, vendor_id, commission_type, commission_value, min_fee, effective_from, tiers_json)
       VALUES 
-      ('rule_default_10', 'Standard Marketplace 10% Commission', NULL, NULL, 'PERCENTAGE', 10.00, 500.00, '2026-01-01')
+      ('rule_default_10', 'Standard Marketplace 10-20% Tiers', NULL, NULL, 'PERCENTAGE', 10.00, 500.00, '2026-01-01',
+        JSON_ARRAY(
+          JSON_OBJECT('min_amount', 0, 'max_amount', 50000, 'commission_value', 10),
+          JSON_OBJECT('min_amount', 50001, 'max_amount', 150000, 'commission_value', 15),
+          JSON_OBJECT('min_amount', 150001, 'max_amount', null, 'commission_value', 20)
+        )
+      )
     `);
 
     await db.query(`

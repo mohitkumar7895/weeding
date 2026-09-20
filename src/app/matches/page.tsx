@@ -54,7 +54,8 @@ export default function MatchesPage() {
           </h1>
 
           <p style={{ color: '#9cb1a6', fontSize: '15px', maxWidth: '640px', margin: '0 auto 18px auto', lineHeight: 1.5 }}>
-            Personalized recommendations based on your verified preferences, Ashtakoota compatibility, and permitted activity signals.
+            Personalized recommendations based on your verified preferences and permitted activity signals.
+            Match percentages are software-generated informational scores and are not a guarantee of marriage or compatibility.
           </p>
 
           {/* Quick AI Assistant Button */}

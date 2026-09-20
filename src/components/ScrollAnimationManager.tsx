@@ -100,8 +100,10 @@ export default function ScrollAnimationManager() {
       });
     };
 
-    // Initial binding
-    bindElements();
+    // Bind after paint so IntersectionObserver never mutates markup during hydration.
+    const startId = window.requestAnimationFrame(() => {
+      bindElements();
+    });
 
     // Re-bind on DOM updates (for dynamically loaded components or route updates)
     const mutationObserver = new MutationObserver(() => {
@@ -114,6 +116,7 @@ export default function ScrollAnimationManager() {
     });
 
     return () => {
+      window.cancelAnimationFrame(startId);
       observer.disconnect();
       mutationObserver.disconnect();
     };

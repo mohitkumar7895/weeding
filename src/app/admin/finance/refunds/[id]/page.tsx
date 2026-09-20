@@ -17,7 +17,7 @@ export default function AdminRefundDetail({ params }: { params: Promise<{ id: st
 
   const fetchRefund = async () => {
     try {
-      const res = await fetch(\`/api/admin/finance/refunds/\${resolvedParams.id}\`);
+      const res = await fetch(`/api/admin/finance/refunds/${resolvedParams.id}`);
       const data = await res.json();
       if (data.success) {
         setRefund(data.data);
@@ -30,10 +30,10 @@ export default function AdminRefundDetail({ params }: { params: Promise<{ id: st
   };
 
   const updateStatus = async (status: string) => {
-    if (!confirm(\`Are you sure you want to transition this refund to \${status}?\`)) return;
+    if (!confirm(`Are you sure you want to transition this refund to ${status}?`)) return;
     setProcessing(true);
     try {
-      const res = await fetch(\`/api/admin/finance/refunds/\${resolvedParams.id}/status\`, {
+      const res = await fetch(`/api/admin/finance/refunds/${resolvedParams.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -59,13 +59,13 @@ export default function AdminRefundDetail({ params }: { params: Promise<{ id: st
       <div className="flex items-center gap-4">
         <Link href="/admin/finance/refunds" className="text-slate-500 hover:text-slate-700">← Back to Ledger</Link>
         <h1 className="text-2xl font-bold text-slate-800">Refund Review: {refund.id.split('-')[0].toUpperCase()}</h1>
-        <span className={\`px-3 py-1 rounded-full text-xs font-bold \${
+        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
             ['COMPLETED', 'PROCESSED'].includes(refund.status) ? 'bg-emerald-100 text-emerald-800' :
             refund.status === 'FAILED' ? 'bg-red-100 text-red-800' :
             refund.status === 'MANUAL_REVIEW' ? 'bg-purple-100 text-purple-800' :
             refund.status === 'PROCESSING' ? 'bg-blue-100 text-blue-800' :
             'bg-amber-100 text-amber-800'
-          }\`}>
+          }`}>
             {refund.status}
         </span>
       </div>

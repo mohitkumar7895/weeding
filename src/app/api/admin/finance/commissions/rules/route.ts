@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyAdminRole } from '@/lib/rbac';
 import { logAudit } from '@/lib/auth';
-import { v4 as uuidv4 } from 'uuid';
+import { uuidv4 } from '@/lib/uuid';
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (!auth.ok) return auth.response!;
 
     const body = await req.json();
-    const { rule_name, commission_type, commission_value, min_fee, max_fee, effective_from, is_active } = body;
+    const { rule_name, commission_type, commission_value, min_fee, max_fee, effective_from, is_active, tiers_json } = body;
 
     if (!rule_name || !commission_value || !effective_from) {
       return NextResponse.json({ success: false, message: 'Missing required fields' }, { status: 400 });
@@ -40,11 +40,19 @@ export async function POST(req: NextRequest) {
     }
 
     const id = uuidv4();
-    await query(
-      `INSERT INTO commission_rules (id, rule_name, commission_type, commission_value, min_fee, max_fee, effective_from, is_active) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, rule_name, commission_type || 'PERCENTAGE', value, min_fee || 0, max_fee || null, effective_from, is_active !== false ? 1 : 0]
-    );
+    try {
+      await query(
+        `INSERT INTO commission_rules (id, rule_name, commission_type, commission_value, min_fee, max_fee, effective_from, is_active, tiers_json) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, rule_name, commission_type || 'PERCENTAGE', value, min_fee || 0, max_fee || null, effective_from, is_active !== false ? 1 : 0, tiers_json ? JSON.stringify(tiers_json) : null]
+      );
+    } catch {
+      await query(
+        `INSERT INTO commission_rules (id, rule_name, commission_type, commission_value, min_fee, max_fee, effective_from, is_active) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, rule_name, commission_type || 'PERCENTAGE', value, min_fee || 0, max_fee || null, effective_from, is_active !== false ? 1 : 0]
+      );
+    }
 
     await logAudit(auth.user!.id, 'CREATE_COMMISSION_RULE', 'commission_rules', id, { rule_name, commission_value });
 

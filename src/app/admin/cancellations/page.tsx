@@ -23,7 +23,7 @@ export default function CancellationsDashboard() {
         const params = new URLSearchParams();
         if (filters.initiator_role) params.append('initiator_role', filters.initiator_role);
         if (filters.booking_id) params.append('booking_id', filters.booking_id);
-        const res = await fetch(\`/api/admin/cancellations/records?\${params.toString()}\`);
+        const res = await fetch(`/api/admin/cancellations/records?${params.toString()}`);
         const data = await res.json();
         if (data.success) setRecords(data.data);
       } else {
@@ -68,7 +68,7 @@ export default function CancellationsDashboard() {
 
   const toggleRule = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(\`/api/admin/cancellations/rules/\${id}\`, {
+      const res = await fetch(`/api/admin/cancellations/rules/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !currentStatus })
@@ -90,8 +90,8 @@ export default function CancellationsDashboard() {
 
       <div className="border-b border-slate-200">
         <nav className="-mb-px flex space-x-8">
-          <button onClick={() => setActiveTab('records')} className={\`py-4 px-1 border-b-2 font-medium text-sm \${activeTab === 'records' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}\`}>Cancellation History</button>
-          <button onClick={() => setActiveTab('rules')} className={\`py-4 px-1 border-b-2 font-medium text-sm \${activeTab === 'rules' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}\`}>Configuration Rules</button>
+          <button onClick={() => setActiveTab('records')} className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'records' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Cancellation History</button>
+          <button onClick={() => setActiveTab('rules')} className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'rules' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Configuration Rules</button>
         </nav>
       </div>
 
@@ -133,11 +133,11 @@ export default function CancellationsDashboard() {
                       <div className="font-medium text-slate-800">Total: ₹{parseFloat(r.total_amount).toLocaleString()}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={\`px-2 py-1 rounded text-xs font-bold \${
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${
                         r.cancelled_by_role === 'CUSTOMER' ? 'bg-purple-100 text-purple-800' :
                         r.cancelled_by_role === 'VENDOR' ? 'bg-emerald-100 text-emerald-800' :
                         'bg-red-100 text-red-800'
-                      }\`}>{r.cancelled_by_role}</span>
+                      }`}>{r.cancelled_by_role}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-slate-700 text-xs italic max-w-xs truncate" title={r.reason}>"{r.reason}"</div>
@@ -211,14 +211,14 @@ export default function CancellationsDashboard() {
                   <tr key={r.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4 font-bold text-slate-800">{r.initiator_role}</td>
                     <td className="px-6 py-4 font-medium text-slate-700">
-                      {r.days_before_event_max ? \`\${r.days_before_event_min} - \${r.days_before_event_max} Days\` : \`\${r.days_before_event_min}+ Days\`}
+                      {r.days_before_event_max ? `${r.days_before_event_min} - ${r.days_before_event_max} Days` : `${r.days_before_event_min}+ Days`}
                     </td>
                     <td className="px-6 py-4">
                       <span className="font-bold text-blue-700">{r.refund_percentage}% Refund</span>
                       {r.penalty_percentage > 0 && <span className="ml-2 font-bold text-red-600">({r.penalty_percentage}% Penalty)</span>}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={\`px-2 py-1 rounded text-xs font-semibold \${r.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}\`}>
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${r.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
                         {r.is_active ? 'ACTIVE' : 'INACTIVE'}
                       </span>
                     </td>

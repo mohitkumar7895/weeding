@@ -107,6 +107,13 @@ export default function VendorDetailPage() {
                 {vendor.is_featured && <span style={{ color: '#ff69b4', fontWeight: 'bold' }}>✦ Featured</span>}
                 {vendor.is_sponsored && <span style={{ color: '#ffd700', fontWeight: 'bold' }}>❖ Sponsored</span>}
               </div>
+              {vendor.city && (
+                <iframe
+                  title="Vendor location"
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(`${vendor.address || ''} ${vendor.city}`)}&z=12&output=embed`}
+                  style={{ width: '100%', height: '220px', border: 0, borderRadius: '12px', marginTop: '12px' }}
+                />
+              )}
             </div>
             <button className="btn-search-primary" style={{ padding: '16px 32px', fontSize: '16px', whiteSpace: 'nowrap' }}>
               Check Availability & Book

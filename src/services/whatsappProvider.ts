@@ -25,9 +25,13 @@ export interface WhatsAppResult {
 }
 
 export async function dispatchWhatsAppMessage(payload: WhatsAppPayload): Promise<WhatsAppResult> {
-  const provider = process.env.WHATSAPP_PROVIDER || 'UNCONFIGURED';
+  let provider = process.env.WHATSAPP_PROVIDER || 'UNCONFIGURED';
 
   try {
+    if (provider === 'UNCONFIGURED' && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_WHATSAPP_FROM) {
+      provider = 'TWILIO';
+    }
+
     if (provider === 'UNCONFIGURED') {
       // Simulate safe failure due to missing provider configuration
       return {
@@ -40,10 +44,29 @@ export async function dispatchWhatsAppMessage(payload: WhatsAppPayload): Promise
 
     // Mock branching for future integrations
     if (provider === 'TWILIO') {
-      // const client = require('twilio')(process.env.TWILIO_SID, process.env.TWILIO_AUTH);
-      // const message = await client.messages.create({ ... });
-      // return { status: 'SENT', provider, provider_reference_id: message.sid, error_metadata: null };
-      throw new Error('Twilio integration not fully implemented');
+      const sid = process.env.TWILIO_ACCOUNT_SID;
+      const token = process.env.TWILIO_AUTH_TOKEN;
+      const from = process.env.TWILIO_WHATSAPP_FROM;
+      if (!sid || !token || !from) {
+        throw new Error('Twilio WhatsApp env vars missing');
+      }
+      const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Basic ' + Buffer.from(`${sid}:${token}`).toString('base64'),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          From: from.startsWith('whatsapp:') ? from : `whatsapp:${from}`,
+          To: payload.recipientPhone.startsWith('whatsapp:') ? payload.recipientPhone : `whatsapp:${payload.recipientPhone}`,
+          Body: payload.messageText,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { status: 'FAILED', provider, provider_reference_id: null, error_metadata: data };
+      }
+      return { status: 'SENT', provider, provider_reference_id: data.sid, error_metadata: null };
     }
 
     if (provider === 'META_GRAPH') {

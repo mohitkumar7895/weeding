@@ -43,7 +43,7 @@ export default function CommissionRulesConfig() {
 
   const toggleRule = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(\`/api/admin/finance/commissions/rules/\${id}\`, {
+      const res = await fetch(`/api/admin/finance/commissions/rules/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !currentStatus })
@@ -101,7 +101,7 @@ export default function CommissionRulesConfig() {
                 <td className="px-6 py-4 text-blue-700 font-semibold">{r.commission_value}{r.commission_type === 'PERCENTAGE' ? '%' : ' Flat'}</td>
                 <td className="px-6 py-4 font-mono text-slate-600">{new Date(r.effective_from).toISOString().split('T')[0]}</td>
                 <td className="px-6 py-4">
-                  <span className={\`px-2 py-1 rounded text-xs font-semibold \${r.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}\`}>
+                  <span className={`px-2 py-1 rounded text-xs font-semibold ${r.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
                     {r.is_active ? 'ACTIVE' : 'INACTIVE'}
                   </span>
                 </td>

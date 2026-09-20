@@ -17,7 +17,7 @@ export default function PayoutsDashboard() {
       if (filters.vendor_id) params.append('vendor_id', filters.vendor_id);
       if (filters.booking_id) params.append('booking_id', filters.booking_id);
 
-      const res = await fetch(\`/api/admin/finance/payouts?\${params.toString()}\`);
+      const res = await fetch(`/api/admin/finance/payouts?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setPayouts(data.data);
@@ -109,7 +109,7 @@ export default function PayoutsDashboard() {
             {loading ? <tr><td colSpan={5} className="p-6 text-center text-slate-500">Loading...</td></tr> : payouts.length === 0 ? <tr><td colSpan={5} className="p-6 text-center text-slate-500">No payouts found</td></tr> : payouts.map(p => (
               <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4">
-                  <Link href={\`/admin/finance/payouts/\${p.id}\`} className="font-medium text-blue-600 hover:underline">{p.id.substring(0,8)}...</Link>
+                  <Link href={`/admin/finance/payouts/${p.id}`} className="font-medium text-blue-600 hover:underline">{p.id.substring(0,8)}...</Link>
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-slate-800 font-semibold">{p.vendor_name}</div>
@@ -119,13 +119,13 @@ export default function PayoutsDashboard() {
                   ₹{parseFloat(p.amount).toLocaleString()}
                 </td>
                 <td className="px-6 py-4">
-                  <span className={\`px-2 py-1 rounded text-xs font-semibold \${
+                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
                     p.status === 'PAID' ? 'bg-emerald-100 text-emerald-800' :
                     p.status === 'FAILED' ? 'bg-red-100 text-red-800' :
                     p.status === 'PROCESSING' ? 'bg-blue-100 text-blue-800' :
                     p.status === 'MANUAL_REVIEW' ? 'bg-purple-100 text-purple-800' :
                     'bg-amber-100 text-amber-800'
-                  }\`}>
+                  }`}>
                     {p.status}
                   </span>
                 </td>

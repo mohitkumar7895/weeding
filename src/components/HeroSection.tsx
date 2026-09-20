@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import React, { useState } from 'react';
 
 export default function HeroSection() {
   const [location, setLocation] = useState('');
@@ -10,74 +9,35 @@ export default function HeroSection() {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [showGuestPicker, setShowGuestPicker] = useState(false);
 
-  // Live Continuous Typewriter Effect
-  const phrases = [
-    'Finding 36 Guna verified Kundali matches...',
-    'Booking royal palace venues in Agra & Jaipur...',
-    'Selecting 100% verified wedding caterers & decor...',
-    'Sagun AI: Your 24/7 personal wedding concierge...',
-    'Protected by WedWithMe Escrow Guarantee...',
-  ];
-  const [activePhraseIndex, setActivePhraseIndex] = useState(0);
-  const [typedText, setTypedText] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const currentPhrase = phrases[activePhraseIndex];
-    const typingSpeed = isDeleting ? 25 : 55;
-
-    const timeout = setTimeout(() => {
-      if (!isDeleting) {
-        setTypedText(currentPhrase.substring(0, typedText.length + 1));
-        if (typedText.length + 1 === currentPhrase.length) {
-          setTimeout(() => setIsDeleting(true), 1800);
-        }
-      } else {
-        setTypedText(currentPhrase.substring(0, typedText.length - 1));
-        if (typedText.length === 0) {
-          setIsDeleting(false);
-          setActivePhraseIndex((prev) => (prev + 1) % phrases.length);
-        }
-      }
-    }, typingSpeed);
-
-    return () => clearTimeout(timeout);
-  }, [typedText, isDeleting, activePhraseIndex]);
-
   const popularCities = ['Agra', 'Delhi NCR', 'Jaipur', 'Udaipur', 'Goa', 'Mumbai', 'Bengaluru'];
   const guestRanges = ['< 100 Guests', '100 - 250 Guests', '250 - 500 Guests', '500 - 1000 Guests', '1000+ Royal Feast'];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Searching for top vendors in ${location || 'Agra, Delhi'} for ${weddingDate || 'upcoming wedding'} (${guests || 'All'} Guests)...`);
+    window.location.href = `/vendors?city=${encodeURIComponent(location || '')}&date=${encodeURIComponent(weddingDate || '')}&guests=${encodeURIComponent(guests || '')}`;
   };
 
   return (
     <section className="hero-section">
-      {/* Full-bleed Photo Backdrop with authentic sunset palace colors */}
       <div className="hero-backdrop">
         <img
           src="/images/hero.jpg"
           alt="Royal Indian destination wedding couple at palace sunset"
           className="hero-full-img"
         />
-        {/* Exact gradient overlay matching reference image */}
         <div className="hero-gradient-overlay"></div>
       </div>
 
       <div className="container-custom hero-inner-container">
         <div className="hero-content">
-          {/* Eyebrow badge */}
           <div className="eyebrow-text">
             AI-POWERED GLOBAL WEDDING PLATFORM
           </div>
 
-          {/* Headline */}
           <h1 className="hero-main-title">
             From Match<br />to Marriage
           </h1>
 
-          {/* Subheading */}
           <div className="hero-tagline">
             <span>Plan</span>
             <span className="dot">•</span>
@@ -86,23 +46,13 @@ export default function HeroSection() {
             <span>Celebrate</span>
           </div>
 
-          {/* Description */}
           <p className="hero-subtext">
             Find your perfect match, trusted vendors,
             <br className="hide-mobile" />
             and create unforgettable moments — all in one place.
           </p>
 
-          {/* Live Dynamic Typewriter Bar ("likhta hua aana") */}
-          <div className="hero-typewriter-bar">
-            <span className="typewriter-sparkle">✨</span>
-            <span className="hero-typewriter-text">{typedText}</span>
-            <span className="hero-typewriter-cursor">|</span>
-          </div>
-
-          {/* Floating Search Pill Bar */}
           <form className="hero-search-pill" onSubmit={handleSearch}>
-            {/* Field 1: City / Location */}
             <div
               className="pill-field clickable"
               onClick={() => {
@@ -145,8 +95,7 @@ export default function HeroSection() {
 
             <div className="pill-divider"></div>
 
-            {/* Field 2: Wedding Date */}
-            <div className="pill-field">
+            <div className="pill-field date-field">
               <div className="pill-icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#25382e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -157,20 +106,19 @@ export default function HeroSection() {
               </div>
               <div className="pill-text-col">
                 <label className="pill-title" htmlFor="dateInput">Wedding Date</label>
+                <span className="pill-subtitle">{weddingDate || 'Select Date'}</span>
                 <input
                   id="dateInput"
-                  type="text"
-                  placeholder="Select Date"
+                  type="date"
                   value={weddingDate}
                   onChange={(e) => setWeddingDate(e.target.value)}
-                  className="pill-input"
+                  className="pill-date-hidden"
                 />
               </div>
             </div>
 
             <div className="pill-divider"></div>
 
-            {/* Field 3: Guests */}
             <div
               className="pill-field clickable"
               onClick={() => {
@@ -213,70 +161,22 @@ export default function HeroSection() {
               )}
             </div>
 
-            {/* Search Button */}
             <div className="pill-btn-wrap">
               <button type="submit" className="pill-search-btn">
                 Search
               </button>
             </div>
           </form>
-
-          {/* Quick Category Icons Strip (Exact match to Mobile App Screen 2) */}
-          <div className="mobile-quick-categories">
-            <Link href="/vendors" className="quick-cat-item">
-              <div className="quick-cat-icon icon-vendors">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-              </div>
-              <span className="quick-cat-label">Vendors</span>
-            </Link>
-
-            <Link href="/matches" className="quick-cat-item">
-              <div className="quick-cat-icon icon-matches">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-              </div>
-              <span className="quick-cat-label">Matches</span>
-            </Link>
-
-            <Link href="/bookings" className="quick-cat-item">
-              <div className="quick-cat-icon icon-bookings">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-              </div>
-              <span className="quick-cat-label">Bookings</span>
-            </Link>
-
-            <Link href="/about" className="quick-cat-item">
-              <div className="quick-cat-icon icon-more">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="1"></circle>
-                  <circle cx="19" cy="12" r="1"></circle>
-                  <circle cx="5" cy="12" r="1"></circle>
-                </svg>
-              </div>
-              <span className="quick-cat-label">More</span>
-            </Link>
-          </div>
         </div>
       </div>
 
       <style jsx>{`
         .hero-section {
           position: relative;
-          min-height: 560px;
+          min-height: 620px;
           display: flex;
           align-items: center;
-          padding: 64px 0 76px;
+          padding: 72px 0 88px;
           overflow: visible;
           background: #061a12;
         }
@@ -292,20 +192,19 @@ export default function HeroSection() {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          object-position: 72% center;
+          object-position: 78% center;
         }
 
-        /* Natural smooth gradient overlay matching the original screenshot */
         .hero-gradient-overlay {
           position: absolute;
           inset: 0;
           background: linear-gradient(
             90deg,
-            rgba(4, 22, 15, 0.96) 0%,
-            rgba(4, 22, 15, 0.88) 32%,
-            rgba(4, 22, 15, 0.65) 50%,
-            rgba(4, 22, 15, 0.2) 75%,
-            rgba(4, 22, 15, 0.05) 100%
+            rgba(5, 24, 16, 0.94) 0%,
+            rgba(5, 24, 16, 0.82) 28%,
+            rgba(5, 24, 16, 0.42) 52%,
+            rgba(5, 24, 16, 0.12) 72%,
+            rgba(5, 24, 16, 0.04) 100%
           );
         }
 
@@ -316,27 +215,27 @@ export default function HeroSection() {
         }
 
         .hero-content {
-          max-width: 820px;
+          max-width: 720px;
         }
 
         .eyebrow-text {
           font-size: 11.5px;
           font-weight: 700;
-          letter-spacing: 2px;
+          letter-spacing: 2.4px;
           text-transform: uppercase;
-          color: #d1ded7;
-          margin-bottom: 16px;
+          color: #d7e4dc;
+          margin-bottom: 18px;
         }
 
         .hero-main-title {
           font-family: var(--font-serif);
-          font-size: 56px;
+          font-size: 64px;
           font-weight: 700;
-          line-height: 1.12;
+          line-height: 1.08;
           color: #ffffff;
-          margin-bottom: 14px;
-          letter-spacing: -0.5px;
-          text-shadow: 0 2px 14px rgba(0, 0, 0, 0.2);
+          margin-bottom: 16px;
+          letter-spacing: -0.8px;
+          text-shadow: 0 2px 18px rgba(0, 0, 0, 0.25);
         }
 
         .hero-tagline {
@@ -344,7 +243,7 @@ export default function HeroSection() {
           display: flex;
           align-items: center;
           gap: 14px;
-          font-size: 22px;
+          font-size: 24px;
           color: #ffffff;
           font-weight: 500;
           margin-bottom: 18px;
@@ -356,22 +255,21 @@ export default function HeroSection() {
         }
 
         .hero-subtext {
-          font-size: 15.5px;
-          line-height: 1.6;
-          color: #c5d8ce;
-          margin-bottom: 38px;
-          max-width: 530px;
+          font-size: 16px;
+          line-height: 1.65;
+          color: #c8d9cf;
+          margin-bottom: 36px;
+          max-width: 520px;
         }
 
-        /* Floating Search Pill Bar */
         .hero-search-pill {
           display: flex;
           align-items: center;
           background: #ffffff;
           border-radius: 9999px;
-          padding: 7px 8px 7px 22px;
-          box-shadow: 0 16px 42px rgba(0, 0, 0, 0.35);
-          max-width: 790px;
+          padding: 8px 8px 8px 20px;
+          box-shadow: 0 18px 46px rgba(0, 0, 0, 0.32);
+          max-width: 780px;
           position: relative;
         }
 
@@ -382,6 +280,10 @@ export default function HeroSection() {
           gap: 12px;
           padding: 6px 12px;
           position: relative;
+        }
+
+        .date-field {
+          cursor: pointer;
         }
 
         .clickable {
@@ -400,6 +302,7 @@ export default function HeroSection() {
           flex-direction: column;
           gap: 2px;
           min-width: 0;
+          position: relative;
         }
 
         .pill-title {
@@ -418,14 +321,13 @@ export default function HeroSection() {
           text-overflow: ellipsis;
         }
 
-        .pill-input {
-          font-size: 12px;
-          color: #7b8e84;
+        .pill-date-hidden {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          cursor: pointer;
           width: 100%;
-        }
-
-        .pill-input::placeholder {
-          color: #8fa298;
+          height: 100%;
         }
 
         .pill-divider {
@@ -443,7 +345,7 @@ export default function HeroSection() {
           color: #ffffff;
           font-size: 14.5px;
           font-weight: 800;
-          padding: 13px 38px;
+          padding: 13px 36px;
           border-radius: 9999px;
           box-shadow: 0 4px 16px rgba(230, 0, 92, 0.4);
           transition: all 0.2s ease;
@@ -456,7 +358,6 @@ export default function HeroSection() {
           filter: brightness(1.08);
         }
 
-        /* Dropdowns */
         .dropdown-panel {
           position: absolute;
           top: calc(100% + 14px);
@@ -531,7 +432,11 @@ export default function HeroSection() {
 
         @media (max-width: 1024px) {
           .hero-main-title {
-            font-size: 46px;
+            font-size: 48px;
+          }
+          .desktop-nav {
+            position: static;
+            transform: none;
           }
         }
 
@@ -546,16 +451,16 @@ export default function HeroSection() {
           .hero-gradient-overlay {
             background: linear-gradient(
               180deg,
-              rgba(4, 22, 15, 0.88) 0%,
-              rgba(4, 22, 15, 0.94) 50%,
-              rgba(4, 22, 15, 0.98) 100%
+              rgba(4, 22, 15, 0.72) 0%,
+              rgba(4, 22, 15, 0.88) 48%,
+              rgba(4, 22, 15, 0.94) 100%
             );
           }
           .hero-main-title {
-            font-size: 36px;
+            font-size: 40px;
           }
           .hero-tagline {
-            font-size: 18px;
+            font-size: 20px;
           }
           .hero-search-pill {
             flex-direction: column;
@@ -582,79 +487,6 @@ export default function HeroSection() {
           .hide-mobile {
             display: none;
           }
-
-          .mobile-quick-categories {
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            margin-top: 20px;
-            padding: 14px 10px;
-            background: rgba(3, 23, 16, 0.72);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border: 1px solid rgba(229, 193, 88, 0.22);
-            border-radius: 20px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-            gap: 8px;
-          }
-
-          .quick-cat-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            text-decoration: none;
-            flex: 1;
-            transition: transform 0.15s ease;
-          }
-
-          .quick-cat-item:active {
-            transform: scale(0.93);
-          }
-
-          .quick-cat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          .icon-vendors {
-            background: rgba(229, 193, 88, 0.16);
-            border: 1.5px solid rgba(229, 193, 88, 0.5);
-            color: #e5c158;
-          }
-
-          .icon-matches {
-            background: rgba(255, 42, 115, 0.16);
-            border: 1.5px solid rgba(255, 42, 115, 0.55);
-            color: #ff2a73;
-          }
-
-          .icon-bookings {
-            background: rgba(46, 204, 113, 0.16);
-            border: 1.5px solid rgba(46, 204, 113, 0.5);
-            color: #2ecc71;
-          }
-
-          .icon-more {
-            background: rgba(255, 255, 255, 0.12);
-            border: 1.5px solid rgba(255, 255, 255, 0.3);
-            color: #ffffff;
-          }
-
-          .quick-cat-label {
-            font-size: 11px;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: 0.2px;
-          }
-        }
-
-        .mobile-quick-categories {
-          display: none;
         }
       `}</style>
     </section>

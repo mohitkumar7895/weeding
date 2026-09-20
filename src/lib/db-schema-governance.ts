@@ -38,7 +38,9 @@ async function runGovernanceMigrations() {
 
   // Seed default configuration
   const defaultConfigs = [
-    { key: 'PLATFORM_COMMISSION_RATE', category: 'FINANCIAL', value: { rate: 10, type: 'PERCENTAGE' }, description: 'Default platform commission rate applied to vendor payouts.' },
+    { key: 'GST_RATE', category: 'FINANCIAL', value: { rate: 18, type: 'PERCENTAGE' }, description: 'GST rate used for invoices.' },
+    { key: 'PAYOUT_DELAY_DAYS', category: 'FINANCIAL', value: { days: 3 }, description: 'Days after booking completion before payout eligibility.' },
+    { key: 'MATRIMONIAL_CHAT_ENABLED', category: 'PRODUCT', value: { enabled: true }, description: 'Enable customer-to-customer matrimonial chat.' },
     { key: 'AUTO_REFUND_ENABLED', category: 'FINANCIAL', value: { enabled: true }, description: 'Automatically process refunds for cancellations matching the policy.' },
     { key: 'DISCOVERY_DEFAULT_RADIUS', category: 'MARKETPLACE', value: { radius_km: 50 }, description: 'Default discovery search radius for customers.' },
     { key: 'MAX_PENDING_BOOKINGS', category: 'MARKETPLACE', value: { limit: 20 }, description: 'Max pending booking requests allowed per vendor.' }

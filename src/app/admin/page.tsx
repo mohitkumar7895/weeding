@@ -200,7 +200,7 @@ export default function AdminDashboardPage() {
                           <span className="text-slate-500">{f.completions}</span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-2">
-                          <div className="bg-blue-500 h-2 rounded-full" style={{ width: \`\${percent}%\` }}></div>
+                          <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${percent}%` }}></div>
                         </div>
                       </div>
                     );
@@ -223,7 +223,7 @@ export default function AdminDashboardPage() {
                           <span className="text-slate-500">{c.profile_count}</span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-2">
-                          <div className="bg-emerald-500 h-2 rounded-full" style={{ width: \`\${percent}%\` }}></div>
+                          <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${percent}%` }}></div>
                         </div>
                       </div>
                     );

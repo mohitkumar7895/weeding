@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { verifyAdminRole } from '@/lib/rbac';
 import { logAudit } from '@/lib/auth';
-import { v4 as uuidv4 } from 'uuid';
+import { uuidv4 } from '@/lib/uuid';
 
 export async function POST(req: NextRequest) {
   try {
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
           originalAmount,
           deductionAmount,
           refundAmount,
-          \`Refund for Cancellation: \${record.reason || 'No reason provided'}\`,
+          `Refund for Cancellation: ${record.reason || 'No reason provided'}`,
           payment.id // Store the payment ID as the reference for processing
         ]);
 
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       return { generatedCount };
     });
 
-    return NextResponse.json({ success: true, message: \`Successfully generated \${result.generatedCount} pending refunds.\` });
+    return NextResponse.json({ success: true, message: `Successfully generated ${result.generatedCount} pending refunds.` });
   } catch (error: any) {
     console.error('API /api/admin/finance/refunds/generate POST Error:', error);
     return NextResponse.json({ success: false, message: error.message }, { status: 400 });

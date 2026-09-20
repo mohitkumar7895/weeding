@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "WedWithMe",
+    "slug": "wedwithme",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "wedwithme",
+    "ios": { "bundleIdentifier": "com.wedwithme.app", "supportsTablet": true },
+    "android": { "package": "com.wedwithme.app" },
+    "extra": {
+      "apiUrl": "https://replace-with-production-host"
+    }
+  }
+}

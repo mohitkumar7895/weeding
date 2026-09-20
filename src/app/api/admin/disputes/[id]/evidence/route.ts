@@ -23,12 +23,13 @@ function generateId() {
   return crypto.randomUUID();
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'SUPPORT', 'FINANCE']);
     if (authResult instanceof NextResponse) return authResult;
 
-    const disputeId = params.id;
+    const disputeId = id;
     const db = await getDbConnection();
 
     const [evidence]: any = await db.execute(
@@ -51,12 +52,13 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'SUPPORT', 'FINANCE']);
     if (authResult instanceof NextResponse) return authResult;
 
-    const disputeId = params.id;
+    const disputeId = id;
     // Mock user for now since the mock rbac doesn't return full user info
     const uploaderId = 'system_admin'; 
 

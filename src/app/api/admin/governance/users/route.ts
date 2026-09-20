@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { verifyAdminRole } from '@/lib/rbac';
 import { auditLog } from '@/lib/security';
 import mysql from 'mysql2/promise';
-import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcrypt';
+import { uuidv4 } from '@/lib/uuid';
+import bcrypt from 'bcryptjs';
 
 const DB_HOST = process.env.DB_HOST || '127.0.0.1';
 const DB_USER = process.env.DB_USER || 'root';

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyAdminRole } from '@/lib/rbac';
 import { auditLog } from '@/lib/security';
 import mysql from 'mysql2/promise';
-import { v4 as uuidv4 } from 'uuid';
+import { uuidv4 } from '@/lib/uuid';
 
 const DB_HOST = process.env.DB_HOST || '127.0.0.1';
 const DB_USER = process.env.DB_USER || 'root';
@@ -39,14 +39,14 @@ function validateVariables(content: string, event_type: string): string | null {
   return null;
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
     if (authResult instanceof NextResponse) return authResult;
 
     const body = await request.json();
     const { content } = body;
-    const { id } = params;
 
     if (!content) return NextResponse.json({ success: false, error: 'Content required' }, { status: 400 });
 

@@ -99,7 +99,7 @@ export default function BookingsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          provider: 'mock_provider',
+          provider: 'razorpay',
         })
       });
       const data = await res.json();

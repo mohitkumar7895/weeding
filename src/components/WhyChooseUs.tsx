@@ -83,7 +83,7 @@ export default function WhyChooseUs() {
     <section className="why-choose-section">
       <div className="container-custom">
         {/* Left-aligned title matching reference screenshot exactly */}
-        <h2 className="why-title" data-typewriter="Why Choose WedWithMe?">
+        <h2 className="why-title">
           Why Choose WedWithMe?
         </h2>
 

@@ -196,6 +196,17 @@ export default function CustomerSearchSection({ initialSubTab = 'search' }: { in
     }
   }, [subTab]);
 
+  useEffect(() => {
+    fetch('/api/matrimonial/interests')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.sentProfileIds)) {
+          setInterestSentIds(new Set(data.sentProfileIds));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Perform live API search
   const executeSearch = async (overrides?: any) => {
     setLoading(true);
@@ -495,9 +506,23 @@ export default function CustomerSearchSection({ initialSubTab = 'search' }: { in
     }
   };
 
-  const handleSendInterest = (profileId: string, name: string) => {
-    setInterestSentIds((prev) => new Set(prev).add(profileId));
-    showToast(`Interest successfully transmitted to ${name}! 💖`);
+  const handleSendInterest = async (profileId: string, name: string) => {
+    try {
+      const res = await fetch('/api/matrimonial/interests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to_profile_id: profileId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setInterestSentIds((prev) => new Set(prev).add(profileId));
+        showToast(data.message || `Interest sent to ${name}`);
+      } else {
+        showToast(data.message || 'Could not send interest');
+      }
+    } catch {
+      showToast('Could not send interest. Please try again.');
+    }
   };
 
   // Count active filters

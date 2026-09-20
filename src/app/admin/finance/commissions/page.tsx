@@ -16,7 +16,7 @@ export default function CommissionReviewList() {
       if (filters.booking_id) params.append('booking_id', filters.booking_id);
       if (filters.status) params.append('status', filters.status);
 
-      const res = await fetch(\`/api/admin/finance/commissions/records?\${params.toString()}\`);
+      const res = await fetch(`/api/admin/finance/commissions/records?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setRecords(data.data);
@@ -130,9 +130,9 @@ export default function CommissionReviewList() {
                     <div className="text-xs text-emerald-600 font-medium mt-1">Vendor Net: ₹{vendorNet.toLocaleString()}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={\`px-2 py-1 rounded text-xs font-semibold \${
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
                       r.is_settled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                    }\`}>
+                    }`}>
                       {r.is_settled ? 'SETTLED' : 'UNSETTLED'}
                     </span>
                   </td>

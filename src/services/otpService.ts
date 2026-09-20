@@ -311,11 +311,6 @@ export async function verifyOtp(
     console.warn('[OtpService] DB verification error:', err.message);
   }
 
-  // 4. Default test code in non-production environments
-  if (trimmedOtp === '123456' && process.env.NODE_ENV !== 'production') {
-    return { valid: true, message: 'Dev OTP verified.' };
-  }
-
   return { valid: false, message: 'Invalid or expired verification code.' };
 }
 

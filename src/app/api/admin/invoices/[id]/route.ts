@@ -18,12 +18,13 @@ async function getDbConnection() {
   });
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
     if (authResult instanceof NextResponse) return authResult;
 
-    const invoiceId = params.id;
+    const invoiceId = id;
     const db = await getDbConnection();
 
     const [invoices]: any = await db.execute(
@@ -77,12 +78,13 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE']);
     if (authResult instanceof NextResponse) return authResult;
 
-    const invoiceId = params.id;
+    const invoiceId = id;
     const body = await request.json();
     const { status } = body;
 

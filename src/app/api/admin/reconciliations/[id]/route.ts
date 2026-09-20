@@ -19,8 +19,9 @@ async function getDbConnection() {
   });
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
     if (authResult instanceof NextResponse) return authResult;
 
@@ -36,7 +37,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
        LEFT JOIN users c ON b.customer_id = c.id
        LEFT JOIN vendors v ON b.vendor_id = v.id
        WHERE r.id = ?`,
-      [params.id]
+      [id]
     );
 
     if (!reconciliations.length) {
@@ -74,8 +75,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE']);
     if (authResult instanceof NextResponse) return authResult;
 
@@ -91,14 +93,14 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
     await db.execute(
       'UPDATE reconciliations SET status = ?, internal_notes = ? WHERE id = ?',
-      [status, internal_notes || null, params.id]
+      [status, internal_notes || null, id]
     );
 
     await auditLog(db, {
       actorId,
       actorRole: 'ADMIN',
       action: 'UPDATE_RECONCILIATION',
-      entityId: params.id,
+      entityId: id,
       entityType: 'reconciliations',
       details: { status },
       ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1'

@@ -21,7 +21,7 @@ async function getDbConnection() {
 export async function GET(request: Request) {
   try {
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'SUPPORT']);
-    if (authResult instanceof NextResponse) return authResult;
+    if (!authResult.ok) return authResult.response!;
 
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 
     const db = await getDbConnection();
 
-    const [registrationsResult]: any = await db.execute(`SELECT COUNT(*) as count FROM users WHERE role = 'USER'${dateFilter}`, params);
+    const [registrationsResult]: any = await db.execute(`SELECT COUNT(*) as count FROM users WHERE role = 'CUSTOMER'${dateFilter}`, params);
     
     const [profilesResult]: any = await db.execute(`SELECT COUNT(*) as count FROM customer_profiles WHERE 1=1${dateFilter}`, params);
 

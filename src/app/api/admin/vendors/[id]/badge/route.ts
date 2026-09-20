@@ -44,7 +44,7 @@ export async function PUT(
 
     await logAudit(auth.user!.id, 'MODERATE_BADGE', 'vendors', id, { action, new_status: newStatus });
 
-    return NextResponse.json({ success: true, message: `Verified badge \${action.toLowerCase()}ed successfully` });
+    return NextResponse.json({ success: true, message: `Verified badge ${action.toLowerCase()}ed successfully` });
   } catch (error: any) {
     console.error('API /api/admin/vendors/[id]/badge PUT Error:', error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

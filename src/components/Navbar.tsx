@@ -21,7 +21,6 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
     { name: 'Vendors', href: '/vendors' },
     { name: 'Matches', href: '/matches' },
     { name: 'Bookings', href: '/bookings' },
-    { name: 'Join as Vendor', href: '/vendor/register' },
     { name: 'About Us', href: '/about' },
   ];
 
@@ -36,7 +35,7 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
         {/* Brand Logo */}
         <Link href="/" className="brand-logo" aria-label="WedWithMe Home">
           <div className="logo-icon-svg">
-            <svg width="44" height="34" viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="56" height="42" viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <linearGradient id="wwmPinkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#ff2a73" />
@@ -111,19 +110,6 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-          </button>
-
-          {/* Mobile Notification Bell (Matching App Screenshot) */}
-          <button
-            className="icon-btn notification-btn"
-            aria-label="Notifications"
-            onClick={() => alert('No new notifications')}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-            <span className="bell-badge" />
           </button>
 
           {/* If user is logged in, show user badge */}
@@ -269,7 +255,8 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          height: 72px;
+          height: 76px;
+          position: relative;
         }
 
         .brand-logo {
@@ -280,8 +267,7 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
         }
 
         .brand-text-block {
-          display: flex;
-          flex-direction: column;
+          display: none;
         }
 
         .brand-name-text {
@@ -317,7 +303,10 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
         .desktop-nav {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 4px;
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
         }
 
         .desktop-nav :global(a),
@@ -538,6 +527,8 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
         @media (max-width: 900px) {
           .desktop-nav {
             display: none;
+            position: static;
+            transform: none;
           }
           .brand-text-block {
             display: none !important;

@@ -22,12 +22,13 @@ async function getDbConnection() {
 const VALID_STATUSES = ['OPEN', 'UNDER_REVIEW', 'EVIDENCE_REQUIRED', 'ESCALATED', 'RESOLVED', 'REJECTED', 'CLOSED'];
 const VALID_RESPONSIBILITIES = ['CUSTOMER', 'VENDOR', 'PLATFORM', 'UNDETERMINED'];
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'SUPPORT', 'FINANCE']);
     if (authResult instanceof NextResponse) return authResult;
 
-    const disputeId = params.id;
+    const disputeId = id;
     const db = await getDbConnection();
 
     const [disputes]: any = await db.execute(
@@ -61,14 +62,15 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const userRoleInfo: any = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
     if (!userRoleInfo.ok) return userRoleInfo.response;
 
     const actorId = 'system_admin'; 
 
-    const disputeId = params.id;
+    const disputeId = id;
     const body = await request.json();
     const { 
       status, 

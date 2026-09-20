@@ -196,7 +196,6 @@ export async function GET(
       refund_info: refundInfo,
       // Metadata
       add_ons: addOns,
-      package_inclusions: packageInclusions,
       // Relationships
       status_history: history,
       conversation_id: conversationId,

@@ -7,8 +7,8 @@ export interface EmailOptions {
   text?: string;
 }
 
-const SMTP_EMAIL = process.env.SMTP_EMAIL || 'prtmohit.provisioningtech.com@gmail.com';
-const SMTP_PASSWORD = process.env.SMTP_PASSWORD || 'vkrdsipfchlkgyxj';
+const SMTP_EMAIL = process.env.SMTP_EMAIL || '';
+const SMTP_PASSWORD = process.env.SMTP_PASSWORD || '';
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'WedWithMe <onboarding@resend.dev>';
 
@@ -53,6 +53,9 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
       return { success: true, messageId: info.messageId };
     } catch (smtpErr: any) {
       console.warn(`[EmailService] SMTP failed for ${to}:`, smtpErr.message);
+      if (!RESEND_API_KEY) {
+        return { success: false, error: smtpErr.message || 'SMTP send failed.' };
+      }
     }
   }
 
@@ -80,20 +83,21 @@ export async function sendEmail(options: EmailOptions): Promise<{ success: boole
         return { success: true, messageId: resData.id };
       } else {
         console.warn(`[EmailService] Resend API failed:`, resData);
+        return {
+          success: false,
+          error: resData?.message || 'Resend API rejected the email.',
+        };
       }
     } catch (resendErr: any) {
       console.warn(`[EmailService] Resend error:`, resendErr.message);
+      return { success: false, error: resendErr.message || 'Resend request failed.' };
     }
   }
 
-  // 3. Fallback for offline dev
-  console.log(`\n==========================================`);
-  console.log(`[EmailService MOCK/DEV OUTPUT]`);
-  console.log(`TO: ${to}`);
-  console.log(`SUBJECT: ${subject}`);
-  console.log(`==========================================\n`);
-
-  return { success: true, messageId: 'mock_' + Date.now() };
+  return {
+    success: false,
+    error: 'Email is not configured. Set SMTP_EMAIL/SMTP_PASSWORD or RESEND_API_KEY.',
+  };
 }
 
 /**

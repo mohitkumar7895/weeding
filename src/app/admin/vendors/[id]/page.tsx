@@ -13,7 +13,7 @@ export default function AdminVendorDetail() {
   const fetchDetail = async () => {
     setLoading(true);
     try {
-      const res = await fetch(\`/api/admin/vendors/\${id}\`);
+      const res = await fetch(`/api/admin/vendors/${id}`);
       const resData = await res.json();
       if (resData.success) {
         setData(resData.data);
@@ -65,17 +65,17 @@ export default function AdminVendorDetail() {
           <p className="text-slate-600">Owner: {data.owner_name} ({data.owner_email}) | City: {data.city}</p>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <span className={\`px-3 py-1 rounded-full text-sm font-semibold \${data.verification_status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'}\`}>
+          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${data.verification_status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'}`}>
             {data.verification_status}
           </span>
           <div className="flex gap-2 mt-2">
             {data.verification_status !== 'VERIFIED' && (
-              <button onClick={() => handleAction(\`/api/admin/vendors/\${id}/badge\`, { action: 'GRANT' })} className="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700">Grant Verified Badge</button>
+              <button onClick={() => handleAction(`/api/admin/vendors/${id}/badge`, { action: 'GRANT' })} className="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700">Grant Verified Badge</button>
             )}
             {data.verification_status === 'VERIFIED' && (
-              <button onClick={() => handleAction(\`/api/admin/vendors/\${id}/badge\`, { action: 'SUSPEND' })} className="bg-orange-600 text-white px-4 py-2 rounded text-sm hover:bg-orange-700">Suspend Badge</button>
+              <button onClick={() => handleAction(`/api/admin/vendors/${id}/badge`, { action: 'SUSPEND' })} className="bg-orange-600 text-white px-4 py-2 rounded text-sm hover:bg-orange-700">Suspend Badge</button>
             )}
-            <button onClick={() => handleAction(\`/api/admin/vendors/\${id}/badge\`, { action: 'REMOVE' })} className="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700">Reject Vendor</button>
+            <button onClick={() => handleAction(`/api/admin/vendors/${id}/badge`, { action: 'REMOVE' })} className="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700">Reject Vendor</button>
           </div>
         </div>
       </div>
@@ -91,7 +91,7 @@ export default function AdminVendorDetail() {
                   <div key={doc.id} className="border border-slate-100 p-3 rounded-lg bg-slate-50">
                     <div className="flex justify-between mb-2">
                       <span className="font-semibold text-slate-700">{doc.doc_type}</span>
-                      <span className={\`text-xs px-2 py-1 rounded \${doc.verification_status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : doc.verification_status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}\`}>{doc.verification_status}</span>
+                      <span className={`text-xs px-2 py-1 rounded ${doc.verification_status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-700' : doc.verification_status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{doc.verification_status}</span>
                     </div>
                     {doc.document_number && <p className="text-xs text-slate-500 mb-1">No: {doc.document_number}</p>}
                     {doc.file_url !== 'REDACTED' ? (
@@ -102,10 +102,10 @@ export default function AdminVendorDetail() {
                     
                     {doc.verification_status === 'PENDING' && doc.file_url !== 'REDACTED' && (
                       <div className="flex gap-2">
-                        <button onClick={() => handleAction(\`/api/admin/vendors/\${id}/documents/\${doc.id}\`, { verification_status: 'VERIFIED' })} className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded hover:bg-emerald-200">Approve</button>
+                        <button onClick={() => handleAction(`/api/admin/vendors/${id}/documents/${doc.id}`, { verification_status: 'VERIFIED' })} className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded hover:bg-emerald-200">Approve</button>
                         <button onClick={() => {
                           const reason = prompt('Rejection reason:');
-                          if (reason) handleAction(\`/api/admin/vendors/\${id}/documents/\${doc.id}\`, { verification_status: 'REJECTED', rejection_reason: reason });
+                          if (reason) handleAction(`/api/admin/vendors/${id}/documents/${doc.id}`, { verification_status: 'REJECTED', rejection_reason: reason });
                         }} className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200">Reject</button>
                       </div>
                     )}
@@ -143,8 +143,8 @@ export default function AdminVendorDetail() {
                   <p className="text-sm text-slate-500 mt-1">₹{parseFloat(s.starting_price).toLocaleString()}</p>
                   {s.moderation_status === 'PENDING_REVIEW' && (
                     <div className="mt-3 flex gap-2">
-                      <button onClick={() => handleAction(\`/api/admin/vendors/\${id}/moderation\`, { resource_type: 'service', resource_id: s.id, moderation_status: 'APPROVED' })} className="text-xs text-blue-600 font-medium">Approve</button>
-                      <button onClick={() => handleAction(\`/api/admin/vendors/\${id}/moderation\`, { resource_type: 'service', resource_id: s.id, moderation_status: 'REJECTED' })} className="text-xs text-red-600 font-medium">Reject</button>
+                      <button onClick={() => handleAction(`/api/admin/vendors/${id}/moderation`, { resource_type: 'service', resource_id: s.id, moderation_status: 'APPROVED' })} className="text-xs text-blue-600 font-medium">Approve</button>
+                      <button onClick={() => handleAction(`/api/admin/vendors/${id}/moderation`, { resource_type: 'service', resource_id: s.id, moderation_status: 'REJECTED' })} className="text-xs text-red-600 font-medium">Reject</button>
                     </div>
                   )}
                 </div>
@@ -162,8 +162,8 @@ export default function AdminVendorDetail() {
                   <p className="text-sm text-slate-500 mt-1">₹{parseFloat(p.price).toLocaleString()} (Cap: {p.guest_capacity})</p>
                   {p.moderation_status === 'PENDING_REVIEW' && (
                     <div className="mt-3 flex gap-2">
-                      <button onClick={() => handleAction(\`/api/admin/vendors/\${id}/moderation\`, { resource_type: 'package', resource_id: p.id, moderation_status: 'APPROVED' })} className="text-xs text-blue-600 font-medium">Approve</button>
-                      <button onClick={() => handleAction(\`/api/admin/vendors/\${id}/moderation\`, { resource_type: 'package', resource_id: p.id, moderation_status: 'REJECTED' })} className="text-xs text-red-600 font-medium">Reject</button>
+                      <button onClick={() => handleAction(`/api/admin/vendors/${id}/moderation`, { resource_type: 'package', resource_id: p.id, moderation_status: 'APPROVED' })} className="text-xs text-blue-600 font-medium">Approve</button>
+                      <button onClick={() => handleAction(`/api/admin/vendors/${id}/moderation`, { resource_type: 'package', resource_id: p.id, moderation_status: 'REJECTED' })} className="text-xs text-red-600 font-medium">Reject</button>
                     </div>
                   )}
                 </div>
@@ -182,8 +182,8 @@ export default function AdminVendorDetail() {
                     </div>
                     {p.moderation_status === 'PENDING_REVIEW' && (
                       <div className="flex gap-2">
-                        <button onClick={() => handleAction(\`/api/admin/vendors/\${id}/moderation\`, { resource_type: 'portfolio', resource_id: p.id, moderation_status: 'APPROVED' })} className="text-xs text-blue-600">Approve</button>
-                        <button onClick={() => handleAction(\`/api/admin/vendors/\${id}/moderation\`, { resource_type: 'portfolio', resource_id: p.id, moderation_status: 'REJECTED' })} className="text-xs text-red-600">Reject</button>
+                        <button onClick={() => handleAction(`/api/admin/vendors/${id}/moderation`, { resource_type: 'portfolio', resource_id: p.id, moderation_status: 'APPROVED' })} className="text-xs text-blue-600">Approve</button>
+                        <button onClick={() => handleAction(`/api/admin/vendors/${id}/moderation`, { resource_type: 'portfolio', resource_id: p.id, moderation_status: 'REJECTED' })} className="text-xs text-red-600">Reject</button>
                       </div>
                     )}
                   </div>

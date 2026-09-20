@@ -16,7 +16,7 @@ export default function AdminRefundsDashboard() {
       if (filters.status) params.append('status', filters.status);
       if (filters.booking_id) params.append('booking_id', filters.booking_id);
       
-      const res = await fetch(\`/api/admin/finance/refunds?\${params.toString()}\`);
+      const res = await fetch(`/api/admin/finance/refunds?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setRefunds(data.data);
@@ -115,13 +115,13 @@ export default function AdminRefundsDashboard() {
                   <div className="text-xs text-slate-400">Gross: ₹{parseFloat(r.original_amount).toLocaleString('en-IN')}</div>
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <span className={\`px-2 py-1 rounded text-xs font-bold \${
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${
                     ['COMPLETED', 'PROCESSED'].includes(r.status) ? 'bg-emerald-100 text-emerald-800' :
                     r.status === 'FAILED' ? 'bg-red-100 text-red-800' :
                     r.status === 'MANUAL_REVIEW' ? 'bg-purple-100 text-purple-800' :
                     r.status === 'PROCESSING' ? 'bg-blue-100 text-blue-800' :
                     'bg-amber-100 text-amber-800'
-                  }\`}>
+                  }`}>
                     {r.status}
                   </span>
                 </td>
@@ -129,7 +129,7 @@ export default function AdminRefundsDashboard() {
                   {new Date(r.created_at).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <Link href={\`/admin/finance/refunds/\${r.id}\`} className="text-blue-600 hover:underline font-medium text-sm">
+                  <Link href={`/admin/finance/refunds/${r.id}`} className="text-blue-600 hover:underline font-medium text-sm">
                     Review
                   </Link>
                 </td>

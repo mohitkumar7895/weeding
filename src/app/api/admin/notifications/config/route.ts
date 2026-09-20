@@ -65,7 +65,7 @@ export async function PATCH(request: Request) {
     for (const update of updates) {
       const { event_type, in_app_enabled, email_enabled, sms_enabled, push_enabled, whatsapp_enabled } = update;
       
-      const prev = existingMap.get(event_type);
+      const prev: any = existingMap.get(event_type);
       if (!prev) continue; // Skip invalid event types
 
       // Prepare audit comparison

@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
     const reelId = randomUUID();
     
     await query(
-      `INSERT INTO vendor_reels (id, vendor_id, video_url, thumbnail_url, title, description, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'PENDING')`,
+      `INSERT INTO vendor_reels (id, vendor_id, video_url, thumbnail_url, title, description, status, is_approved)
+       VALUES (?, ?, ?, ?, ?, ?, 'PENDING', FALSE)`,
       [reelId, user.id, video_url, thumbnail_url || null, title, description || null]
     );
 

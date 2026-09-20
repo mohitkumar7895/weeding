@@ -30,6 +30,9 @@ This checklist documents the security hardening pass executed across the platfor
 - [x] **Secret Redaction**: Passwords and JWTs are stripped from `audit_logs` payloads before database insertion.
 
 ## 7. Next Steps (Infrastructure / DevOps - TBD)
+- [x] **Payment webhooks**: Razorpay HMAC signature verified when `RAZORPAY_WEBHOOK_SECRET` is set; production refuses unsigned webhooks.
+- [x] **Payment verify**: Client `success: true` is ignored; order/payment HMAC required.
+- [x] **SMTP secrets**: Email credentials loaded from env only.
 - [ ] Configure Web Application Firewall (WAF) to handle DDoS protection and general rate-limiting at the Edge.
 - [ ] Ensure the production database is hosted on a private VPC, unreachable from the public internet.
 - [ ] Configure automated daily volume backups for the MySQL cluster.

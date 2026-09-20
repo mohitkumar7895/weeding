@@ -48,8 +48,17 @@ export default async function AdminLayout({
               <div className="pt-4 pb-2 px-4">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Operations</p>
               </div>
+              <Link href="/admin/customers" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors text-slate-300">
+                Customers
+              </Link>
               <Link href="/admin/vendors" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors text-slate-300">
                 Vendors Management
+              </Link>
+              <Link href="/admin/reels" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors text-slate-300">
+                Reels moderation
+              </Link>
+              <Link href="/admin/matching/weights" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors text-slate-300">
+                Match weights
               </Link>
               <Link href="/admin/marketplace" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors text-slate-300">
                 Marketplace Settings
@@ -65,8 +74,11 @@ export default async function AdminLayout({
               <Link href="/admin/reports/financial" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors text-slate-300">
                 Financial Reports
               </Link>
-              <Link href="/admin/reconciliations" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors text-slate-300">
-                Reconciliation
+              <Link href="/admin/receipts" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors text-slate-300">
+                Receipts
+              </Link>
+              <Link href="/admin/invoices" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors text-slate-300">
+                Invoices
               </Link>
             </>
           )}
@@ -98,6 +110,9 @@ export default async function AdminLayout({
               </Link>
               <Link href="/admin/governance/config" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors text-slate-300">
                 System Configuration
+              </Link>
+              <Link href="/admin/audit-logs" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors text-slate-300">
+                Audit Logs
               </Link>
               <Link href="/admin/notifications/config" className="block px-4 py-2 rounded hover:bg-slate-800 transition-colors text-slate-300">
                 Notification Matrix

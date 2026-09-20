@@ -30,11 +30,11 @@ export async function GET(req: NextRequest) {
     const headers = Object.keys(vendors[0]).join(',');
     const rows = vendors.map(v => 
       Object.values(v).map(val => 
-        typeof val === 'string' ? \`"\${val.replace(/"/g, '""')}"\` : val
+        typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
       ).join(',')
-    ).join('\\n');
+    ).join('\n');
 
-    const csvContent = \`\${headers}\\n\${rows}\`;
+    const csvContent = `${headers}\n${rows}`;
 
     return new NextResponse(csvContent, {
       headers: {

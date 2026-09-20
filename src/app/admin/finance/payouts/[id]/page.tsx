@@ -10,7 +10,7 @@ export default function PayoutDetail() {
   const [loading, setLoading] = useState(true);
 
   const fetchDetail = async () => {
-    const res = await fetch(\`/api/admin/finance/payouts/\${id}\`);
+    const res = await fetch(`/api/admin/finance/payouts/${id}`);
     const resData = await res.json();
     if (resData.success) setData(resData.data);
     setLoading(false);
@@ -19,11 +19,11 @@ export default function PayoutDetail() {
   useEffect(() => { fetchDetail(); }, [id]);
 
   const handleStatusChange = async (target_status: string) => {
-    const note = prompt(\`Enter note for changing status to \${target_status}:\`);
+    const note = prompt(`Enter note for changing status to ${target_status}:`);
     if (note === null) return;
 
     try {
-      const res = await fetch(\`/api/admin/finance/payouts/\${id}/status\`, {
+      const res = await fetch(`/api/admin/finance/payouts/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target_status, note })
@@ -46,12 +46,12 @@ export default function PayoutDetail() {
           <button onClick={() => router.back()} className="text-sm text-slate-500 hover:text-slate-800 mb-2">&larr; Back to payouts</button>
           <h1 className="text-2xl font-bold text-slate-800">Payout ID: {data.id}</h1>
         </div>
-        <span className={\`px-4 py-2 rounded-lg text-sm font-bold \${
+        <span className={`px-4 py-2 rounded-lg text-sm font-bold ${
           data.status === 'PAID' ? 'bg-emerald-100 text-emerald-800' :
           data.status === 'FAILED' ? 'bg-red-100 text-red-800' :
           data.status === 'MANUAL_REVIEW' ? 'bg-purple-100 text-purple-800' :
           'bg-amber-100 text-amber-800'
-        }\`}>
+        }`}>
           {data.status}
         </span>
       </div>

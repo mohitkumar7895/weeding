@@ -52,7 +52,8 @@ export async function GET(request: Request) {
     }
 
     const countQuery = `SELECT COUNT(*) as total FROM notification_delivery_logs l WHERE 1=1 ${query.substring(query.indexOf('WHERE 1=1') + 9)}`;
-    const [[{ total }]] = await db.execute(countQuery, params);
+    const [countRows]: any = await db.execute(countQuery, params);
+    const total = countRows?.[0]?.total || 0;
 
     query += ` ORDER BY l.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
     

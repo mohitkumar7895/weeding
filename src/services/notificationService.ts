@@ -1,5 +1,7 @@
 import { query } from '@/lib/db';
 import { randomUUID } from 'crypto';
+import { sendEmail } from './emailService';
+import { dispatchWhatsAppMessage } from './whatsappProvider';
 
 export type NotificationChannel = 'IN_APP' | 'EMAIL' | 'SMS' | 'WHATSAPP';
 
@@ -29,8 +31,6 @@ export interface WhatsAppMessage {
   parameters: string[];
 }
 
-import { sendEmail } from './emailService';
-
 // Provider Abstractions
 export class EmailProvider {
   async send(msg: EmailMessage): Promise<boolean> {
@@ -45,17 +45,57 @@ export class EmailProvider {
 
 export class SmsProvider {
   async send(msg: SmsMessage): Promise<boolean> {
-    // Configurable SMS Gateway abstraction
-    console.log(`[SmsProvider] Sent to ${msg.to}: "${msg.body}"`);
-    return true;
+    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+    const twilioFrom = process.env.TWILIO_SMS_FROM;
+    const msg91 = process.env.MSG91_AUTH_KEY;
+
+    if (twilioSid && twilioToken && twilioFrom) {
+      const body = new URLSearchParams({ To: msg.to, From: twilioFrom, Body: msg.body });
+      const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Basic ' + Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64'),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body,
+      });
+      if (!res.ok) {
+        console.warn('[SmsProvider] Twilio failed', await res.text());
+        return false;
+      }
+      return true;
+    }
+
+    if (msg91) {
+      const res = await fetch('https://control.msg91.com/api/v5/flow/', {
+        method: 'POST',
+        headers: { authkey: msg91, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          template_id: process.env.MSG91_TEMPLATE_ID,
+          recipients: [{ mobiles: msg.to.replace(/\D/g, ''), VAR1: msg.body }],
+        }),
+      });
+      if (!res.ok) {
+        console.warn('[SmsProvider] MSG91 failed', await res.text());
+        return false;
+      }
+      return true;
+    }
+
+    console.warn('[SmsProvider] No SMS provider configured; message not sent');
+    return false;
   }
 }
 
 export class WhatsAppProvider {
   async send(msg: WhatsAppMessage): Promise<boolean> {
-    // Meta Cloud API / Gupshup abstraction
-    console.log(`[WhatsAppProvider] Template ${msg.templateName} dispatched to ${msg.to}`);
-    return true;
+    const result = await dispatchWhatsAppMessage({
+      recipientPhone: msg.to,
+      templateName: msg.templateName,
+      messageText: `${msg.templateName}: ${msg.parameters.join(' ')}`,
+    });
+    return result.status === 'SENT' || result.status === 'DELIVERED';
   }
 }
 

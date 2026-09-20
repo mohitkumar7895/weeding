@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { verifyAdminRole } from '@/lib/rbac';
 import { logAudit } from '@/lib/auth';
-import { v4 as uuidv4 } from 'uuid';
+import { uuidv4 } from '@/lib/uuid';
 
 export async function GET(req: NextRequest) {
   try {
@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest) {
         if (key.startsWith('RANKING_WEIGHT_')) {
           const numValue = parseInt(value, 10);
           if (isNaN(numValue) || numValue < 0 || numValue > 100) {
-            throw new Error(\`Invalid weight for \${key}. Must be 0-100.\`);
+            throw new Error(`Invalid weight for ${key}. Must be 0-100.`);
           }
         }
 

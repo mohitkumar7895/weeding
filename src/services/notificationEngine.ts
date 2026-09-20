@@ -19,9 +19,9 @@ export interface NotificationPayload {
 export async function sendNotification(payload: NotificationPayload) {
   const { userId, title, message, category, link, metadata } = payload;
   
-  // 1. Check Preferences and User Profile
-  const [userResult] = await query<any[]>(`SELECT phone FROM users WHERE id = ?`, [userId]);
+  const [userResult] = await query<any[]>(`SELECT phone, email FROM users WHERE id = ?`, [userId]);
   const userPhone = userResult ? userResult.phone : null;
+  const userEmail = userResult ? userResult.email : null;
 
   const [pref] = await query<any[]>(
     `SELECT * FROM notification_preferences WHERE user_id = ? AND category = ?`,
@@ -30,11 +30,14 @@ export async function sendNotification(payload: NotificationPayload) {
 
   const inAppEnabled = pref ? pref.in_app_enabled : true;
   const emailEnabled = pref ? pref.email_enabled : true;
+  const smsEnabled = pref ? pref.sms_enabled !== false : true;
   const whatsappEnabled = pref ? pref.whatsapp_enabled : false;
+  const transactional = ['BOOKINGS', 'PAYMENTS', 'SECURITY'].includes(category);
 
   const results = {
     inApp: false,
     email: false,
+    sms: false,
     whatsapp: false,
   };
 
@@ -50,9 +53,24 @@ export async function sendNotification(payload: NotificationPayload) {
     results.inApp = true;
   }
 
-  // 3. Dispatch Email
-  if (emailEnabled) {
-    results.email = true;
+  if (emailEnabled || transactional) {
+    if (!userEmail) {
+      console.warn(`[notificationEngine] No email for user ${userId}`);
+    } else {
+      const { sendEmail } = await import('@/services/emailService');
+      const sent = await sendEmail({
+        to: userEmail,
+        subject: `[WedWithMe] ${title}`,
+        html: `<p>${message}</p>${link ? `<p><a href="${link}">Open</a></p>` : ''}`,
+      });
+      results.email = sent.success;
+      if (!sent.success) console.warn('[notificationEngine] Email failed', sent.error);
+    }
+  }
+
+  if ((smsEnabled || transactional) && userPhone) {
+    const { smsService } = await import('@/services/notificationService');
+    results.sms = await smsService.send({ to: userPhone, body: `${title}: ${message}` });
   }
 
   // 4. Dispatch WhatsApp

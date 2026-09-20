@@ -36,6 +36,44 @@ export function getClientIp(req: NextRequest): string {
 }
 
 /**
+ * Persist an admin action using an existing mysql2 connection.
+ */
+export async function auditLog(
+  db: any,
+  params: {
+    actorId?: string;
+    actorRole?: string;
+    action: string;
+    entityId?: string;
+    entityType?: string;
+    details?: any;
+    ipAddress?: string;
+  }
+) {
+  try {
+    const id = 'aud_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    await db.execute(
+      `INSERT INTO audit_logs (id, user_id, role, action, entity_type, entity_id, old_values, new_values, ip_address, user_agent)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        params.actorId || null,
+        params.actorRole || null,
+        params.action,
+        params.entityType || 'GENERAL',
+        params.entityId || 'N/A',
+        null,
+        params.details ? JSON.stringify(params.details) : null,
+        params.ipAddress || null,
+        null,
+      ]
+    );
+  } catch (err) {
+    console.error('Audit Log Error:', err);
+  }
+}
+
+/**
  * Generic safe error wrapper to prevent stack traces or SQL details from leaking
  */
 export function safeErrorResponse(error: any, defaultMessage = 'Internal Server Error', status = 500) {

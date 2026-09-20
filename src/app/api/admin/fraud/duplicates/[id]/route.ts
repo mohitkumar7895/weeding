@@ -19,8 +19,9 @@ async function getDbConnection() {
   });
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'SUPPORT']);
     if (authResult instanceof NextResponse) return authResult;
 
@@ -32,7 +33,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       FROM duplicate_profile_cases c
       LEFT JOIN users u ON c.reviewed_by = u.id
       WHERE c.id = ?
-    `, [params.id]);
+    `, [id]);
 
     if (cases.length === 0) {
       await db.end();
@@ -81,8 +82,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
     if (authResult instanceof NextResponse) return authResult;
 
@@ -91,7 +93,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
     const db = await getDbConnection();
 
-    const [rows]: any = await db.execute('SELECT status, risk_flag_id FROM duplicate_profile_cases WHERE id = ?', [params.id]);
+    const [rows]: any = await db.execute('SELECT status, risk_flag_id FROM duplicate_profile_cases WHERE id = ?', [id]);
     if (rows.length === 0) {
       await db.end();
       return NextResponse.json({ success: false, error: 'Case not found' }, { status: 404 });
@@ -105,7 +107,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       UPDATE duplicate_profile_cases 
       SET status = ?, review_notes = ?, reviewed_by = ? 
       WHERE id = ?
-    `, [status, review_notes || null, authResult.user?.id, params.id]);
+    `, [status, review_notes || null, authResult.user?.id, id]);
 
     // Sync status to the linked risk flag if applicable
     if (riskFlagId) {
@@ -124,7 +126,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       actorId: authResult.user?.id || 'system',
       actorRole: authResult.user?.role || 'ADMIN',
       action: 'UPDATE_DUPLICATE_CASE',
-      entityId: params.id,
+      entityId: id,
       entityType: 'duplicate_profile_cases',
       details: { previousStatus, newStatus: status, notes: review_notes },
       ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1'

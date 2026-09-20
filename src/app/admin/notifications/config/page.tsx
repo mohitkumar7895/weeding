@@ -117,7 +117,7 @@ export default function AdminNotificationConfig() {
       </div>
 
       <div className="space-y-8">
-        {Object.entries(groupedSettings).map(([category, events]) => (
+        {(Object.entries(groupedSettings) as [string, any[]][]).map(([category, events]) => (
           <div key={category} className="bg-white rounded-lg border shadow-sm overflow-hidden">
             <div className="bg-gray-50 px-6 py-4 border-b">
               <h2 className="text-lg font-bold text-gray-800">{category} EVENTS</h2>

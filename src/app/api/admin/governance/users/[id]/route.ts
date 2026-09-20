@@ -19,12 +19,11 @@ async function getDbConnection() {
   });
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN']);
     if (authResult instanceof NextResponse) return authResult;
-
-    const { id } = params;
     const body = await request.json();
     const { status, role } = body;
 

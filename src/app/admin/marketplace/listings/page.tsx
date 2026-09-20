@@ -16,7 +16,7 @@ export default function MarketplaceListings() {
   useEffect(() => { fetchVendors(); }, []);
 
   const togglePromotion = async (id: string, field: 'is_featured' | 'is_sponsored', currentValue: boolean) => {
-    await fetch(\`/api/admin/marketplace/vendors/\${id}/promotion\`, {
+    await fetch(`/api/admin/marketplace/vendors/${id}/promotion`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ [field]: !currentValue })
@@ -48,7 +48,7 @@ export default function MarketplaceListings() {
                 <td className="px-6 py-4 text-center">
                   <button 
                     onClick={() => togglePromotion(v.id, 'is_featured', v.is_featured)}
-                    className={\`px-3 py-1 rounded-full text-xs font-semibold \${v.is_featured ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}\`}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${v.is_featured ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
                   >
                     {v.is_featured ? '★ Featured' : 'Mark Featured'}
                   </button>
@@ -56,7 +56,7 @@ export default function MarketplaceListings() {
                 <td className="px-6 py-4 text-center">
                   <button 
                     onClick={() => togglePromotion(v.id, 'is_sponsored', v.is_sponsored)}
-                    className={\`px-3 py-1 rounded-full text-xs font-semibold \${v.is_sponsored ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}\`}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${v.is_sponsored ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
                   >
                     {v.is_sponsored ? '$ Sponsored' : 'Mark Sponsored'}
                   </button>

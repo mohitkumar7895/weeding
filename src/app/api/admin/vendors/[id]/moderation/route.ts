@@ -27,12 +27,12 @@ export async function PUT(
     else if (resource_type === 'portfolio') tableName = 'vendor_portfolios';
     else return NextResponse.json({ success: false, message: 'Invalid resource type' }, { status: 400 });
 
-    const existing = await query<any[]>(`SELECT id FROM \${tableName} WHERE id = ? AND vendor_id = ?`, [resource_id, id]);
+    const existing = await query<any[]>(`SELECT id FROM ${tableName} WHERE id = ? AND vendor_id = ?`, [resource_id, id]);
     if (!existing.length) {
       return NextResponse.json({ success: false, message: 'Resource not found' }, { status: 404 });
     }
 
-    await query(`UPDATE \${tableName} SET moderation_status = ? WHERE id = ?`, [moderation_status, resource_id]);
+    await query(`UPDATE ${tableName} SET moderation_status = ? WHERE id = ?`, [moderation_status, resource_id]);
 
     await logAudit(auth.user!.id, 'MODERATE_CONTENT', tableName, resource_id, {
       vendor_id: id,

@@ -21,7 +21,7 @@ async function getDbConnection() {
 export async function GET(request: Request) {
   try {
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
-    if (authResult instanceof NextResponse) return authResult;
+    if (!authResult.ok) return authResult.response!;
 
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
@@ -37,14 +37,12 @@ export async function GET(request: Request) {
     if (endDate) { bCond += ' AND b.created_at <= ?'; bParams.push(`${endDate} 23:59:59`); }
     if (vendorId) { bCond += ' AND b.vendor_id = ?'; bParams.push(vendorId); }
 
-    // 1. Gross Bookings
-    const [[{ gross_booking_value }]] = await db.execute(`
+    const [grossRows]: any = await db.execute(`
       SELECT SUM(total_amount) as gross_booking_value FROM bookings b WHERE ${bCond} AND b.status IN ('CONFIRMED', 'COMPLETED')
     `, bParams);
+    const gross_booking_value = grossRows?.[0]?.gross_booking_value;
 
-    // 2. Payments
-    // We filter payments by joining with bookings to respect the booking-level filters (vendor, date)
-    const [[{ successful_payments, failed_payments }]] = await db.execute(`
+    const [payRows]: any = await db.execute(`
       SELECT 
         SUM(CASE WHEN p.status = 'SUCCESS' THEN p.amount ELSE 0 END) as successful_payments,
         SUM(CASE WHEN p.status IN ('FAILED', 'PENDING') THEN p.amount ELSE 0 END) as failed_payments
@@ -52,22 +50,24 @@ export async function GET(request: Request) {
       JOIN bookings b ON p.booking_id = b.id
       WHERE ${bCond}
     `, bParams);
+    const successful_payments = payRows?.[0]?.successful_payments;
+    const failed_payments = payRows?.[0]?.failed_payments;
 
-    // 3. Refunds
-    const [[{ total_refunds }]] = await db.execute(`
+    const [refundRows]: any = await db.execute(`
       SELECT SUM(r.amount) as total_refunds
       FROM refunds r
       JOIN bookings b ON r.booking_id = b.id
       WHERE ${bCond} AND r.status = 'PROCESSED'
     `, bParams);
+    const total_refunds = refundRows?.[0]?.total_refunds;
 
-    // 4. Disputes
-    const [[{ total_disputed }]] = await db.execute(`
+    const [disputeRows]: any = await db.execute(`
       SELECT SUM(d.amount_under_dispute) as total_disputed
       FROM disputes d
       JOIN bookings b ON d.booking_id = b.id
       WHERE ${bCond} AND d.status NOT IN ('RESOLVED', 'CLOSED', 'REJECTED')
     `, bParams);
+    const total_disputed = disputeRows?.[0]?.total_disputed;
 
     // 5. Reconciliation Stats
     const [recStats]: any = await db.execute(`

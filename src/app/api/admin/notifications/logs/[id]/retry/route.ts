@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyAdminRole } from '@/lib/rbac';
 import { auditLog } from '@/lib/security';
 import mysql from 'mysql2/promise';
-import { v4 as uuidv4 } from 'uuid';
+import { uuidv4 } from '@/lib/uuid';
 
 const DB_HOST = process.env.DB_HOST || '127.0.0.1';
 const DB_USER = process.env.DB_USER || 'root';
@@ -20,12 +20,11 @@ async function getDbConnection() {
   });
 }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
     if (authResult instanceof NextResponse) return authResult;
-
-    const { id } = params;
 
     const db = await getDbConnection();
     

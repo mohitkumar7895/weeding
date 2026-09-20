@@ -17,7 +17,7 @@ export default function MarketplaceDashboard() {
         {cards.map(c => (
           <Link href={c.link} key={c.title} className="block group">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 h-full transition-all hover:shadow-md hover:border-slate-300">
-              <div className={\`w-12 h-12 rounded-lg flex items-center justify-center font-bold mb-4 \${c.color}\`}>
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold mb-4 ${c.color}`}>
                 {c.title.charAt(0)}
               </div>
               <h2 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 mb-2">{c.title}</h2>

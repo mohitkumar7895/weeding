@@ -16,7 +16,7 @@ export default function FinancePaymentsList() {
       if (filters.transaction_ref) params.append('transaction_ref', filters.transaction_ref);
       if (filters.booking_id) params.append('booking_id', filters.booking_id);
 
-      const res = await fetch(\`/api/admin/finance/payments?\${params.toString()}\`);
+      const res = await fetch(`/api/admin/finance/payments?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setPayments(data.data);
@@ -81,7 +81,7 @@ export default function FinancePaymentsList() {
             {loading ? <tr><td colSpan={6} className="p-6 text-center text-slate-500">Loading...</td></tr> : payments.length === 0 ? <tr><td colSpan={6} className="p-6 text-center text-slate-500">No payments found</td></tr> : payments.map(p => (
               <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4">
-                  <Link href={\`/admin/finance/payments/\${p.id}\`} className="font-medium text-blue-600 hover:underline">{p.transaction_ref}</Link>
+                  <Link href={`/admin/finance/payments/${p.id}`} className="font-medium text-blue-600 hover:underline">{p.transaction_ref}</Link>
                 </td>
                 <td className="px-6 py-4 text-slate-500 font-mono text-xs">{p.booking_id.substring(0,8)}...</td>
                 <td className="px-6 py-4">
@@ -92,11 +92,11 @@ export default function FinancePaymentsList() {
                   {parseFloat(p.amount).toLocaleString()} {p.currency}
                 </td>
                 <td className="px-6 py-4">
-                  <span className={\`px-2 py-1 rounded text-xs font-semibold \${
+                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
                     p.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-800' :
                     p.status === 'FAILED' ? 'bg-red-100 text-red-800' :
                     'bg-amber-100 text-amber-800'
-                  }\`}>
+                  }`}>
                     {p.status}
                   </span>
                 </td>

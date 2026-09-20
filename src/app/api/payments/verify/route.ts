@@ -21,7 +21,9 @@ export async function POST(req: NextRequest) {
     });
     
     const { booking_id, payment_reference: payment_transaction_id } = parsed;
-    const { success, simulated_error, order_id } = body;
+    const order_id = body.order_id || body.razorpay_order_id;
+    const payment_id = body.payment_id || body.razorpay_payment_id;
+    const signature = body.signature || body.razorpay_signature;
 
     // 1. Fetch transaction and booking to verify authorization
     const txns = await query<any[]>(
@@ -58,20 +60,18 @@ export async function POST(req: NextRequest) {
     let isVerified = false;
     let providerError = null;
 
-    if (success === true) {
-      try {
-        isVerified = await defaultPaymentProvider.verifyPayment({
-          orderId: order_id || txn.transaction_ref,
-          paymentId: `PAY_${Date.now()}_${randomUUID().split('-')[0]}`,
-          bookingId: booking_id
-        });
-      } catch (err: any) {
-        providerError = err.message;
+    try {
+      isVerified = await defaultPaymentProvider.verifyPayment({
+        orderId: order_id || txn.transaction_ref,
+        paymentId: payment_id,
+        signature,
+        bookingId: booking_id,
+      });
+      if (!isVerified) {
+        providerError = 'Razorpay signature verification failed';
       }
-    } else if (success === 'UNKNOWN') {
-       providerError = 'PENDING';
-    } else {
-       providerError = simulated_error || 'Payment failed or rejected by provider.';
+    } catch (err: any) {
+      providerError = err.message;
     }
 
     await transaction(async (conn) => {

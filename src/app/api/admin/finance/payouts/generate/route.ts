@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { verifyAdminRole } from '@/lib/rbac';
 import { logAudit } from '@/lib/auth';
-import { v4 as uuidv4 } from 'uuid';
+import { uuidv4 } from '@/lib/uuid';
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      message: \`Successfully generated \${result.count} payouts.\`,
+      message: `Successfully generated ${result.count} payouts.`,
       data: result
     });
   } catch (error: any) {

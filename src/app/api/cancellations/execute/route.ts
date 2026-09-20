@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { verifyAuth } from '@/lib/auth';
-import { v4 as uuidv4 } from 'uuid';
+import { uuidv4 } from '@/lib/uuid';
 
 export async function POST(req: NextRequest) {
   try {
     const auth = await verifyAuth();
-    if (!auth.user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    const user = auth.user;
+    if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
     const { booking_id, reason, initiator_override } = body;
@@ -35,11 +36,11 @@ export async function POST(req: NextRequest) {
 
       // 2. Determine Initiator Role
       let initiatorRole = 'ADMIN';
-      if (['SUPER_ADMIN', 'ADMIN'].includes(auth.user.role)) {
-         initiatorRole = initiator_override || 'ADMIN'; // Admins can simulate cancel for customer/vendor
-      } else if (b.customer_user_id === auth.user.id) {
+      if (['SUPER_ADMIN', 'ADMIN'].includes(user.role)) {
+         initiatorRole = initiator_override || 'ADMIN';
+      } else if (b.customer_user_id === user.id) {
          initiatorRole = 'CUSTOMER';
-      } else if (b.vendor_user_id === auth.user.id) {
+      } else if (b.vendor_user_id === user.id) {
          initiatorRole = 'VENDOR';
       } else {
          throw new Error('Unauthorized to cancel this booking');
@@ -73,13 +74,13 @@ export async function POST(req: NextRequest) {
       await conn.execute(`
         INSERT INTO cancellations (id, booking_id, cancelled_by_role, user_id, reason, rule_applied_id)
         VALUES (?, ?, ?, ?, ?, ?)
-      `, [cancellationId, booking_id, initiatorRole, auth.user.id, reason, ruleId]);
+      `, [cancellationId, booking_id, initiatorRole, user.id, reason, ruleId]);
 
       // 5. Add History Log
       await conn.execute(`
         INSERT INTO booking_status_history (id, booking_id, previous_status, new_status, changed_by, notes)
         VALUES (?, ?, ?, 'CANCELLED', ?, ?)
-      `, [uuidv4(), booking_id, b.status, auth.user.id, `Cancelled by ${initiatorRole}: ${reason}`]);
+      `, [uuidv4(), booking_id, b.status, user.id, `Cancelled by ${initiatorRole}: ${reason}`]);
 
       return { initiatorRole, ruleId };
     });

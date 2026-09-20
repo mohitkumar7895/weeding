@@ -180,10 +180,9 @@ export default function TopVendors() {
   return (
     <section className="vendors-section" id="vendors">
       <div className="container-custom">
-        {/* Section Header with typewriter scroll reveal */}
         <div className="section-header reveal-on-scroll">
           <div className="header-left">
-            <h2 className="section-title" data-typewriter="Top Wedding Vendors">
+            <h2 className="section-title">
               Top Wedding Vendors
             </h2>
             <p className="section-subtitle">
@@ -217,6 +216,7 @@ export default function TopVendors() {
                     className={`fav-btn ${isFav ? 'fav-active' : ''}`}
                     onClick={(e) => toggleFavorite(vendor.id, e)}
                     aria-label={`Add ${vendor.title} to favorites`}
+                    style={{ display: 'none' }}
                   >
                     <svg
                       width="18"

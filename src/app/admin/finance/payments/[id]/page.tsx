@@ -10,7 +10,7 @@ export default function FinancePaymentDetail() {
   const [loading, setLoading] = useState(true);
 
   const fetchDetail = async () => {
-    const res = await fetch(\`/api/admin/finance/payments/\${id}\`);
+    const res = await fetch(`/api/admin/finance/payments/${id}`);
     const resData = await res.json();
     if (resData.success) setData(resData.data);
     setLoading(false);
@@ -19,11 +19,11 @@ export default function FinancePaymentDetail() {
   useEffect(() => { fetchDetail(); }, [id]);
 
   const handleReconcile = async (target_status: string) => {
-    const reason = prompt(\`Enter reason for forcing \${target_status}:\`);
+    const reason = prompt(`Enter reason for forcing ${target_status}:`);
     if (!reason) return;
 
     try {
-      const res = await fetch(\`/api/admin/finance/payments/\${id}/reconcile\`, {
+      const res = await fetch(`/api/admin/finance/payments/${id}/reconcile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target_status, reason })
@@ -47,11 +47,11 @@ export default function FinancePaymentDetail() {
           <h1 className="text-2xl font-bold text-slate-800">Transaction: {data.transaction_ref}</h1>
           <p className="text-slate-500 text-sm mt-1">UUID: {data.id}</p>
         </div>
-        <span className={\`px-4 py-2 rounded-lg text-sm font-bold \${
+        <span className={`px-4 py-2 rounded-lg text-sm font-bold ${
           data.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-800' :
           data.status === 'FAILED' ? 'bg-red-100 text-red-800' :
           'bg-amber-100 text-amber-800'
-        }\`}>
+        }`}>
           {data.status}
         </span>
       </div>

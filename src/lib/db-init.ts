@@ -296,9 +296,9 @@ export async function initializeDatabase() {
       commission_amount DECIMAL(12, 2) NOT NULL,
       vendor_payout_amount DECIMAL(12, 2) NOT NULL,
       status ENUM(
-        'REQUESTED', 'PENDING_VENDOR', 'ACCEPTED', 'REJECTED',
+        'DRAFT', 'PENDING', 'REQUESTED', 'PENDING_VENDOR', 'ACCEPTED', 'REJECTED',
         'PAYMENT_PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED',
-        'CANCELLED', 'REFUND_PENDING', 'REFUNDED', 'DISPUTED'
+        'CANCELLED', 'REFUND_PROCESSING', 'REFUND_PENDING', 'REFUNDED', 'DISPUTED'
       ) DEFAULT 'REQUESTED',
       cancellation_reason TEXT,
       notes TEXT,
@@ -484,6 +484,13 @@ export async function initializeDatabase() {
 
   // Safe incremental migrations for existing customer_profiles
   const migrations = [
+    `ALTER TABLE bookings MODIFY status ENUM(
+        'DRAFT', 'PENDING', 'REQUESTED', 'PENDING_VENDOR', 'ACCEPTED', 'REJECTED',
+        'PAYMENT_PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED',
+        'CANCELLED', 'REFUND_PROCESSING', 'REFUND_PENDING', 'REFUNDED', 'DISPUTED'
+      ) DEFAULT 'REQUESTED'`,
+    `ALTER TABLE vendor_reels ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PENDING'`,
+    `ALTER TABLE vendor_reels ADD COLUMN IF NOT EXISTS rejection_reason TEXT NULL`,
     `ALTER TABLE customer_profiles MODIFY gender ENUM('MALE', 'FEMALE', 'OTHER') NULL`,
     `ALTER TABLE customer_profiles MODIFY date_of_birth DATE NULL`,
     `ALTER TABLE customer_profiles MODIFY height_cm INT NULL`,
@@ -560,6 +567,43 @@ export async function initializeDatabase() {
       await db.query(sql);
     } catch (_) {}
   }
+
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS matrimonial_threads (
+        id VARCHAR(36) PRIMARY KEY,
+        user_a_id VARCHAR(36) NOT NULL,
+        user_b_id VARCHAR(36) NOT NULL,
+        status ENUM('ACTIVE', 'BLOCKED', 'ARCHIVED') DEFAULT 'ACTIVE',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_mat_thread (user_a_id, user_b_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS matrimonial_messages (
+        id VARCHAR(36) PRIMARY KEY,
+        thread_id VARCHAR(36) NOT NULL,
+        sender_id VARCHAR(36) NOT NULL,
+        message TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_mat_msg_thread (thread_id, created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS matrimonial_interests (
+        id VARCHAR(36) PRIMARY KEY,
+        from_user_id VARCHAR(36) NOT NULL,
+        to_user_id VARCHAR(36) NOT NULL,
+        from_profile_id VARCHAR(36) NULL,
+        to_profile_id VARCHAR(36) NULL,
+        status ENUM('PENDING', 'ACCEPTED', 'DECLINED') DEFAULT 'PENDING',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_interest_pair (from_user_id, to_user_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+  } catch (_) {}
 
   // Step 4: Seed Initial Data
   await seedInitialData(db);

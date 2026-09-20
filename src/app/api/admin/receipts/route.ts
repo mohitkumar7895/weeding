@@ -26,10 +26,23 @@ function generateReceiptNumber() {
   return `${prefix}-${timestamp}-${rand}`;
 }
 
+export async function GET() {
+  try {
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
+    if (!authResult.ok) return authResult.response!;
+    const db = await getDbConnection();
+    const [rows] = await db.execute(`SELECT * FROM receipts ORDER BY created_at DESC LIMIT 200`);
+    await db.end();
+    return NextResponse.json({ success: true, data: rows });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE']);
-    if (authResult instanceof NextResponse) return authResult;
+    if (!authResult.ok) return authResult.response!;
 
     const actorId = 'system_admin'; 
     const body = await request.json();

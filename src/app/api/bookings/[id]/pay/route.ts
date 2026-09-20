@@ -108,6 +108,7 @@ export async function POST(
         amount: booking.total_amount,
         currency: order.currency,
         provider: order.provider,
+        key_id: order.keyId || process.env.RAZORPAY_KEY_ID || null,
         payment_transaction_id: paymentId
       }
     });

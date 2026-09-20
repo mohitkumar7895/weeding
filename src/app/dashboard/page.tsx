@@ -7,9 +7,11 @@ import PartnerPreferencesEditor from '@/components/PartnerPreferencesEditor';
 import CustomerMatchesSection from '@/components/CustomerMatchesSection';
 import CustomerSearchSection from '@/components/CustomerSearchSection';
 import CustomerShortlistSection from '@/components/CustomerShortlistSection';
+import CustomerInterestsSection from '@/components/CustomerInterestsSection';
+import CustomerMatrimonialChat from '@/components/CustomerMatrimonialChat';
 
 export default function CustomerDashboardPage() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'preferences' | 'matches' | 'shortlist' | 'search' | 'saved_searches' | 'bookings' | 'privacy' | 'checklist'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'preferences' | 'matches' | 'shortlist' | 'search' | 'saved_searches' | 'bookings' | 'privacy' | 'checklist' | 'notifications' | 'interests' | 'chat'>('dashboard');
   const [user, setUser] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
@@ -36,6 +38,9 @@ export default function CustomerDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [payingBookingId, setPayingBookingId] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [chatPeerUserId, setChatPeerUserId] = useState<string | null>(null);
 
   // Modals
   const [cancelModalBooking, setCancelModalBooking] = useState<any>(null);
@@ -53,7 +58,7 @@ export default function CustomerDashboardPage() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam && ['dashboard', 'profile', 'preferences', 'matches', 'shortlist', 'search', 'saved_searches', 'bookings', 'privacy', 'checklist'].includes(tabParam)) {
+      if (tabParam && ['dashboard', 'profile', 'preferences', 'matches', 'shortlist', 'search', 'saved_searches', 'bookings', 'privacy', 'checklist', 'notifications', 'interests', 'chat'].includes(tabParam)) {
         setActiveTab(tabParam as any);
       }
     }
@@ -82,12 +87,24 @@ export default function CustomerDashboardPage() {
         loadShortlist(),
         loadProfile(),
         loadBlockedUsers(),
+        loadNotifications(),
       ]);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications');
+      const data = await res.json();
+      if (data.success) {
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unread_count || 0);
+      }
+    } catch {}
   };
 
   const loadMatches = async () => {
@@ -413,12 +430,15 @@ export default function CustomerDashboardPage() {
     { id: 'profile', label: 'My Matrimonial Profile', icon: '👤' },
     { id: 'preferences', label: 'Partner Preferences', icon: '❤️' },
     { id: 'matches', label: 'Matrimonial Matches', icon: '💍', count: matches.length },
+    { id: 'interests', label: 'Interests', icon: '💖' },
+    { id: 'chat', label: 'Matrimonial Chat', icon: '💬' },
     { id: 'shortlist', label: 'Shortlisted Profiles', icon: '⭐', count: shortlistCount },
     { id: 'search', label: 'Search Profiles', icon: '🔍' },
     { id: 'saved_searches', label: 'Saved Searches', icon: '💾' },
     { id: 'bookings', label: 'My Bookings & Escrow', icon: '🛎️', count: bookings.length },
     { id: 'checklist', label: 'Wedding Checklist', icon: '📋' },
     { id: 'privacy', label: 'Privacy & Security', icon: '🔒' },
+    { id: 'notifications', label: 'Notifications', icon: '🔔', count: unreadCount },
   ];
 
   return (
@@ -597,6 +617,7 @@ export default function CustomerDashboardPage() {
               {activeTab === 'bookings' && '🛎️ My Wedding Bookings & Platform Escrow'}
               {activeTab === 'checklist' && '📋 Wedding Planning Milestones'}
               {activeTab === 'privacy' && '🔒 Personal Data Privacy & Security Controls'}
+              {activeTab === 'notifications' && '🔔 In-app notifications'}
             </h1>
             <p style={{ fontSize: '12px', color: '#9cb1a6', margin: 0 }}>
               Customer Suite • Escrow Protected Celebrations
@@ -1154,6 +1175,19 @@ export default function CustomerDashboardPage() {
             <CustomerMatchesSection
               onNavigateToPreferences={() => setActiveTab('preferences')}
             />
+          )}
+
+          {activeTab === 'interests' && (
+            <CustomerInterestsSection
+              onOpenChat={(peerUserId) => {
+                setChatPeerUserId(peerUserId);
+                setActiveTab('chat');
+              }}
+            />
+          )}
+
+          {activeTab === 'chat' && (
+            <CustomerMatrimonialChat currentUserId={user?.id} initialPeerUserId={chatPeerUserId} />
           )}
 
           {/* ================= TAB 1.1: SHORTLISTED PROFILES ================= */}
@@ -1766,6 +1800,30 @@ export default function CustomerDashboardPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'notifications' && (
+            <div style={{ background: 'rgba(3,23,16,0.6)', borderRadius: '16px', border: '1px solid rgba(229,193,88,0.2)', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <h2 style={{ margin: 0 }}>Notifications</h2>
+                <button
+                  onClick={async () => {
+                    await fetch('/api/notifications', { method: 'PUT' });
+                    loadNotifications();
+                  }}
+                  style={{ background: 'transparent', color: '#e5c158', border: '1px solid #e5c158', borderRadius: '8px', padding: '6px 10px' }}
+                >
+                  Mark all read
+                </button>
+              </div>
+              {notifications.length === 0 && <p style={{ color: '#9cb1a6' }}>No notifications yet.</p>}
+              {notifications.map((n: any) => (
+                <div key={n.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '10px 0' }}>
+                  <div style={{ fontWeight: 700 }}>{n.title}</div>
+                  <div style={{ color: '#9cb1a6', fontSize: '13px' }}>{n.message}</div>
+                </div>
+              ))}
             </div>
           )}
         </main>

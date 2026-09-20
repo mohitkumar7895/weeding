@@ -6,7 +6,9 @@
     "dev": "node server.js",
     "build": "next build",
     "start": "cross-env NODE_ENV=production node server.js",
-    "lint": "next lint"
+    "lint": "next lint",
+    "openapi": "node scripts/generate-openapi.js",
+    "test": "node --test scripts/website-unit-tests.js"
   },
   "dependencies": {
     "@prisma/client": "^7.10.0",

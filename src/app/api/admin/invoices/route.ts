@@ -29,7 +29,7 @@ function generateInvoiceNumber() {
 export async function GET(request: Request) {
   try {
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
-    if (authResult instanceof NextResponse) return authResult;
+    if (!authResult.ok) return authResult.response!;
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE']);
-    if (authResult instanceof NextResponse) return authResult;
+    if (!authResult.ok) return authResult.response!;
 
     const actorId = 'system_admin'; 
     const body = await request.json();
@@ -122,7 +122,15 @@ export async function POST(request: Request) {
     // If total_amount includes tax: taxable = total / 1.18, tax = total - taxable
     // If total_amount is base: tax = total * 0.18, final = total + tax.
     // Let's assume booking.total_amount is the final amount including tax.
-    const taxRate = 18.00;
+    const gstCfg = await db.execute(`SELECT config_value FROM system_configuration WHERE config_key = 'GST_RATE' LIMIT 1`).catch(() => [[] as any]);
+    let taxRate = 18.00;
+    try {
+      const rows: any = Array.isArray(gstCfg) ? gstCfg[0] : [];
+      if (rows?.[0]?.config_value) {
+        const parsed = typeof rows[0].config_value === 'string' ? JSON.parse(rows[0].config_value) : rows[0].config_value;
+        if (parsed.rate) taxRate = parseFloat(parsed.rate);
+      }
+    } catch {}
     const totalAmount = parseFloat(booking.total_amount);
     const taxableAmount = totalAmount / (1 + (taxRate / 100));
     const taxAmount = totalAmount - taxableAmount;

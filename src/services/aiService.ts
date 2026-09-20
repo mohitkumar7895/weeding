@@ -1,5 +1,81 @@
-import { query, transaction } from '@/lib/db';
+import { query } from '@/lib/db';
 import { randomUUID } from 'crypto';
+
+async function ensureAiTables() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS ai_conversations (
+      id VARCHAR(36) PRIMARY KEY,
+      user_id VARCHAR(36) NULL,
+      session_token VARCHAR(100),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+  await query(`
+    CREATE TABLE IF NOT EXISTS ai_messages (
+      id VARCHAR(36) PRIMARY KEY,
+      conversation_id VARCHAR(36) NOT NULL,
+      sender VARCHAR(20) NOT NULL,
+      content TEXT NOT NULL,
+      structured_data JSON NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_ai_msg_conv (conversation_id, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+}
+
+async function persistConversation(userId: string | null, conversationId: string | null): Promise<string> {
+  let currentConvId = conversationId || randomUUID();
+  try {
+    await ensureAiTables();
+    if (conversationId) {
+      const existing = await query<any[]>(`SELECT id FROM ai_conversations WHERE id = ?`, [conversationId]);
+      if (existing?.length) return conversationId;
+      currentConvId = randomUUID();
+    }
+    await query(
+      `INSERT INTO ai_conversations (id, user_id, session_token) VALUES (?, ?, ?)`,
+      [currentConvId, userId, randomUUID()]
+    );
+    return currentConvId;
+  } catch (err: any) {
+    if (String(err.message || '').includes('foreign key')) {
+      const fallbackId = randomUUID();
+      try {
+        await query(
+          `INSERT INTO ai_conversations (id, user_id, session_token) VALUES (?, NULL, ?)`,
+          [fallbackId, randomUUID()]
+        );
+        return fallbackId;
+      } catch {
+        return fallbackId;
+      }
+    }
+    console.warn('[Sagun] conversation persist skipped:', err.message);
+    return currentConvId;
+  }
+}
+
+async function persistMessage(
+  conversationId: string,
+  sender: 'USER' | 'SAGUN',
+  content: string,
+  structuredData: unknown
+) {
+  try {
+    await query(
+      `INSERT INTO ai_messages (id, conversation_id, sender, content, structured_data) VALUES (?, ?, ?, ?, ?)`,
+      [
+        randomUUID(),
+        conversationId,
+        sender,
+        content || ' ',
+        structuredData ? JSON.stringify(structuredData) : null,
+      ]
+    );
+  } catch (err: any) {
+    console.warn('[Sagun] message persist skipped:', err.message);
+  }
+}
 
 export interface AIChatResponse {
   conversationId: string;
@@ -16,34 +92,32 @@ export async function processAIChat(
   conversationId: string | null,
   message: string
 ): Promise<AIChatResponse> {
-  const normalizedMsg = message.toLowerCase().trim();
-  let currentConvId = conversationId;
-
-  // 1. Ensure conversation exists
-  if (!currentConvId) {
-    currentConvId = randomUUID();
-    await query(
-      `INSERT INTO ai_conversations (id, user_id, session_token) VALUES (?, ?, ?)`,
-      [currentConvId, userId, randomUUID()]
-    );
-  } else {
-    // Verify conversation exists
-    const existing = await query<any[]>(`SELECT id FROM ai_conversations WHERE id = ?`, [currentConvId]);
-    if (!existing.length) {
-      currentConvId = randomUUID();
-      await query(
-        `INSERT INTO ai_conversations (id, user_id, session_token) VALUES (?, ?, ?)`,
-        [currentConvId, userId, randomUUID()]
-      );
-    }
+  try {
+    return await processAIChatInner(userId, conversationId, message);
+  } catch (error: any) {
+    console.error('[Sagun] processAIChat failed:', error);
+    return {
+      conversationId: conversationId || randomUUID(),
+      reply:
+        'Namaste! Main Sagun hoon. Abhi assistant connect nahi ho paaya, lekin aap Vendors aur Matches pages par seedha dekh sakte ho. Thodi der baad phir try karein.',
+      structuredData: null,
+      suggestedPrompts: [
+        'Show me top photographers in Delhi',
+        'Find compatible verified brides / grooms',
+        'Plan a ₹20 Lakh Indian wedding budget',
+      ],
+    };
   }
+}
 
-  // 2. Save User Message
-  const userMsgId = randomUUID();
-  await query(
-    `INSERT INTO ai_messages (id, conversation_id, sender, content) VALUES (?, ?, 'USER', ?)`,
-    [userMsgId, currentConvId, message]
-  );
+async function processAIChatInner(
+  userId: string | null,
+  conversationId: string | null,
+  message: string
+): Promise<AIChatResponse> {
+  const normalizedMsg = message.toLowerCase().trim();
+  const currentConvId = await persistConversation(userId, conversationId);
+  await persistMessage(currentConvId, 'USER', message, null);
 
   // 3. Intent Detection & Live Database Querying
   let reply = '';
@@ -78,7 +152,7 @@ export async function processAIChat(
     let vendorSql = `
       SELECT v.id, v.business_name, v.city, v.rating, v.review_count, v.starting_price, v.cover_image, c.name as category_name
       FROM vendors v
-      JOIN categories c ON v.category_id = c.id
+      LEFT JOIN categories c ON v.category_id = c.id
       WHERE v.verification_status != 'SUSPENDED'
     `;
     const params: any[] = [];
@@ -92,7 +166,12 @@ export async function processAIChat(
     }
     vendorSql += ` ORDER BY v.rating DESC, v.is_featured DESC LIMIT 3`;
 
-    const vendors = await query<any[]>(vendorSql, params);
+    let vendors: any[] = [];
+    try {
+      vendors = await query<any[]>(vendorSql, params);
+    } catch (err: any) {
+      console.warn('[Sagun] vendor lookup failed:', err.message);
+    }
 
     if (vendors.length > 0) {
       reply = `Namaste! Based on your criteria, I have handpicked top-rated verified wedding vendors for you${cityFilter ? ' in ' + cityFilter : ''}. All these vendors offer verified transparent pricing and escrow-backed booking security through WedWithMe.`;
@@ -133,7 +212,12 @@ export async function processAIChat(
     }
     matchSql += ` LIMIT 3`;
 
-    const candidates = await query<any[]>(matchSql, params);
+    let candidates: any[] = [];
+    try {
+      candidates = await query<any[]>(matchSql, params);
+    } catch (err: any) {
+      console.warn('[Sagun] match lookup failed:', err.message);
+    }
     if (candidates.length > 0) {
       reply = `Here are government-ID verified matrimonial profiles on WedWithMe that match high compatibility scores. Our proprietary 10-Factor AI engine evaluates mutual preferences across lifestyle, education, values, and location.`;
       structuredData = {
@@ -178,24 +262,19 @@ export async function processAIChat(
       'How to book with milestone escrow'
     ];
   } else {
-    // General conversational & cultural guidance
-    reply = `Namaste! I am Sagun, your AI Wedding & Matrimonial Advisor on WedWithMe. 
-I can help you discover 100% government-ID verified matrimonial matches, calculate Vedic compatibility, recommend top wedding vendors with verified pricing, and plan your milestone-based budget.
-What aspect of your wedding or matchmaking journey can I assist you with today?`;
+    const { generateSagunResponse, getSagunSystemPrompt } = await import('@/services/sagunProvider');
+    reply = await generateSagunResponse([
+      { role: 'SYSTEM', content: getSagunSystemPrompt() },
+      { role: 'USER', content: message },
+    ]);
     suggestedPrompts = [
       'Show me top photographers in Delhi',
       'Find compatible verified brides / grooms',
       'Plan a ₹20 Lakh Indian wedding budget',
-      'What are the auspicious wedding dates for 2026-2027?'
     ];
   }
 
-  // 4. Save Sagun Response
-  const aiMsgId = randomUUID();
-  await query(
-    `INSERT INTO ai_messages (id, conversation_id, sender, content, structured_data) VALUES (?, ?, 'SAGUN', ?, ?)`,
-    [aiMsgId, currentConvId, reply, structuredData ? JSON.stringify(structuredData) : null]
-  );
+  await persistMessage(currentConvId, 'SAGUN', reply, structuredData);
 
   return {
     conversationId: currentConvId,

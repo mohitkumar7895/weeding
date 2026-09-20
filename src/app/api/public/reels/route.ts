@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
        FROM vendor_reels r
        JOIN vendors v ON r.vendor_id = v.id
        JOIN users u ON v.id = u.id
-       WHERE r.status = 'APPROVED' 
-         AND v.verification_status = 'APPROVED'
+       WHERE (r.status = 'APPROVED' OR r.is_approved = TRUE)
+         AND v.verification_status IN ('APPROVED', 'VERIFIED')
        ORDER BY r.created_at DESC
        LIMIT 50`
     );

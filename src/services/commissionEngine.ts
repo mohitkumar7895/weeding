@@ -1,4 +1,5 @@
 import { query } from '@/lib/db';
+import { computeCommissionAmount, pickTierValue } from '@/lib/commissionTiers';
 
 export interface CommissionCalculationResult {
   ruleId: string;
@@ -43,13 +44,19 @@ export async function calculateCommission(
     return applyRule(defaultRules[0], totalAmount);
   }
 
-  // Default hardcoded fallback if table empty: 10%
-  const commission = (totalAmount * 10) / 100;
+  const { getSystemConfig } = await import('@/lib/systemConfig');
+  const cfg = await getSystemConfig<{ rate?: number }>('PLATFORM_COMMISSION_RATE', { rate: 10 });
+  const rate = Number(cfg.rate);
+  if (!Number.isFinite(rate)) {
+    throw new Error('No active commission rule and PLATFORM_COMMISSION_RATE is invalid');
+  }
+  console.error('Commission rules table empty; using PLATFORM_COMMISSION_RATE config', rate);
+  const commission = (totalAmount * rate) / 100;
   return {
-    ruleId: 'default_fallback',
-    ruleName: 'Standard 10% Fallback',
+    ruleId: 'platform_config',
+    ruleName: 'Platform configured commission',
     commissionType: 'PERCENTAGE',
-    commissionValue: 10,
+    commissionValue: rate,
     totalAmount,
     commissionAmount: commission,
     vendorPayoutAmount: totalAmount - commission,
@@ -57,40 +64,23 @@ export async function calculateCommission(
 }
 
 function applyRule(rule: any, totalAmount: number): CommissionCalculationResult {
-  let commission = 0;
   let appliedValue = parseFloat(rule.commission_value);
-
   if (rule.tiers_json) {
     try {
       const tiers = typeof rule.tiers_json === 'string' ? JSON.parse(rule.tiers_json) : rule.tiers_json;
-      if (Array.isArray(tiers) && tiers.length > 0) {
-        // Find matching tier
-        for (const tier of tiers) {
-          const min = parseFloat(tier.min_amount) || 0;
-          const max = tier.max_amount ? parseFloat(tier.max_amount) : Infinity;
-          if (totalAmount >= min && totalAmount <= max) {
-             appliedValue = parseFloat(tier.commission_value);
-             break;
-          }
-        }
-      }
+      appliedValue = pickTierValue(totalAmount, appliedValue, tiers);
     } catch (e) {
       console.error('Error parsing commission rule tiers JSON', e);
     }
   }
 
-  if (rule.commission_type === 'PERCENTAGE') {
-    commission = (totalAmount * appliedValue) / 100;
-  } else {
-    commission = appliedValue;
-  }
-
-  if (rule.min_fee && commission < parseFloat(rule.min_fee)) {
-    commission = parseFloat(rule.min_fee);
-  }
-  if (rule.max_fee && commission > parseFloat(rule.max_fee)) {
-    commission = parseFloat(rule.max_fee);
-  }
+  const amounts = computeCommissionAmount({
+    totalAmount,
+    commissionType: rule.commission_type,
+    commissionValue: appliedValue,
+    minFee: rule.min_fee ? parseFloat(rule.min_fee) : undefined,
+    maxFee: rule.max_fee ? parseFloat(rule.max_fee) : undefined,
+  });
 
   return {
     ruleId: rule.id,
@@ -98,7 +88,7 @@ function applyRule(rule: any, totalAmount: number): CommissionCalculationResult 
     commissionType: rule.commission_type,
     commissionValue: appliedValue,
     totalAmount,
-    commissionAmount: Math.round(commission * 100) / 100,
-    vendorPayoutAmount: Math.round((totalAmount - commission) * 100) / 100,
+    commissionAmount: amounts.commissionAmount,
+    vendorPayoutAmount: amounts.vendorPayoutAmount,
   };
 }

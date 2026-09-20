@@ -12,7 +12,7 @@ export default function AdminVendorsList() {
   const fetchVendors = async () => {
     setLoading(true);
     try {
-      const url = statusFilter ? \`/api/admin/vendors?status=\${statusFilter}\` : '/api/admin/vendors';
+      const url = statusFilter ? `/api/admin/vendors?status=${statusFilter}` : '/api/admin/vendors';
       const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
@@ -87,12 +87,12 @@ export default function AdminVendorsList() {
                     <div className="text-xs text-slate-500">{v.city}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={\`px-2 py-1 rounded text-xs font-medium \${v.verification_status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800' : v.verification_status === 'PENDING' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'}\`}>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${v.verification_status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800' : v.verification_status === 'PENDING' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'}`}>
                       {v.verification_status}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <Link href={\`/admin/vendors/\${v.id}\`} className="text-blue-600 hover:text-blue-800 font-medium">
+                    <Link href={`/admin/vendors/${v.id}`} className="text-blue-600 hover:text-blue-800 font-medium">
                       Manage &rarr;
                     </Link>
                   </td>

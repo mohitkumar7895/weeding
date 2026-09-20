@@ -19,8 +19,9 @@ async function getDbConnection() {
   });
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
     if (authResult instanceof NextResponse) return authResult;
 
@@ -31,7 +32,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       FROM risk_flags f
       LEFT JOIN users u ON f.reviewed_by = u.id
       WHERE f.id = ?
-    `, [params.id]);
+    `, [id]);
 
     if (flags.length === 0) {
       await db.end();
@@ -65,8 +66,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
     if (authResult instanceof NextResponse) return authResult;
 
@@ -75,7 +77,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
     const db = await getDbConnection();
 
-    const [rows]: any = await db.execute('SELECT status FROM risk_flags WHERE id = ?', [params.id]);
+    const [rows]: any = await db.execute('SELECT status FROM risk_flags WHERE id = ?', [id]);
     if (rows.length === 0) {
       await db.end();
       return NextResponse.json({ success: false, error: 'Flag not found' }, { status: 404 });
@@ -88,13 +90,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       UPDATE risk_flags 
       SET status = ?, review_notes = ?, reviewed_by = ? 
       WHERE id = ?
-    `, [status, review_notes || null, authResult.user?.id, params.id]);
+    `, [status, review_notes || null, authResult.user?.id, id]);
 
     await auditLog(db, {
       actorId: authResult.user?.id || 'system',
       actorRole: authResult.user?.role || 'ADMIN',
       action: 'UPDATE_RISK_FLAG',
-      entityId: params.id,
+      entityId: id,
       entityType: 'risk_flags',
       details: { previousStatus, newStatus: status, notes: review_notes },
       ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1'
