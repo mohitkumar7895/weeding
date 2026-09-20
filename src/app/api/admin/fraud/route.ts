@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSessionUser, logAudit } from '@/lib/auth';
 import { verifyAdminRole } from '@/lib/rbac';
+import { ensureOpsTables, safeSelect } from '@/lib/ensureOpsTables';
 
 export async function GET(req: NextRequest) {
     const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
@@ -13,9 +14,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
     }
 
+    await ensureOpsTables();
+
     const [fraudFlags, riskEvents] = await Promise.all([
-      query<any[]>(`SELECT * FROM fraud_flags ORDER BY created_at DESC LIMIT 50`),
-      query<any[]>(`SELECT * FROM risk_events ORDER BY created_at DESC LIMIT 50`),
+      safeSelect<any[]>(`SELECT * FROM fraud_flags ORDER BY created_at DESC LIMIT 50`),
+      safeSelect<any[]>(`SELECT * FROM risk_events ORDER BY created_at DESC LIMIT 50`),
     ]);
 
     return NextResponse.json({

@@ -9,6 +9,8 @@ interface ProfileData {
 
 export async function detectDuplicateProfile(userId: string, profileId: string, profileData: ProfileData) {
   try {
+    const { ensureOpsTables } = await import('./ensureOpsTables');
+    await ensureOpsTables();
     const { gender, date_of_birth, name } = profileData;
 
     if (!gender || !date_of_birth || !name) {

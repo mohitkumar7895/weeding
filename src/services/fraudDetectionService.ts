@@ -10,6 +10,8 @@ export interface FraudFlagParams {
 }
 
 export async function createFraudFlag(params: FraudFlagParams): Promise<string> {
+  const { ensureOpsTables } = await import('@/lib/ensureOpsTables');
+  await ensureOpsTables();
   const id = randomUUID();
   await query(
     `INSERT INTO fraud_flags (id, entity_type, entity_id, risk_score, flag_reason, severity, status)
