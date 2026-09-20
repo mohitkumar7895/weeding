@@ -22,11 +22,16 @@ export function getPool(): mysql.Pool {
       database: DB_NAME,
       port: DB_PORT,
       waitForConnections: true,
-      connectionLimit: 20,
+      connectionLimit: process.env.VERCEL ? 5 : 20,
       queueLimit: 0,
+      connectTimeout: 15000,
       enableKeepAlive: true,
       keepAliveInitialDelay: 10000,
       decimalNumbers: true,
+      ssl:
+        process.env.DB_SSL === 'true' || process.env.DB_SSL === '1'
+          ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
+          : undefined,
     });
   }
   return global._mysqlPool;
