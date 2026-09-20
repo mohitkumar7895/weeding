@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getSessionUser();
     if (!session) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ success: true, count: 0, shortlists: [], shortlistedIds: [] });
     }
 
     const profiles = await query<any[]>(

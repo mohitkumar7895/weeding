@@ -5,16 +5,16 @@ import { getSessionUser } from '@/lib/auth';
 export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser();
-    if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    if (!user) return NextResponse.json({ success: true, preferences: [] });
 
     const preferences = await query<any[]>(
       `SELECT * FROM notification_preferences WHERE user_id = ?`,
       [user.id]
     );
 
-    return NextResponse.json({ success: true, preferences });
+    return NextResponse.json({ success: true, preferences: Array.isArray(preferences) ? preferences : [] });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    return NextResponse.json({ success: true, preferences: [] });
   }
 }
 

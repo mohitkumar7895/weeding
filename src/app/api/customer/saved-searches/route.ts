@@ -2,18 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 import { randomUUID } from 'crypto';
+import { ensureOpsTables, safeSelect } from '@/lib/ensureOpsTables';
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getSessionUser();
-    if (!session || (session.role !== 'CUSTOMER' && session.role !== 'SUPER_ADMIN')) {
-      return NextResponse.json(
-        { success: false, message: 'Authentication required to view saved searches.' },
-        { status: 401 }
-      );
+    if (!session) {
+      return NextResponse.json({ success: true, data: [], count: 0 });
     }
 
-    const rows = await query<any[]>(
+    await ensureOpsTables();
+    const rows = await safeSelect<any[]>(
       `SELECT id, user_id, name, criteria_json, created_at, updated_at
        FROM saved_searches
        WHERE user_id = ?
@@ -45,10 +44,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('[Saved Searches GET Error]:', error);
-    return NextResponse.json(
-      { success: false, message: error.message || 'Failed to fetch saved searches.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: true, data: [], count: 0 });
   }
 }
 

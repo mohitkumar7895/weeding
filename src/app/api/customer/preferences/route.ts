@@ -53,10 +53,7 @@ export async function GET() {
   try {
     const session = await getSessionUser();
     if (!session) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized. Please sign in.' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: true, preferences: null, guest: true });
     }
 
     try {

@@ -50,8 +50,16 @@ export function verifyToken(token: string): TokenPayload | null {
  */
 export async function getSessionUser(): Promise<TokenPayload | null> {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
+    const cookieStore = cookies();
+    let token = cookieStore.get(COOKIE_NAME)?.value;
+    // Fallback to Authorization header (Bearer token)
+    if (!token) {
+      const { headers } = await import('next/headers');
+      const authHeader = headers().get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7).trim();
+      }
+    }
     if (!token) return null;
     return verifyToken(token);
   } catch (error) {

@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: [], enabled: false, message: 'Matrimonial chat is disabled' });
     }
     const user = await getSessionUser();
-    if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    if (!user) return NextResponse.json({ success: true, data: [], enabled: true });
 
     await ensureOpsTables();
     const threadId = new URL(req.url).searchParams.get('thread_id');

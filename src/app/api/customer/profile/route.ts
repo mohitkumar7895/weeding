@@ -139,7 +139,7 @@ export async function GET() {
   try {
     const session = await getSessionUser();
     if (!session) {
-      return NextResponse.json({ success: false, message: 'Unauthorized. Please sign in.' }, { status: 401 });
+      return NextResponse.json({ success: true, profile: null, guest: true });
     }
 
     // 1. Fetch user record
