@@ -125,6 +125,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
 
