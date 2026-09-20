@@ -9,6 +9,8 @@ export default function MobileBottomNav() {
   const pathname = usePathname() || '/';
   const { user } = useAppContext();
 
+  if (pathname.startsWith('/admin')) return null;
+
   const profileHref = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN'
     ? '/admin'
     : user?.role === 'VENDOR'

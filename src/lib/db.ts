@@ -1,12 +1,15 @@
 import mysql from 'mysql2/promise';
 
-const DB_HOST = process.env.DB_HOST || 'localhost';
-const DB_USER = process.env.DB_USER || 'root';
-const DB_PASSWORD = process.env.DB_PASSWORD || '';
-const DB_NAME = process.env.DB_NAME || 'wedwithme';
-const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
+function envDbConfig() {
+  return {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT ? Number(process.env.DB_PORT) : undefined,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+  };
+}
 
-// Global pool cache to prevent multiple pools during Next.js hot reloading
 declare global {
   var _mysqlPool: mysql.Pool | undefined;
 }
@@ -16,11 +19,7 @@ let pool: mysql.Pool;
 export function getPool(): mysql.Pool {
   if (!global._mysqlPool) {
     global._mysqlPool = mysql.createPool({
-      host: DB_HOST,
-      user: DB_USER,
-      password: DB_PASSWORD,
-      database: DB_NAME,
-      port: DB_PORT,
+      ...envDbConfig(),
       waitForConnections: true,
       connectionLimit: process.env.VERCEL ? 5 : 20,
       queueLimit: 0,
@@ -48,17 +47,18 @@ export async function query<T = any>(sql: string, params: any[] = []): Promise<T
     const [results] = await connectionPool.query(sql, params);
     return results as T;
   } catch (error: any) {
-    // If the database doesn't exist yet, initialize it
     if (error.code === 'ER_BAD_DB_ERROR') {
+      const cfg = envDbConfig();
       const adminConn = await mysql.createConnection({
-        host: DB_HOST,
-        user: DB_USER,
-        password: DB_PASSWORD,
-        port: DB_PORT,
+        host: cfg.host,
+        user: cfg.user,
+        password: cfg.password,
+        port: cfg.port,
       });
-      await adminConn.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+      await adminConn.query(
+        `CREATE DATABASE IF NOT EXISTS \`${cfg.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+      );
       await adminConn.end();
-      // Retry query
       const [results] = await connectionPool.query(sql, params);
       return results as T;
     }
