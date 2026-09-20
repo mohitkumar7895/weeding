@@ -174,7 +174,7 @@ export default function AdminBackupReliabilityDashboard() {
           <h3 className="text-yellow-800 font-bold text-sm">Disaster Recovery (DR) Runbook</h3>
           <p className="text-yellow-700 text-xs mt-1">Ensure your team is familiar with the MySQL restoration procedures before an incident occurs.</p>
         </div>
-        <Link href="/docs/restore-procedure.md" target="_blank" className="bg-yellow-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-yellow-700">
+        <Link href="/docs/restore-procedure" target="_blank" className="bg-yellow-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-yellow-700">
           View Restore Runbook &rarr;
         </Link>
       </div>
