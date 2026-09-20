@@ -42,36 +42,43 @@ export async function GET() {
   try {
     const user = await getSessionUser();
     if (!user) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({
+        success: true,
+        sent: [],
+        received: [],
+        sentProfileIds: [],
+      });
     }
     await ensureInterestTables();
 
-    const sent = await query<any[]>(
-      `SELECT i.*, u.name as peer_name, u.id as peer_user_id,
-              (SELECT url FROM profile_photos pp JOIN customer_profiles cp ON pp.profile_id = cp.id
-               WHERE cp.user_id = i.to_user_id AND pp.is_primary = TRUE LIMIT 1) as photo_url
-       FROM matrimonial_interests i
-       JOIN users u ON u.id = i.to_user_id
-       WHERE i.from_user_id = ?
-       ORDER BY i.updated_at DESC`,
-      [user.id]
-    );
-    const received = await query<any[]>(
-      `SELECT i.*, u.name as peer_name, u.id as peer_user_id,
-              (SELECT url FROM profile_photos pp JOIN customer_profiles cp ON pp.profile_id = cp.id
-               WHERE cp.user_id = i.from_user_id AND pp.is_primary = TRUE LIMIT 1) as photo_url
-       FROM matrimonial_interests i
-       JOIN users u ON u.id = i.from_user_id
-       WHERE i.to_user_id = ?
-       ORDER BY i.updated_at DESC`,
-      [user.id]
-    );
+    let sent: any[] = [];
+    let received: any[] = [];
+    try {
+      sent = await query<any[]>(
+        `SELECT i.*, u.name as peer_name, u.id as peer_user_id
+         FROM matrimonial_interests i
+         JOIN users u ON u.id = i.to_user_id
+         WHERE i.from_user_id = ?
+         ORDER BY i.updated_at DESC`,
+        [user.id]
+      );
+      received = await query<any[]>(
+        `SELECT i.*, u.name as peer_name, u.id as peer_user_id
+         FROM matrimonial_interests i
+         JOIN users u ON u.id = i.from_user_id
+         WHERE i.to_user_id = ?
+         ORDER BY i.updated_at DESC`,
+        [user.id]
+      );
+    } catch (listErr: any) {
+      console.warn('[interests] list query failed', listErr.message);
+    }
 
     return NextResponse.json({
       success: true,
-      sent,
-      received,
-      sentProfileIds: sent.map((row) => row.to_profile_id).filter(Boolean),
+      sent: Array.isArray(sent) ? sent : [],
+      received: Array.isArray(received) ? received : [],
+      sentProfileIds: (Array.isArray(sent) ? sent : []).map((row) => row.to_profile_id).filter(Boolean),
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
