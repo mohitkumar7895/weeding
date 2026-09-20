@@ -21,11 +21,12 @@ function cleanKey(value?: string): string {
 function readEnv(name: string): string {
   const fromProcess = cleanKey(process.env[name]);
   if (fromProcess) return fromProcess;
+  if (process.env.NODE_ENV === 'production') return '';
   try {
     const fs = require('fs') as typeof import('fs');
     const path = require('path') as typeof import('path');
     for (const file of ['.env.local', '.env']) {
-      const filePath = path.join(process.cwd(), file);
+      const filePath = path.join(/* turbopackIgnore: true */ process.cwd(), file);
       if (!fs.existsSync(filePath)) continue;
       const text = fs.readFileSync(filePath, 'utf8');
       const match = text.match(new RegExp(`^${name}\\s*=\\s*(.*)$`, 'm'));

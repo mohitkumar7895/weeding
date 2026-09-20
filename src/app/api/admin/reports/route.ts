@@ -53,7 +53,7 @@ export async function PUT(req: NextRequest) {
       [status, report_id]
     );
 
-    await logAudit(admin.id, 'ACTION_CUSTOMER_REPORT', 'customer_reports', report_id, { status });
+    await logAudit(admin?.id || 'system', 'ACTION_CUSTOMER_REPORT', 'customer_reports', report_id, { status });
 
     return NextResponse.json({
       success: true,

@@ -3,6 +3,16 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
+type CaseRow = {
+  id: string;
+  category?: string;
+  status?: string;
+  reporter_name?: string;
+  reported_name?: string;
+  booking_number?: string;
+  reason?: string;
+};
+
 export default function SupportCasesPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [disputes, setDisputes] = useState<any[]>([]);
@@ -44,8 +54,8 @@ export default function SupportCasesPage() {
               rows={reports}
               empty="No open reports."
               href={() => '/admin/support/reports'}
-              title={(r) => r.category}
-              meta={(r) => `${r.status} · ${r.reporter_name || ''} → ${r.reported_name || ''}`}
+              title={(r: CaseRow) => r.category || 'Report'}
+              meta={(r: CaseRow) => `${r.status || ''} · ${r.reporter_name || ''} → ${r.reported_name || ''}`}
             />
           </section>
           <section className="support-panel">
@@ -56,9 +66,9 @@ export default function SupportCasesPage() {
             <CaseList
               rows={disputes}
               empty="No open disputes."
-              href={(d) => `/admin/disputes/${d.id}`}
-              title={(d) => d.status}
-              meta={(d) => d.booking_number || d.reason || d.id}
+              href={(d: CaseRow) => `/admin/disputes/${d.id}`}
+              title={(d: CaseRow) => d.status || 'Dispute'}
+              meta={(d: CaseRow) => d.booking_number || d.reason || d.id}
             />
           </section>
         </div>
@@ -67,11 +77,23 @@ export default function SupportCasesPage() {
   );
 }
 
-function CaseList({ rows, empty, href, title, meta }: any) {
+function CaseList({
+  rows,
+  empty,
+  href,
+  title,
+  meta,
+}: {
+  rows: CaseRow[];
+  empty: string;
+  href: (row: CaseRow) => string;
+  title: (row: CaseRow) => string;
+  meta: (row: CaseRow) => string;
+}) {
   if (!rows.length) return <div className="support-empty">{empty}</div>;
   return (
     <div>
-      {rows.slice(0, 2).map((row: any) => (
+      {rows.slice(0, 2).map((row) => (
         <Link key={row.id} href={href(row)} className="support-row">
           <b>{title(row)}</b>
           <small>{meta(row)}</small>
