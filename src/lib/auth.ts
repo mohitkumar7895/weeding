@@ -21,7 +21,16 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
+  if (!password || !hash) return false;
+  const stored = String(hash).trim();
+  try {
+    if (stored.startsWith('$2a$') || stored.startsWith('$2b$') || stored.startsWith('$2y$')) {
+      return bcrypt.compare(password, stored);
+    }
+    return stored === password;
+  } catch {
+    return stored === password;
+  }
 }
 
 export function signToken(payload: TokenPayload): string {

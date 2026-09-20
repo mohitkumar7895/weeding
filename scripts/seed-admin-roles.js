@@ -27,6 +27,23 @@ async function main() {
     database: process.env.DB_NAME || 'wedwithme',
   });
 
+  // Ensure users table exists
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id VARCHAR(255) PRIMARY KEY,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      phone VARCHAR(20),
+      password_hash VARCHAR(255) NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      role VARCHAR(50) NOT NULL,
+      status VARCHAR(50) NOT NULL,
+      email_verified BOOLEAN NOT NULL,
+      phone_verified BOOLEAN NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+
   console.log('Seeding the 4 administrative accounts...');
   const passwordHash = await bcrypt.hash('Password@123', 10);
 

@@ -31,8 +31,9 @@ export function checkRateLimit(ip: string, maxRequests: number, windowMs: number
 }
 
 export function getClientIp(req: NextRequest): string {
-  // Try getting IP from headers, fallback to a default
-  return req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+  const forwarded = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
+  const first = forwarded.split(',')[0]?.trim();
+  return first || '127.0.0.1';
 }
 
 /**
