@@ -72,7 +72,8 @@ export async function GET(request: Request) {
                         LEFT JOIN reconciliations rec ON rec.booking_id = b.id 
                         ${query.substring(query.indexOf('WHERE'))}`;
     
-    const [[{ total }]] = await db.execute(countQuery, params);
+    const [countRows]: any = await db.execute(countQuery, params);
+    const total = Number(countRows?.[0]?.total || 0);
 
     query += ` ORDER BY b.created_at DESC LIMIT ? OFFSET ?`;
     params.push(limit.toString(), offset.toString()); 

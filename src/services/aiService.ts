@@ -261,12 +261,41 @@ async function processAIChatInner(
       'Show budget caterers in Delhi',
       'How to book with milestone escrow'
     ];
-  } else {
-    const { generateSagunResponse, getSagunSystemPrompt } = await import('@/services/sagunProvider');
-    reply = await generateSagunResponse([
-      { role: 'SYSTEM', content: getSagunSystemPrompt() },
-      { role: 'USER', content: message },
-    ]);
+  }
+
+  const { generateSagunResult, getSagunSystemPrompt } = await import('@/services/sagunProvider');
+  let facts = '';
+  if (structuredData?.type === 'VENDORS' && structuredData.items?.length) {
+    facts = structuredData.items
+      .map((v: any) => `- ${v.business_name} (${v.city}) ${v.category_name || ''} from ₹${v.starting_price}`)
+      .join('\n');
+  } else if (structuredData?.type === 'MATCHES' && structuredData.items?.length) {
+    facts = structuredData.items
+      .map((p: any) => `- ${p.name}, ${p.age}, ${p.city}, ${p.profession || ''}`)
+      .join('\n');
+  } else if (structuredData?.type === 'BUDGET_BREAKDOWN' && structuredData.items?.length) {
+    facts = structuredData.items
+      .map((b: any) => `- ${b.category}: ${b.percentage}%`)
+      .join('\n');
+  }
+
+  const llm = await generateSagunResult([
+    {
+      role: 'SYSTEM',
+      content:
+        getSagunSystemPrompt() +
+        (facts ? `\n\nUse this live WedWithMe data if relevant:\n${facts}` : ''),
+    },
+    { role: 'USER', content: message },
+  ]);
+  if (llm.text && !llm.error) {
+    reply = llm.text;
+  } else if (!reply) {
+    reply =
+      llm.text ||
+      'Namaste! Main Sagun hoon. Abhi AI reply late ho gaya, lekin aap Vendors aur Matches pages par seedha dekh sakte ho.';
+  }
+  if (!suggestedPrompts.length) {
     suggestedPrompts = [
       'Show me top photographers in Delhi',
       'Find compatible verified brides / grooms',

@@ -63,5 +63,17 @@ export function originAllowed(requestUrl: string, origin: string | null, referer
       return false;
     }
   }
-  return candidates.some((candidate) => allowed.includes(candidate));
+  if (candidates.some((candidate) => allowed.includes(candidate))) return true;
+  try {
+    const reqHost = new URL(requestUrl).host;
+    return candidates.some((candidate) => {
+      try {
+        return new URL(candidate).host === reqHost;
+      } catch {
+        return false;
+      }
+    });
+  } catch {
+    return false;
+  }
 }

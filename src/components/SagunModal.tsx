@@ -57,14 +57,14 @@ export default function SagunModal({ isOpen, onClose }: SagunModalProps) {
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (data.success && data.data) {
         setConversationId(data.data.conversationId);
         if (data.data.suggestedPrompts && data.data.suggestedPrompts.length > 0) {
           setPrompts(data.data.suggestedPrompts);
         }
 
-        let replyText = data.data.reply;
+        let replyText = data.data.reply || 'Sagun se abhi jawab nahi aaya. Server restart karke phir try karein.';
         if (data.data.structuredData && data.data.structuredData.items) {
           if (data.data.structuredData.type === 'VENDORS') {
             const vNames = data.data.structuredData.items.map((v: any) => `• ${v.business_name} (${v.city}) - Starting ₹${parseFloat(v.starting_price).toLocaleString('en-IN')}`).join('\n');
@@ -84,14 +84,14 @@ export default function SagunModal({ isOpen, onClose }: SagunModalProps) {
           },
         ]);
       } else {
-        throw new Error(data.message || 'Error communicating with Sagun AI');
+        throw new Error(data.message || `Sagun API ${res.status}`);
       }
     } catch (err: any) {
       setMessages((prev) => [
         ...prev,
         {
           sender: 'sagun',
-          text: 'माफ़ कीजियेगा, नेटवर्क में समस्या आ रही है। WedWithMe पर आप सीधे वेंडर्स एक्सप्लोर कर सकते हैं या थोड़ी देर में पुनः प्रयास करें।',
+          text: `माफ़ कीजियेगा, Sagun reply nahi de paayi: ${err.message || 'network error'}. Server restart karke phir try karein.`,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);

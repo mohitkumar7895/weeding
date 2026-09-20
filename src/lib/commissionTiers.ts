@@ -12,7 +12,11 @@ export function pickTierValue(
   if (!Array.isArray(tiers) || tiers.length === 0) return defaultValue;
   for (const tier of tiers) {
     const min = Number(tier.min_amount) || 0;
-    const max = tier.max_amount == null || tier.max_amount === '' ? Infinity : Number(tier.max_amount);
+    const maxRaw = tier.max_amount;
+    const max =
+      maxRaw == null || (typeof maxRaw === 'number' && !Number.isFinite(maxRaw))
+        ? Infinity
+        : Number(maxRaw);
     if (totalAmount >= min && totalAmount <= max) {
       return Number(tier.commission_value);
     }

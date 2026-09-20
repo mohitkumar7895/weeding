@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { processAIChat } from '@/services/aiService';
 import { getSessionUser } from '@/lib/auth';
 
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getSessionUser();
