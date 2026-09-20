@@ -104,6 +104,41 @@ const OPS_TABLES = [
       destination_reference VARCHAR(255) NULL,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS matrimonial_threads (
+      id VARCHAR(36) PRIMARY KEY,
+      user_a_id VARCHAR(36) NOT NULL,
+      user_b_id VARCHAR(36) NOT NULL,
+      status VARCHAR(20) DEFAULT 'ACTIVE',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_mat_thread (user_a_id, user_b_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS matrimonial_messages (
+      id VARCHAR(36) PRIMARY KEY,
+      thread_id VARCHAR(36) NOT NULL,
+      sender_id VARCHAR(36) NOT NULL,
+      message TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_mat_msg_thread (thread_id, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS matrimonial_interests (
+      id VARCHAR(36) PRIMARY KEY,
+      from_user_id VARCHAR(36) NOT NULL,
+      to_user_id VARCHAR(36) NOT NULL,
+      from_profile_id VARCHAR(36) NULL,
+      to_profile_id VARCHAR(36) NULL,
+      status VARCHAR(20) DEFAULT 'PENDING',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_interest_pair (from_user_id, to_user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS blocked_profiles (
+      id VARCHAR(36) PRIMARY KEY,
+      user_id VARCHAR(36) NOT NULL,
+      blocked_user_id VARCHAR(36) NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_block_pair (user_id, blocked_user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 ];
 
 let ensured = false;

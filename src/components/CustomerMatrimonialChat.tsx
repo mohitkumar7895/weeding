@@ -36,13 +36,21 @@ export default function CustomerMatrimonialChat({
   const loadThreads = async () => {
     const res = await fetch('/api/matrimonial/chat');
     const data = await res.json();
+    if (res.status === 401) {
+      setError('Sign in to view chats');
+      return;
+    }
     if (res.status === 404 || data.enabled === false) {
       setEnabled(false);
       setError(data.message || 'Matrimonial chat is disabled');
       return;
     }
-    if (data.success) setThreads(data.data || []);
-    else setError(data.message);
+    if (data.success) {
+      setThreads(data.data || []);
+      setError(null);
+    } else {
+      setError(data.message);
+    }
   };
 
   const loadMessages = async (id: string) => {
