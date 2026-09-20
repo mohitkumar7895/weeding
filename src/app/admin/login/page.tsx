@@ -23,9 +23,11 @@ export default function AdminLoginPage() {
       });
       const data = await res.json();
       if (data.success) {
-        // Redirect to admin dashboard
+        const u = data.user || data.data?.user;
+        if (u?.role) {
+          sessionStorage.setItem('wwm_admin_user', JSON.stringify({ name: u.name, role: u.role }));
+        }
         router.push('/admin');
-        router.refresh(); // ensure server components reload with new cookie
       } else {
         setError(data.message || 'Admin login failed');
       }

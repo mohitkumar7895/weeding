@@ -17,18 +17,20 @@ export async function GET(request: Request) {
       params.push(startDate, endDate);
     }
 
-    const registrations = await safeSelect<any[]>(
-      `SELECT COUNT(*) as count FROM users WHERE role IN ('CUSTOMER','USER')${dateFilter}`,
-      params
-    );
-    const profiles = await safeSelect<any[]>(
-      `SELECT COUNT(*) as count FROM customer_profiles WHERE 1=1${dateFilter}`,
-      params
-    );
-    const shortlists = await safeSelect<any[]>(
-      `SELECT COUNT(*) as count FROM shortlists WHERE 1=1${dateFilter}`,
-      params
-    );
+    const [registrations, profiles, shortlists] = await Promise.all([
+      safeSelect<any[]>(
+        `SELECT COUNT(*) as count FROM users WHERE role IN ('CUSTOMER','USER')${dateFilter}`,
+        params
+      ),
+      safeSelect<any[]>(
+        `SELECT COUNT(*) as count FROM customer_profiles WHERE 1=1${dateFilter}`,
+        params
+      ),
+      safeSelect<any[]>(
+        `SELECT COUNT(*) as count FROM shortlists WHERE 1=1${dateFilter}`,
+        params
+      ),
+    ]);
 
     return NextResponse.json({
       success: true,

@@ -64,7 +64,8 @@
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
-  transition: background 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+  transition: background 0.08s ease, color 0.08s ease;
 }
 
 .admin-nav a:hover,
@@ -189,6 +190,7 @@
   .admin-shell .md\:col-span-1 { grid-column: span 1 / span 1; }
 }
 @media (min-width: 1024px) {
+  .admin-shell .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-shell .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .admin-shell .lg\:col-span-1 { grid-column: span 1 / span 1; }
   .admin-shell .lg\:col-span-2 { grid-column: span 2 / span 2; }
@@ -352,6 +354,7 @@
 }
 .admin-shell button {
   font-family: inherit;
+  cursor: pointer;
 }
 
 @media (max-width: 900px) {

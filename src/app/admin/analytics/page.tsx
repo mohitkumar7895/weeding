@@ -20,45 +20,29 @@ export default function AdminAnalyticsDashboard() {
   const router = useRouter();
 
   const fetchAnalytics = async () => {
-    setLoading(true);
+    setError('');
     let query = '';
     if (startDate && endDate) {
       query = `?startDate=${startDate} 00:00:00&endDate=${endDate} 23:59:59`;
     }
 
-    try {
-      const [overviewRes, customersRes, vendorsRes, financialsRes, performanceRes] = await Promise.all([
-        fetch(`/api/admin/analytics/overview${query}`),
-        fetch(`/api/admin/analytics/customers${query}`),
-        fetch(`/api/admin/analytics/vendors${query}`),
-        fetch(`/api/admin/analytics/financials${query}`),
-        fetch(`/api/admin/analytics/performance${query}`)
-      ]);
-
-      if (overviewRes.status === 401 || overviewRes.status === 403) {
+    const load = async (url: string, apply: (data: any) => void) => {
+      const res = await fetch(url, { credentials: 'include' });
+      if (res.status === 401 || res.status === 403) {
         router.push('/admin/login');
         return;
       }
+      const json = await res.json();
+      if (json.success) apply(json.data);
+    };
 
-      const [overviewData, customersData, vendorsData, financialsData, performanceData] = await Promise.all([
-        overviewRes.json(),
-        customersRes.json(),
-        vendorsRes.json(),
-        financialsRes.json(),
-        performanceRes.json()
-      ]);
-
-      if (overviewData.success) setOverview(overviewData.data);
-      if (customersData.success) setCustomers(customersData.data);
-      if (vendorsData.success) setVendors(vendorsData.data);
-      if (financialsData.success) setFinancials(financialsData.data);
-      if (performanceData.success) setPerformance(performanceData.data);
-      
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    void Promise.all([
+        load(`/api/admin/analytics/overview${query}`, setOverview),
+        load(`/api/admin/analytics/customers${query}`, setCustomers),
+        load(`/api/admin/analytics/vendors${query}`, setVendors),
+        load(`/api/admin/analytics/financials${query}`, setFinancials),
+        load(`/api/admin/analytics/performance${query}`, setPerformance),
+      ]).catch((err: any) => setError(err.message)).finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -82,7 +66,6 @@ export default function AdminAnalyticsDashboard() {
     }
   };
 
-  if (loading && !overview) return <div className="p-6 text-center text-gray-500">Loading Analytics...</div>;
   if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
 
   return (
@@ -91,6 +74,7 @@ export default function AdminAnalyticsDashboard() {
         <div>
           <h1 className="text-2xl font-bold">Platform Analytics</h1>
           <p className="text-sm text-gray-500 mt-1">Real-time platform metrics aggregated from the database.</p>
+          {loading && <p className="text-xs text-gray-500 mt-1">Refreshing numbers…</p>}
         </div>
         <div className="flex gap-4">
           <select 

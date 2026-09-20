@@ -104,6 +104,17 @@ function loginResponse(user: any, vendorId?: string, profileId?: string, busines
     path: '/',
     maxAge: 60 * 60 * 24 * 7,
   });
+  response.cookies.set(
+    'wwm_ui',
+    encodeURIComponent(JSON.stringify({ name: user.name, role: user.role })),
+    {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    }
+  );
 
   return response;
 }
