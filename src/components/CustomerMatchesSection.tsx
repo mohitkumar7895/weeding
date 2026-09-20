@@ -319,31 +319,6 @@ export default function CustomerMatchesSection({
         </div>
       )}
 
-      {/* ================= INFORMATIONAL DISCLAIMER BANNER ================= */}
-      <div
-        style={{
-          background: 'rgba(6, 42, 28, 0.7)',
-          border: '1px solid rgba(229, 193, 88, 0.35)',
-          borderRadius: '14px',
-          padding: '14px 18px',
-          marginBottom: '24px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
-        }}
-      >
-        <span style={{ fontSize: '20px', lineHeight: '1.2' }}>ℹ️</span>
-        <div>
-          <div style={{ fontSize: '13px', fontWeight: '800', color: '#e5c158', letterSpacing: '0.3px', textTransform: 'uppercase' }}>
-            Informational Disclaimer & Algorithmic Notice
-          </div>
-          <p style={{ fontSize: '12.5px', color: '#9cb1a6', margin: '3px 0 0 0', lineHeight: 1.5 }}>
-            Software compatibility match percentages and profile recommendations are mathematical evaluations derived from user-reported preferences, profile criteria, and trust signals. They do not constitute an absolute guarantee of compatibility, marriage success, or exhaustive background verification.
-          </p>
-        </div>
-      </div>
-
       {/* ================= TOP SECTION HEADER & TAB NAV ================= */}
       <div
         style={{
@@ -362,9 +337,6 @@ export default function CustomerMatchesSection({
               {matches.length} Verified Candidates
             </span>
           </h2>
-          <p style={{ fontSize: '13px', color: '#9cb1a6', margin: '4px 0 0 0' }}>
-            Curated prospects ranked by multi-factor algorithmic compatibility and verified community trust.
-          </p>
         </div>
 
         {/* 3 LOGICAL SECTIONS / TABS */}
