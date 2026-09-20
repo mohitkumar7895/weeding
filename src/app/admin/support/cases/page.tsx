@@ -14,8 +14,8 @@ type CaseRow = {
 };
 
 export default function SupportCasesPage() {
-  const [reports, setReports] = useState<any[]>([]);
-  const [disputes, setDisputes] = useState<any[]>([]);
+  const [reports, setReports] = useState<CaseRow[]>([]);
+  const [disputes, setDisputes] = useState<CaseRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,8 +24,14 @@ export default function SupportCasesPage() {
       fetch('/api/admin/disputes', { credentials: 'include' }).then((r) => r.json()),
     ])
       .then(([reportJson, disputeJson]) => {
-        setReports((reportJson.data || []).filter((r: any) => !['RESOLVED', 'DISMISSED'].includes(r.status)));
-        setDisputes((disputeJson.disputes || []).filter((d: any) => !['RESOLVED', 'CLOSED', 'REJECTED'].includes(d.status)));
+        const openReports = ((reportJson.data || []) as CaseRow[]).filter(
+          (row) => !['RESOLVED', 'DISMISSED'].includes(row.status || '')
+        );
+        const openDisputes = ((disputeJson.disputes || []) as CaseRow[]).filter(
+          (row) => !['RESOLVED', 'CLOSED', 'REJECTED'].includes(row.status || '')
+        );
+        setReports(openReports);
+        setDisputes(openDisputes);
       })
       .finally(() => setLoading(false));
   }, []);
