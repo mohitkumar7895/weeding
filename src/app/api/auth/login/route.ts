@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { query } from '@/lib/db';
 import { verifyPassword, hashPassword, signToken, logAudit } from '@/lib/auth';
 import { checkRateLimit, getClientIp, safeErrorResponse } from '@/lib/security';
+import { ensureOpsTables } from '@/lib/ensureOpsTables';
 
 function asRows(result: any): any[] {
   return Array.isArray(result) ? result : [];
@@ -69,11 +70,12 @@ async function upsertBootstrapAdmin(email: string, password: string) {
 }
 
 function loginResponse(user: any, vendorId?: string, profileId?: string, businessName?: string) {
+  const role = String(user.role || '').trim().toUpperCase();
   const token = signToken({
     id: user.id,
     email: user.email,
     name: user.name,
-    role: user.role,
+    role: role as any,
     vendor_id: vendorId,
     profile_id: profileId,
   });
@@ -82,7 +84,7 @@ function loginResponse(user: any, vendorId?: string, profileId?: string, busines
     id: user.id,
     email: user.email,
     name: user.name,
-    role: user.role,
+    role,
     vendor_id: vendorId,
     vendorId: vendorId,
     customerProfileId: profileId,
@@ -106,7 +108,7 @@ function loginResponse(user: any, vendorId?: string, profileId?: string, busines
   });
   response.cookies.set(
     'wwm_ui',
-    encodeURIComponent(JSON.stringify({ name: user.name, role: user.role })),
+    encodeURIComponent(JSON.stringify({ name: user.name, role })),
     {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
@@ -122,6 +124,7 @@ function loginResponse(user: any, vendorId?: string, profileId?: string, busines
 export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req);
+    await ensureOpsTables();
     if (!checkRateLimit(`login_${ip}`, 20, 60000)) {
       return NextResponse.json(
         { success: false, message: 'Too many login attempts. Please try again later.' },

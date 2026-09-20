@@ -80,6 +80,12 @@ app.prepare().then(() => {
     max: RATE_LIMIT_MAX_REQUESTS,
     standardHeaders: true,
     legacyHeaders: false,
+    max: (req) => (req.method === 'GET' ? Math.max(RATE_LIMIT_MAX_REQUESTS, 2000) : RATE_LIMIT_MAX_REQUESTS),
+    skip: (req) => {
+      if (dev) return true;
+      const url = req.originalUrl || req.url || '';
+      return url.startsWith('/api/auth/me') || url.startsWith('/api/auth/session');
+    },
     message: { success: false, message: 'Too many requests from this IP, please try again later.' },
   });
   server.use('/api', apiLimiter);

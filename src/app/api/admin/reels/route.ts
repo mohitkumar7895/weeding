@@ -3,7 +3,7 @@ import { verifyAdminRole } from '@/lib/rbac';
 import { ensureOpsTables, safeSelect } from '@/lib/ensureOpsTables';
 
 export async function GET(req: NextRequest) {
-  const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'SUPPORT']);
+  const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
   if (!auth.ok) return auth.response!;
 
   try {

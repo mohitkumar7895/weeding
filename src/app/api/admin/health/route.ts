@@ -4,7 +4,7 @@ import { query } from '@/lib/db';
 
 export async function GET() {
   try {
-    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'SUPPORT']);
+    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
     if (!auth.ok) return auth.response!;
 
     const startTime = Date.now();

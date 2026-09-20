@@ -4,7 +4,7 @@ import { firstCount, safeSelect } from '@/lib/ensureOpsTables';
 
 export async function GET(request: Request) {
   try {
-    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
+    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE']);
     if (!auth.ok) return auth.response!;
 
     const { searchParams } = new URL(request.url);

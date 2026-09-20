@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { homePathForRole, isCustomerRole, isStaffRole, isVendorRole, persistStaffSession } from '@/lib/roleHome';
 import CustomerProfileEditor from '@/components/CustomerProfileEditor';
 import PartnerPreferencesEditor from '@/components/PartnerPreferencesEditor';
 import CustomerMatchesSection from '@/components/CustomerMatchesSection';
@@ -11,6 +13,7 @@ import CustomerInterestsSection from '@/components/CustomerInterestsSection';
 import CustomerMatrimonialChat from '@/components/CustomerMatrimonialChat';
 
 export default function CustomerDashboardPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'preferences' | 'matches' | 'shortlist' | 'search' | 'saved_searches' | 'bookings' | 'privacy' | 'checklist' | 'notifications' | 'interests' | 'chat'>('dashboard');
   const [user, setUser] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
@@ -69,13 +72,23 @@ export default function CustomerDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const authRes = await fetch('/api/auth/me');
+      const authRes = await fetch('/api/auth/me', { credentials: 'include' });
       const authData = await authRes.json();
       if (!authData.authenticated) {
         setAuthNeeded(true);
         setLoading(false);
         return;
       }
+      const role = authData.user?.role;
+      if (isStaffRole(role) || isVendorRole(role)) {
+        router.replace(homePathForRole(role));
+        return;
+      }
+      if (!isCustomerRole(role)) {
+        router.replace('/');
+        return;
+      }
+      persistStaffSession(null);
       setUser(authData.user);
       setAuthNeeded(false);
 
@@ -223,8 +236,14 @@ export default function CustomerDashboardPage() {
       });
       const data = await res.json();
       if (data.success) {
+        const u = data.user || data.data?.user;
+        persistStaffSession(u);
+        if (isStaffRole(u?.role) || isVendorRole(u?.role)) {
+          router.replace(homePathForRole(u?.role));
+          return;
+        }
         setAuthNeeded(false);
-        loadCustomerData();
+        await loadCustomerData();
       } else {
         setError(data.message || 'Login failed');
       }
@@ -349,6 +368,14 @@ export default function CustomerDashboardPage() {
   const handleExportData = () => {
     window.open('/api/privacy/export', '_blank');
   };
+
+  if (loading || (user && (isStaffRole(user.role) || isVendorRole(user.role)))) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#031710', color: '#9cb1a6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Checking your account…
+      </div>
+    );
+  }
 
   if (authNeeded) {
     return (
@@ -569,8 +596,8 @@ export default function CustomerDashboardPage() {
         <div style={{ padding: '18px 20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <button
             onClick={async () => {
-              await fetch('/api/auth/logout', { method: 'POST' });
-              setAuthNeeded(true);
+              await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+              window.location.assign('/');
             }}
             style={{
               width: '100%',

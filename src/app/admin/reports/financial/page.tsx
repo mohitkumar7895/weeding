@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -11,13 +11,14 @@ export default function AdminFinancialReports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const router = useRouter();
+  const abortRef = useRef<AbortController | null>(null);
 
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
     vendorId: '',
     status: '',
-    search: ''
+    search: '',
   });
 
   const buildQueryString = (page = 1) => {
@@ -28,45 +29,50 @@ export default function AdminFinancialReports() {
     if (filters.status) p.set('status', filters.status);
     if (filters.search) p.set('search', filters.search);
     p.set('page', page.toString());
-    p.set('limit', pagination.limit.toString());
+    p.set('limit', '20');
     return p.toString();
   };
 
   const fetchReports = async (page = 1) => {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     setLoading(true);
+    setError('');
     try {
       const query = buildQueryString(page);
-      
       const [sumRes, txRes] = await Promise.all([
-        fetch(`/api/admin/reports/financial/summary?${query}`),
-        fetch(`/api/admin/reports/financial/transactions?${query}`)
+        fetch(`/api/admin/reports/financial/summary?${query}`, { signal: ctrl.signal, credentials: 'include' }),
+        fetch(`/api/admin/reports/financial/transactions?${query}`, { signal: ctrl.signal, credentials: 'include' }),
       ]);
 
       if (sumRes.status === 401 || txRes.status === 401) {
-        router.push('/admin/login');
+        router.push('/login');
         return;
       }
 
-      const sumData = await sumRes.json();
-      const txData = await txRes.json();
+      const sumData = await sumRes.json().catch(() => ({}));
+      const txData = await txRes.json().catch(() => ({}));
 
-      if (sumData.success && txData.success) {
-        setSummary(sumData.summary);
-        setTransactions(txData.transactions);
-        setPagination(txData.pagination);
-      } else {
-        setError(sumData.error || txData.error || 'Failed to fetch reports');
+      if (sumData.success) setSummary(sumData.summary);
+      if (txData.success) {
+        setTransactions(txData.transactions || []);
+        if (txData.pagination) setPagination(txData.pagination);
       }
     } catch (err: any) {
-      setError(err.message);
+      if (err.name !== 'AbortError') setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchReports(1);
-  }, [filters]);
+    const t = setTimeout(() => fetchReports(1), 400);
+    return () => {
+      clearTimeout(t);
+      abortRef.current?.abort();
+    };
+  }, [filters.startDate, filters.endDate, filters.vendorId, filters.status, filters.search]);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });

@@ -26,8 +26,8 @@ export default function AdminBackupReliabilityDashboard() {
         fetch('/api/admin/health')
       ]);
 
-      if (resConfig.status === 401 || resConfig.status === 403) {
-        router.push('/admin/login');
+      if (resConfig.status === 401) {
+        router.push('/login');
         return;
       }
 

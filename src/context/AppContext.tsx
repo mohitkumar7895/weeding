@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { ThemeMode, User } from '@/models';
+import { persistStaffSession } from '@/lib/roleHome';
 
 interface AppContextType {
   user: User | null;
@@ -15,19 +16,28 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUserState] = useState<User | null>(null);
   const [theme, setTheme] = useState<ThemeMode>('system');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const setUser = (next: User | null) => {
+    persistStaffSession(next);
+    setUserState(next);
+  };
 
   React.useEffect(() => {
-    fetch('/api/auth/me')
+    fetch('/api/auth/me', { credentials: 'include' })
       .then((res) => res.json())
       .then((data) => {
         if (data.authenticated && data.user) {
           setUser(data.user);
+        } else {
+          persistStaffSession(null);
+          setUserState(null);
         }
       })
-      .catch((err) => console.error('Session restore error:', err));
+      .catch((err) => console.error('Session restore error:', err))
+      .finally(() => setIsLoading(false));
   }, []);
 
   return (

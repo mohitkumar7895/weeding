@@ -28,10 +28,11 @@ export default function AdminAnalyticsDashboard() {
 
     const load = async (url: string, apply: (data: any) => void) => {
       const res = await fetch(url, { credentials: 'include' });
-      if (res.status === 401 || res.status === 403) {
-        router.push('/admin/login');
+      if (res.status === 401) {
+        router.push('/login');
         return;
       }
+      if (!res.ok) return;
       const json = await res.json();
       if (json.success) apply(json.data);
     };

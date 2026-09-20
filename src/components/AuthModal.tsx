@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context';
+import { homePathForRole, isStaffRole, persistStaffSession } from '@/lib/roleHome';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -14,6 +16,7 @@ type AuthMode = 'login' | 'register' | 'forgot' | 'email-otp';
 export default function AuthModal({ isOpen, initialMode = 'login', onClose }: AuthModalProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const { setUser } = useAppContext();
+  const router = useRouter();
 
   // Form states
   const [email, setEmail] = useState('');
@@ -28,6 +31,33 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
+
+  const completeLogin = (loggedIn: any, message: string) => {
+    const roleUser = loggedIn
+      ? { ...loggedIn, role: String(loggedIn.role || '').trim().toUpperCase() }
+      : null;
+    persistStaffSession(roleUser);
+    setUser(roleUser);
+    setNotification(message);
+    let dest = homePathForRole(roleUser?.role);
+    try {
+      const next = new URLSearchParams(window.location.search).get('next') || '';
+      if (
+        next.startsWith('/') &&
+        !next.startsWith('//') &&
+        isStaffRole(roleUser?.role) &&
+        next.startsWith('/admin')
+      ) {
+        dest = next;
+      }
+    } catch {
+      /* keep role home */
+    }
+    setTimeout(() => {
+      setNotification(null);
+      router.replace(dest);
+    }, 400);
+  };
   const [forgotAction, setForgotAction] = useState<'login' | 'reset'>('login');
 
   // Status states
@@ -134,12 +164,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         throw new Error(data.message || 'Invalid email or password.');
       }
 
-      setUser(data.data?.user || data.user);
-      setNotification(`Welcome back, ${data.data?.user?.name || data.user?.name || 'Partner'}! ✨`);
-      setTimeout(() => {
-        setNotification(null);
-        onClose();
-      }, 1200);
+      completeLogin(
+        data.data?.user || data.user,
+        `Welcome back, ${data.data?.user?.name || data.user?.name || 'Partner'}! ✨`
+      );
     } catch (err: any) {
       setError(err.message || 'Authentication error.');
     } finally {
@@ -180,12 +208,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         throw new Error(data.message || 'Invalid or expired verification code.');
       }
 
-      setUser(data.data?.user || data.user);
-      setNotification(`Signed in successfully! Welcome to WedWithMe 🎉`);
-      setTimeout(() => {
-        setNotification(null);
-        onClose();
-      }, 1200);
+      completeLogin(data.data?.user || data.user, `Signed in successfully! Welcome to WedWithMe 🎉`);
     } catch (err: any) {
       setError(err.message || 'OTP verification failed.');
     } finally {
@@ -249,12 +272,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         throw new Error(data.message || 'Registration failed.');
       }
 
-      setUser(data.data?.user || data.user);
-      setNotification(`Welcome to WedWithMe, ${data.data?.user?.name || name}! 🎉`);
-      setTimeout(() => {
-        setNotification(null);
-        onClose();
-      }, 1200);
+      completeLogin(
+        data.data?.user || data.user,
+        `Welcome to WedWithMe, ${data.data?.user?.name || name}! 🎉`
+      );
     } catch (err: any) {
       setError(err.message || 'Registration error.');
     } finally {
@@ -297,12 +318,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         throw new Error(data.message || 'Direct sign-in failed.');
       }
 
-      setUser(data.data?.user || data.user);
-      setNotification(`Welcome back, ${data.data?.user?.name || data.user?.name || 'Partner'}! Signed in successfully 🎉`);
-      setTimeout(() => {
-        setNotification(null);
-        onClose();
-      }, 1200);
+      completeLogin(
+        data.data?.user || data.user,
+        `Welcome back, ${data.data?.user?.name || data.user?.name || 'Partner'}! Signed in successfully 🎉`
+      );
     } catch (err: any) {
       setError(err.message || 'Verification error.');
     } finally {
@@ -355,12 +374,10 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
       }
 
       if (data.user) {
-        setUser(data.data?.user || data.user);
-        setNotification(`Password updated! Welcome back, ${data.data?.user?.name || data.user?.name || 'Partner'}! ✨`);
-        setTimeout(() => {
-          setNotification(null);
-          onClose();
-        }, 1200);
+        completeLogin(
+          data.data?.user || data.user,
+          `Password updated! Welcome back, ${data.data?.user?.name || data.user?.name || 'Partner'}! ✨`
+        );
       } else {
         setNotification('Password reset successfully! Please sign in with your new password. ✨');
         setTimeout(() => {
@@ -382,17 +399,15 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      setUser({
-        id: 'usr_social_' + Date.now(),
-        name: 'Mohit Kumar',
-        email: 'mohit@example.com',
-        role: 'CUSTOMER',
-      });
-      setNotification(`Signed in with ${provider}! 🎉`);
-      setTimeout(() => {
-        setNotification(null);
-        onClose();
-      }, 900);
+      completeLogin(
+        {
+          id: 'usr_social_' + Date.now(),
+          name: 'Mohit Kumar',
+          email: 'mohit@example.com',
+          role: 'CUSTOMER',
+        },
+        `Signed in with ${provider}! 🎉`
+      );
     }, 600);
   };
 

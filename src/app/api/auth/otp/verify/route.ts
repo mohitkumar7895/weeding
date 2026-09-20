@@ -58,28 +58,27 @@ export async function POST(req: Request) {
         console.warn('[api/auth/otp/verify] DB query error:', dbErr);
       }
 
-      // If user not in DB (e.g., offline dev), create mock user object
       if (!user) {
-        user = {
-          id: 'usr_otp_' + Date.now(),
-          email: normalizedEmail,
-          name: normalizedEmail.split('@')[0],
-          role: 'CUSTOMER',
-        };
+        return NextResponse.json(
+          { success: false, message: 'Account not found. Register first, then sign in.' },
+          { status: 401 }
+        );
       }
+
+      const role = String(user.role || '').trim().toUpperCase();
 
       const token = signToken({
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role,
+        role: role as any,
         vendor_id: vendorId,
         profile_id: profileId,
       });
 
       await logAudit({
         userId: user.id,
-        role: user.role,
+        role,
         action: 'USER_LOGIN_EMAIL_OTP',
         entityType: 'User',
         entityId: user.id,
@@ -89,7 +88,7 @@ export async function POST(req: Request) {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role,
+        role,
         vendor_id: vendorId,
         vendorId: vendorId,
         profile_id: profileId,
@@ -110,6 +109,18 @@ export async function POST(req: Request) {
         path: '/',
         maxAge: 60 * 60 * 24 * 7,
       });
+
+      response.cookies.set(
+        'wwm_ui',
+        encodeURIComponent(JSON.stringify({ name: user.name, role })),
+        {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path: '/',
+          maxAge: 60 * 60 * 24 * 7,
+        }
+      );
 
       return response;
     }

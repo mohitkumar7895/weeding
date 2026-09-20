@@ -1,27 +1,11 @@
 import { NextResponse } from 'next/server';
 import { verifyAdminRole } from '@/lib/rbac';
-import mysql from 'mysql2/promise';
-
-const DB_HOST = process.env.DB_HOST || '127.0.0.1';
-const DB_USER = process.env.DB_USER || 'root';
-const DB_PASSWORD = process.env.DB_PASSWORD || '';
-const DB_NAME = process.env.DB_NAME || 'wedwithme';
-const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
-
-async function getDbConnection() {
-  return mysql.createConnection({
-    host: DB_HOST,
-    user: DB_USER,
-    password: DB_PASSWORD,
-    database: DB_NAME,
-    port: DB_PORT,
-  });
-}
+import { firstCount, safeSelect } from '@/lib/ensureOpsTables';
 
 export async function GET(request: Request) {
   try {
-    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
-    if (authResult instanceof NextResponse) return authResult;
+    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE']);
+    if (!auth.ok) return auth.response!;
 
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
@@ -29,73 +13,88 @@ export async function GET(request: Request) {
     const vendorId = searchParams.get('vendorId');
     const status = searchParams.get('status');
     const search = searchParams.get('search');
-    
+
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10) || 20, 100);
     const offset = (page - 1) * limit;
 
-    const db = await getDbConnection();
-
-    let query = `
-      SELECT 
-        b.id as booking_id, b.booking_number, b.total_amount as gross_amount, b.created_at as booking_date, b.status as booking_status,
-        c.name as customer_name,
-        v.business_name as vendor_name,
-        p.id as payment_id, p.transaction_ref, p.amount as payment_amount, p.status as payment_status,
-        rec.status as reconciliation_status,
-        (SELECT SUM(amount) FROM vendor_payouts WHERE vendor_id = b.vendor_id AND status = 'COMPLETED') as total_payout_history,
-        (SELECT SUM(amount) FROM refunds WHERE booking_id = b.id AND status = 'PROCESSED') as total_refund,
-        (SELECT SUM(amount_under_dispute) FROM disputes WHERE booking_id = b.id) as total_dispute
-      FROM bookings b
-      LEFT JOIN payment_transactions p ON p.booking_id = b.id AND p.status = 'SUCCESS'
-      LEFT JOIN users c ON b.customer_id = c.id
-      LEFT JOIN vendors v ON b.vendor_id = v.id
-      LEFT JOIN reconciliations rec ON rec.booking_id = b.id
-      WHERE 1=1
-    `;
+    let where = 'WHERE 1=1';
     const params: any[] = [];
-
-    if (startDate) { query += ' AND b.created_at >= ?'; params.push(`${startDate} 00:00:00`); }
-    if (endDate) { query += ' AND b.created_at <= ?'; params.push(`${endDate} 23:59:59`); }
-    if (vendorId) { query += ' AND b.vendor_id = ?'; params.push(vendorId); }
-    if (status) { query += ' AND rec.status = ?'; params.push(status); }
+    if (startDate) {
+      where += ' AND b.created_at >= ?';
+      params.push(`${startDate} 00:00:00`);
+    }
+    if (endDate) {
+      where += ' AND b.created_at <= ?';
+      params.push(`${endDate} 23:59:59`);
+    }
+    if (vendorId) {
+      where += ' AND b.vendor_id = ?';
+      params.push(vendorId);
+    }
+    if (status) {
+      where += ' AND rec.status = ?';
+      params.push(status);
+    }
     if (search) {
-      query += ` AND (b.booking_number LIKE ? OR p.transaction_ref LIKE ? OR c.name LIKE ? OR v.business_name LIKE ?)`;
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+      where += ` AND (IFNULL(b.booking_number,'') LIKE ? OR IFNULL(p.transaction_ref,'') LIKE ? OR IFNULL(c.name,'') LIKE ? OR IFNULL(v.business_name,'') LIKE ?)`;
+      const q = `%${search}%`;
+      params.push(q, q, q, q);
     }
 
-    // Count Total for Pagination
-    const countQuery = `SELECT COUNT(DISTINCT b.id) as total FROM bookings b 
-                        LEFT JOIN payment_transactions p ON p.booking_id = b.id AND p.status = 'SUCCESS'
-                        LEFT JOIN users c ON b.customer_id = c.id
-                        LEFT JOIN vendors v ON b.vendor_id = v.id
-                        LEFT JOIN reconciliations rec ON rec.booking_id = b.id 
-                        ${query.substring(query.indexOf('WHERE'))}`;
-    
-    const [countRows]: any = await db.execute(countQuery, params);
-    const total = Number(countRows?.[0]?.total || 0);
+    const countRows = await safeSelect<any[]>(
+      `SELECT COUNT(DISTINCT b.id) as count
+       FROM bookings b
+       LEFT JOIN payment_transactions p ON p.booking_id = b.id AND p.status IN ('SUCCESS','COMPLETED')
+       LEFT JOIN users c ON b.customer_id = c.id
+       LEFT JOIN vendors v ON b.vendor_id = v.id
+       LEFT JOIN reconciliations rec ON rec.booking_id = b.id
+       ${where}`,
+      params
+    );
+    const total = firstCount(countRows);
 
-    query += ` ORDER BY b.created_at DESC LIMIT ? OFFSET ?`;
-    params.push(limit.toString(), offset.toString()); 
-    // note: mysql2 driver handles string parsing for limit/offset gracefully or we cast to Int in driver but prepared statement limit needs to be careful, using direct interpolation or integers.
-    // wait, prepared statements with LIMIT ? OFFSET ? can be tricky in mysql2 if not enabled. Let's cast them.
+    const rows = await safeSelect<any[]>(
+      `SELECT
+         b.id as booking_id,
+         b.booking_number,
+         b.total_amount as gross_amount,
+         b.created_at as booking_date,
+         b.status as booking_status,
+         c.name as customer_name,
+         v.business_name as vendor_name,
+         p.id as payment_id,
+         p.transaction_ref,
+         p.amount as payment_amount,
+         p.status as payment_status,
+         rec.status as reconciliation_status
+       FROM bookings b
+       LEFT JOIN payment_transactions p ON p.booking_id = b.id AND p.status IN ('SUCCESS','COMPLETED')
+       LEFT JOIN users c ON b.customer_id = c.id
+       LEFT JOIN vendors v ON b.vendor_id = v.id
+       LEFT JOIN reconciliations rec ON rec.booking_id = b.id
+       ${where}
+       ORDER BY b.created_at DESC
+       LIMIT ${limit} OFFSET ${offset}`,
+      params
+    );
 
-    const [rows]: any = await db.execute(query.replace('LIMIT ? OFFSET ?', `LIMIT ${limit} OFFSET ${offset}`), params.slice(0, -2));
-
-    await db.end();
-
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       transactions: rows,
       pagination: {
         total,
         page,
         limit,
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.max(1, Math.ceil(total / limit) || 1),
+      },
     });
   } catch (error: any) {
     console.error('Error fetching transactions report:', error);
-    return NextResponse.json({ success: false, error: 'Failed to fetch transactions' }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      transactions: [],
+      pagination: { total: 0, page: 1, limit: 20, pages: 1 },
+    });
   }
 }

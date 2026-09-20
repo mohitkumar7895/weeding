@@ -1,0 +1,82 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+
+export default function SupportCasesPage() {
+  const [reports, setReports] = useState<any[]>([]);
+  const [disputes, setDisputes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/admin/reports', { credentials: 'include' }).then((r) => r.json()),
+      fetch('/api/admin/disputes', { credentials: 'include' }).then((r) => r.json()),
+    ])
+      .then(([reportJson, disputeJson]) => {
+        setReports((reportJson.data || []).filter((r: any) => !['RESOLVED', 'DISMISSED'].includes(r.status)));
+        setDisputes((disputeJson.disputes || []).filter((d: any) => !['RESOLVED', 'CLOSED', 'REJECTED'].includes(d.status)));
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div className="support-hero">
+        <div>
+          <p className="support-kicker">Case queue</p>
+          <h1>Support Cases</h1>
+          <p>Open abuse/fraud reports and unresolved disputes in one place. Use Reports or Disputes for full detail.</p>
+        </div>
+        <span className="support-hero-chip">{reports.length + disputes.length} open</span>
+      </div>
+
+      {loading ? (
+        <p className="support-empty">Loading cases…</p>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <section className="support-panel">
+            <div className="support-panel-head">
+              <h2>Open reports</h2>
+              <Link href="/admin/support/reports">View all</Link>
+            </div>
+            <CaseList
+              rows={reports}
+              empty="No open reports."
+              href={() => '/admin/support/reports'}
+              title={(r) => r.category}
+              meta={(r) => `${r.status} · ${r.reporter_name || ''} → ${r.reported_name || ''}`}
+            />
+          </section>
+          <section className="support-panel">
+            <div className="support-panel-head">
+              <h2>Open disputes</h2>
+              <Link href="/admin/disputes">View all</Link>
+            </div>
+            <CaseList
+              rows={disputes}
+              empty="No open disputes."
+              href={(d) => `/admin/disputes/${d.id}`}
+              title={(d) => d.status}
+              meta={(d) => d.booking_number || d.reason || d.id}
+            />
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CaseList({ rows, empty, href, title, meta }: any) {
+  if (!rows.length) return <div className="support-empty">{empty}</div>;
+  return (
+    <div>
+      {rows.slice(0, 2).map((row: any) => (
+        <Link key={row.id} href={href(row)} className="support-row">
+          <b>{title(row)}</b>
+          <small>{meta(row)}</small>
+        </Link>
+      ))}
+    </div>
+  );
+}

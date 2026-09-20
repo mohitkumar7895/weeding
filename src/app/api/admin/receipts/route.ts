@@ -28,7 +28,7 @@ function generateReceiptNumber() {
 
 export async function GET() {
   try {
-    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE']);
     if (!authResult.ok) return authResult.response!;
     const db = await getDbConnection();
     const [rows] = await db.execute(`SELECT * FROM receipts ORDER BY created_at DESC LIMIT 200`);

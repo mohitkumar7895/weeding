@@ -4,7 +4,7 @@ import { verifyAdminRole } from '@/lib/rbac';
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
+    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE']);
     if (!auth.ok) return auth.response!;
 
     const { searchParams } = new URL(req.url);

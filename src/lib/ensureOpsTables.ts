@@ -57,6 +57,61 @@ const OPS_TABLES = [
       display_order INT DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS notification_templates (
+      id VARCHAR(36) PRIMARY KEY,
+      event_type VARCHAR(100) NOT NULL,
+      channel VARCHAR(20) NOT NULL,
+      content TEXT NOT NULL,
+      is_active BOOLEAN DEFAULT TRUE,
+      version INT DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS notification_delivery_logs (
+      id VARCHAR(36) PRIMARY KEY,
+      event_type VARCHAR(100) NOT NULL,
+      recipient_type VARCHAR(20) NOT NULL,
+      recipient_id VARCHAR(36) NOT NULL,
+      channel VARCHAR(20) NOT NULL,
+      template_id VARCHAR(36) NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'QUEUED',
+      failure_reason TEXT NULL,
+      entity_id VARCHAR(36) NULL,
+      entity_type VARCHAR(50) NULL,
+      idempotency_key VARCHAR(100) NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      sent_at DATETIME NULL,
+      delivered_at DATETIME NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS customer_reports (
+      id VARCHAR(36) PRIMARY KEY,
+      reporter_user_id VARCHAR(36) NOT NULL,
+      reported_user_id VARCHAR(36) NOT NULL,
+      reported_profile_id VARCHAR(36) NULL,
+      category VARCHAR(40) NOT NULL,
+      description TEXT NULL,
+      status VARCHAR(20) DEFAULT 'PENDING',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS invoices (
+      id VARCHAR(36) PRIMARY KEY,
+      invoice_number VARCHAR(50) UNIQUE NOT NULL,
+      booking_id VARCHAR(36) NOT NULL,
+      payment_id VARCHAR(36) NULL,
+      customer_id VARCHAR(36) NOT NULL,
+      vendor_id VARCHAR(36) NOT NULL,
+      customer_billing_info JSON NULL,
+      vendor_billing_info JSON NULL,
+      taxable_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      tax_rate DECIMAL(5, 2) NOT NULL DEFAULT 18.00,
+      tax_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      total_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      status VARCHAR(20) DEFAULT 'DRAFT',
+      issued_at DATETIME NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   `CREATE TABLE IF NOT EXISTS backup_records (
       id VARCHAR(36) PRIMARY KEY,
       status VARCHAR(20) NOT NULL,
@@ -160,6 +215,11 @@ export async function ensureOpsTables() {
     } catch (err: any) {
       console.warn('[ensureOpsTables]', err.message);
     }
+  }
+  try {
+    await query(`ALTER TABLE users MODIFY COLUMN role VARCHAR(32) NOT NULL DEFAULT 'CUSTOMER'`);
+  } catch {
+    /* already compatible */
   }
   try {
     await query(`ALTER TABLE vendor_reels ADD COLUMN status VARCHAR(20) DEFAULT 'PENDING'`);

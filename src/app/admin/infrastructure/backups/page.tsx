@@ -14,9 +14,9 @@ export default function AdminBackups() {
   useEffect(() => {
     const fetchLogs = async () => {
       try {
-        const res = await fetch('/api/admin/infrastructure/backups/logs');
-        if (res.status === 401 || res.status === 403) {
-          router.push('/admin/login');
+        const res = await fetch('/api/admin/infrastructure/backups/logs', { credentials: 'include' });
+        if (res.status === 401) {
+          router.push('/login');
           return;
         }
         const data = await res.json();

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser, TokenPayload } from './auth';
+import { normalizeRole } from './roleHome';
 
 export type AdminRole = 'SUPER_ADMIN' | 'ADMIN' | 'SUPPORT' | 'FINANCE';
 
@@ -29,7 +30,7 @@ export async function verifyAdminRole(allowedRoles: AdminRole[]): Promise<RBACRe
       };
     }
 
-    const userRole = user.role as AdminRole;
+    const userRole = normalizeRole(user.role) as AdminRole;
     if (!allowedRoles.includes(userRole)) {
       const roleLabels: Record<AdminRole, string> = {
         SUPER_ADMIN: 'Super Admin',

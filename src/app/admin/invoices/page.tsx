@@ -26,9 +26,9 @@ export default function AdminInvoicesList() {
       if (filters.status) queryParams.set('status', filters.status);
       if (filters.search) queryParams.set('search', filters.search);
 
-      const res = await fetch(`/api/admin/invoices?${queryParams.toString()}`);
-      if (res.status === 401 || res.status === 403) {
-        router.push('/admin/login');
+      const res = await fetch(`/api/admin/invoices?${queryParams.toString()}`, { credentials: 'include' });
+      if (res.status === 401) {
+        router.push('/login');
         return;
       }
       const data = await res.json();

@@ -1,14 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
 import CustomerMatchesSection from '@/components/CustomerMatchesSection';
+import { homePathForRole, isStaffRole, isVendorRole } from '@/lib/roleHome';
 
 export default function MatchesPage() {
+  const router = useRouter();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((res) => res.json())
+      .then((data) => {
+        const role = data?.user?.role;
+        if (data?.authenticated && (isStaffRole(role) || isVendorRole(role))) {
+          router.replace(homePathForRole(role));
+          return;
+        }
+        setReady(true);
+      })
+      .catch(() => setReady(true));
+  }, [router]);
+
+  if (!ready) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#031710', color: '#9cb1a6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Checking your account…
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#031710', color: '#fff', display: 'flex', flexDirection: 'column' }}>

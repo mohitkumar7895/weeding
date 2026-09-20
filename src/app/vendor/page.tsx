@@ -2,9 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import PackageComparisonModal from '@/components/PackageComparisonModal';
+import { homePathForRole } from '@/lib/roleHome';
 
 export default function VendorDashboardPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'services' | 'onboarding' | 'packages' | 'calendar' | 'bookings' | 'portfolio'>('overview');
   const [vendorData, setVendorData] = useState<any>(null);
   const [onboardingData, setOnboardingData] = useState<any>(null);
@@ -207,11 +210,15 @@ export default function VendorDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const authRes = await fetch('/api/auth/me');
+      const authRes = await fetch('/api/auth/me', { credentials: 'include' });
       const authData = await authRes.json();
-      if (!authData.authenticated || authData.user?.role !== 'VENDOR') {
+      if (!authData.authenticated) {
         setAuthNeeded(true);
         setLoading(false);
+        return;
+      }
+      if (authData.user?.role !== 'VENDOR') {
+        router.replace(homePathForRole(authData.user?.role));
         return;
       }
 
@@ -1538,6 +1545,14 @@ export default function VendorDashboardPage() {
     }
   };
 
+  if (loading && !vendorData) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#03140e', color: '#9cb1a6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Checking your account…
+      </div>
+    );
+  }
+
   if (authNeeded) {
     return (
       <div style={{ minHeight: '100vh', background: '#03140e', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
@@ -1756,8 +1771,8 @@ export default function VendorDashboardPage() {
         <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(229,193,88,0.15)' }}>
           <button
             onClick={async () => {
-              await fetch('/api/auth/logout', { method: 'POST' });
-              setAuthNeeded(true);
+              await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+              window.location.assign('/');
             }}
             style={{
               width: '100%',

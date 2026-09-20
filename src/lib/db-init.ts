@@ -742,7 +742,9 @@ async function seedInitialData(db: mysql.Connection) {
     },
   ];
 
-  for (const v of vendors) {
+  const demoVendors = vendors.filter((v) => v.id === 'ven_royal_clicks' || v.id === 'ven_royal_palace');
+
+  for (const v of demoVendors) {
     await db.query(
       `INSERT INTO users (id, email, phone, password_hash, name, role, status, email_verified, phone_verified)
        VALUES (?, ?, ?, ?, ?, 'VENDOR', 'ACTIVE', true, true)
@@ -987,7 +989,7 @@ async function seedInitialData(db: mysql.Connection) {
     }
   ];
 
-  for (const c of customers) {
+  for (const c of customers.slice(0, 2)) {
     await db.query(
       `INSERT INTO users (id, email, phone, password_hash, name, role, status, email_verified, phone_verified)
        VALUES (?, ?, ?, ?, ?, 'CUSTOMER', 'ACTIVE', true, true)
@@ -1060,6 +1062,21 @@ async function seedInitialData(db: mysql.Connection) {
       'prof_usr_cust_gopal',
       'ven_royal_palace',
       '2026-11-12',
+    ]
+  );
+
+  await db.query(
+    `INSERT INTO bookings (
+       id, booking_number, customer_id, vendor_id, event_date, guest_count,
+       total_amount, commission_rate, commission_amount, vendor_payout_amount, status, notes
+     ) VALUES (?, ?, ?, ?, ?, 120, 45000.00, 10.00, 4500.00, 40500.00, 'REQUESTED', 'Royal Clicks Photography pre-wedding')
+     ON DUPLICATE KEY UPDATE status = VALUES(status)`,
+    [
+      'book_demo_02',
+      'WWM-2026-8942',
+      'prof_usr_cust_priya',
+      'ven_royal_clicks',
+      '2026-10-18',
     ]
   );
 

@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { ensureOpsTables } from '@/lib/ensureOpsTables';
 
 export async function GET() {
   try {
     const session = await getSessionUser();
     if (!session) {
-      return NextResponse.json({ success: false, user: null }, { status: 200 });
+      return NextResponse.json({ success: false, authenticated: false, user: null }, { status: 200 });
     }
+
+    await ensureOpsTables();
 
     const users = await query<any[]>(
       `SELECT u.id, u.email, u.phone, u.name, u.role, u.status, u.created_at,
@@ -21,10 +24,11 @@ export async function GET() {
     );
 
     if (users.length === 0) {
-      return NextResponse.json({ success: false, user: null }, { status: 200 });
+      return NextResponse.json({ success: false, authenticated: false, user: null }, { status: 200 });
     }
 
     const user = users[0];
+    const role = String(user.role || session.role || '').trim().toUpperCase();
     return NextResponse.json({
       success: true,
       authenticated: true,
@@ -33,7 +37,7 @@ export async function GET() {
         email: user.email,
         phone: user.phone,
         name: user.name,
-        role: user.role,
+        role,
         status: user.status,
         customerProfileId: user.customer_profile_id,
         profile_id: user.customer_profile_id,
@@ -45,6 +49,6 @@ export async function GET() {
       },
     });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, authenticated: false, message: error.message }, { status: 500 });
   }
 }

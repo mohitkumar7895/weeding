@@ -21,7 +21,7 @@ async function getDbConnection() {
 
 export async function GET(request: Request) {
   try {
-    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
+    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
     if (authResult instanceof NextResponse) return authResult;
 
     const db = await getDbConnection();

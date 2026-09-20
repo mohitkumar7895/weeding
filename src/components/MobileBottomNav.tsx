@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppContext } from '@/context';
+import { homePathForRole, isStaffRole } from '@/lib/roleHome';
 
 export default function MobileBottomNav() {
   const pathname = usePathname() || '/';
@@ -11,11 +12,7 @@ export default function MobileBottomNav() {
 
   if (pathname.startsWith('/admin')) return null;
 
-  const profileHref = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN'
-    ? '/admin'
-    : user?.role === 'VENDOR'
-    ? '/vendor'
-    : '/dashboard';
+  const profileHref = homePathForRole(user?.role);
 
   const navItems = [
     {
@@ -79,7 +76,7 @@ export default function MobileBottomNav() {
 
   return (
     <nav className="mobile-bottom-bar" aria-label="Mobile Navigation">
-      {navItems.map((item) => (
+      {navItems.filter((item) => item.label !== 'Matches' || !isStaffRole(user?.role)).map((item) => (
         <Link
           key={item.label}
           href={item.href}

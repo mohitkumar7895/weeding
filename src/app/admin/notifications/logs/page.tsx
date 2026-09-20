@@ -33,10 +33,9 @@ export default function AdminNotificationLogs() {
     setLoading(true);
     try {
       const query = buildQueryString(page);
-      const res = await fetch(`/api/admin/notifications/logs?${query}`);
-      
-      if (res.status === 401 || res.status === 403) {
-        router.push('/admin/login');
+      const res = await fetch(`/api/admin/notifications/logs?${query}`, { credentials: 'include' });
+      if (res.status === 401) {
+        router.push('/login');
         return;
       }
       const data = await res.json();
@@ -79,17 +78,21 @@ export default function AdminNotificationLogs() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Notification Delivery Logs</h1>
-        <p className="text-sm text-gray-500 mt-1">Monitor all outgoing platform communications and manage failures.</p>
+    <div className="space-y-6">
+      <div className="support-hero">
+        <div>
+          <p className="support-kicker">Communications</p>
+          <h1>Notification Logs</h1>
+          <p>Track outgoing emails, SMS, WhatsApp, and in-app messages. Retry failed deliveries from this queue.</p>
+        </div>
+        <span className="support-hero-chip">{pagination.total} records</span>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow-sm border grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="support-toolbar">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
-          <select name="status" value={filters.status} onChange={handleFilterChange} className="border rounded-md px-2 py-1.5 w-full text-sm">
-            <option value="">All Statuses</option>
+          <label>Status</label>
+          <select name="status" value={filters.status} onChange={handleFilterChange}>
+            <option value="">All statuses</option>
             <option value="QUEUED">QUEUED</option>
             <option value="SENT">SENT</option>
             <option value="DELIVERED">DELIVERED</option>
@@ -98,9 +101,9 @@ export default function AdminNotificationLogs() {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Channel</label>
-          <select name="channel" value={filters.channel} onChange={handleFilterChange} className="border rounded-md px-2 py-1.5 w-full text-sm">
-            <option value="">All Channels</option>
+          <label>Channel</label>
+          <select name="channel" value={filters.channel} onChange={handleFilterChange}>
+            <option value="">All channels</option>
             <option value="EMAIL">EMAIL</option>
             <option value="SMS">SMS</option>
             <option value="WHATSAPP">WHATSAPP</option>
@@ -108,17 +111,17 @@ export default function AdminNotificationLogs() {
             <option value="PUSH">PUSH</option>
           </select>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Event Type</label>
-          <input type="text" name="eventType" value={filters.eventType} onChange={handleFilterChange} placeholder="e.g. BOOKING_CONFIRMED" className="border rounded-md px-2 py-1.5 w-full text-sm" />
+        <div className="grow">
+          <label>Event type</label>
+          <input type="text" name="eventType" value={filters.eventType} onChange={handleFilterChange} placeholder="e.g. BOOKING_CONFIRMED" />
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Search Entity/Recipient ID</label>
-          <input type="text" name="search" value={filters.search} onChange={handleFilterChange} placeholder="Search..." className="border rounded-md px-2 py-1.5 w-full text-sm" />
+        <div className="grow">
+          <label>Entity / recipient</label>
+          <input type="text" name="search" value={filters.search} onChange={handleFilterChange} placeholder="Search id…" />
         </div>
       </div>
 
-      <div className="bg-white shadow-sm border rounded-lg overflow-hidden">
+      <div className="support-panel">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -152,11 +155,11 @@ export default function AdminNotificationLogs() {
                       <div className="text-xs text-gray-900 mt-1 truncate max-w-[120px]" title={log.recipient_id}>{log.recipient_id}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        log.status === 'DELIVERED' || log.status === 'SENT' ? 'bg-green-100 text-green-800' :
-                        log.status === 'FAILED' ? 'bg-red-100 text-red-800' :
-                        log.status === 'QUEUED' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
+                      <span className={`support-pill ${
+                        log.status === 'DELIVERED' || log.status === 'SENT' ? 'ok' :
+                        log.status === 'FAILED' ? 'bad' :
+                        log.status === 'QUEUED' ? 'pending' :
+                        'warn'
                       }`}>
                         {log.status}
                       </span>
@@ -168,8 +171,8 @@ export default function AdminNotificationLogs() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       {log.status === 'FAILED' && (
-                        <button onClick={() => handleRetry(log.id)} className="text-xs font-bold text-indigo-600 hover:text-indigo-900">
-                          RETRY
+                        <button onClick={() => handleRetry(log.id)} className="support-btn">
+                          Retry
                         </button>
                       )}
                     </td>

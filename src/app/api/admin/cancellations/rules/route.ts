@@ -6,7 +6,7 @@ import { uuidv4 } from '@/lib/uuid';
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE', 'SUPPORT']);
+    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'FINANCE']);
     if (!auth.ok) return auth.response!;
 
     const rules = await query<any[]>(`SELECT * FROM cancellation_rules ORDER BY created_at DESC`);

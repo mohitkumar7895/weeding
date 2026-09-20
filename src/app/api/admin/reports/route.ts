@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getSessionUser, logAudit } from '@/lib/auth';
+import { logAudit } from '@/lib/auth';
 import { verifyAdminRole } from '@/lib/rbac';
+import { ensureOpsTables, safeSelect } from '@/lib/ensureOpsTables';
 
 export async function GET(req: NextRequest) {
-    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
-    if (!authResult.ok) return authResult.response;
+  const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'SUPPORT']);
+  if (!authResult.ok) return authResult.response!;
 
   try {
-    const admin = await getSessionUser();
-    if (!admin || (admin.role !== 'SUPER_ADMIN' && admin.role !== 'ADMIN' && admin.role !== 'SUPPORT')) {
-      return NextResponse.json({ success: false, message: 'Admin or Support access required' }, { status: 403 });
-    }
-
-    const reports = await query<any[]>(
+    await ensureOpsTables();
+    const reports = await safeSelect<any[]>(
       `SELECT r.*, 
               u1.name as reporter_name, u1.email as reporter_email,
               u2.name as reported_name, u2.email as reported_email
@@ -34,14 +31,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-    const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
-    if (!authResult.ok) return authResult.response;
+  const authResult = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'SUPPORT']);
+  if (!authResult.ok) return authResult.response!;
 
   try {
-    const admin = await getSessionUser();
-    if (!admin || (admin.role !== 'SUPER_ADMIN' && admin.role !== 'ADMIN' && admin.role !== 'SUPPORT')) {
-      return NextResponse.json({ success: false, message: 'Admin or Support access required' }, { status: 403 });
-    }
+    const admin = authResult.user;
 
     const body = await req.json();
     const { report_id, status } = body;

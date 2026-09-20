@@ -4,7 +4,7 @@ import { safeSelect } from '@/lib/ensureOpsTables';
 
 export async function GET() {
   try {
-    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'SUPPORT']);
+    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
     if (!auth.ok) return auth.response!;
 
     const configs = await safeSelect<any[]>(

@@ -30,7 +30,7 @@ function readUiUser(): UiUser | null {
 function NavLink({ href, label, pathname }: { href: string; label: string; pathname: string }) {
   const active = href === '/admin' ? pathname === '/admin' : pathname === href || pathname.startsWith(`${href}/`);
   return (
-    <Link href={href} prefetch className={active ? 'is-active' : undefined}>
+    <Link href={href} prefetch={false} className={active ? 'is-active' : undefined}>
       {label}
     </Link>
   );
@@ -40,16 +40,18 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<UiUser | null>(null);
+  const role = user?.role;
+  const roleDisplay = (role || '').replace('_', ' ');
 
   useEffect(() => {
     const local = readUiUser();
-    if (local?.role) setUser(local);
+    if (local?.role) setUser({ ...local, role: String(local.role).toUpperCase() as AdminRole });
 
     fetch('/api/auth/session', { credentials: 'include' })
       .then((res) => res.json())
       .then((data) => {
         if (!data?.success || !data.user) return;
-        const next = { name: data.user.name, role: data.user.role as AdminRole };
+        const next = { name: data.user.name, role: String(data.user.role || '').toUpperCase() as AdminRole };
         setUser(next);
         sessionStorage.setItem('wwm_admin_user', JSON.stringify(next));
       })
@@ -57,38 +59,46 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   }, []);
 
   useEffect(() => {
-    const hrefs = [
-      '/admin',
-      '/admin/analytics',
-      '/admin/customers',
-      '/admin/vendors',
-      '/admin/reels',
-      '/admin/matching/weights',
-      '/admin/marketplace',
-      '/admin/reports/financial',
-      '/admin/receipts',
-      '/admin/invoices',
-      '/admin/disputes',
-      '/admin/notifications/logs',
-      '/admin/governance/users',
-      '/admin/reliability',
-    ];
-    hrefs.forEach((href) => router.prefetch(href));
-  }, [router]);
+    if (role === 'SUPPORT' && pathname === '/admin') {
+      router.replace('/admin/support');
+    }
+    if (role === 'FINANCE' && pathname?.startsWith('/admin/support')) {
+      router.replace('/admin/reports/financial');
+    }
+  }, [role, pathname, router]);
 
-  const role = user?.role;
-  const roleDisplay = (role || '').replace('_', ' ');
+  useEffect(() => {
+    // Prefetch only the current area, not every admin page (that hammered the API limiter).
+    if (pathname?.startsWith('/admin')) {
+      router.prefetch('/admin');
+    }
+  }, [router, pathname]);
 
   const nav = useMemo(() => {
     if (!role) return null;
     return (
       <>
-        <NavLink href="/admin" label="Dashboard" pathname={pathname} />
+        {role !== 'SUPPORT' && (
+          <NavLink href="/admin" label="Dashboard" pathname={pathname} />
+        )}
 
         {(role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'FINANCE') && (
           <>
             <div className="admin-nav-section">Analytics & Reports</div>
             <NavLink href="/admin/analytics" label="Platform Analytics" pathname={pathname} />
+          </>
+        )}
+
+        {role === 'SUPPORT' && (
+          <>
+            <div className="admin-nav-section">Support Console</div>
+            <NavLink href="/admin/support" label="Support Dashboard" pathname={pathname} />
+            <NavLink href="/admin/support/cases" label="Support Cases" pathname={pathname} />
+            <NavLink href="/admin/customers" label="Customers" pathname={pathname} />
+            <NavLink href="/admin/support/bookings" label="Bookings" pathname={pathname} />
+            <NavLink href="/admin/support/reports" label="Reports" pathname={pathname} />
+            <NavLink href="/admin/disputes" label="Disputes" pathname={pathname} />
+            <NavLink href="/admin/notifications/logs" label="Notifications" pathname={pathname} />
           </>
         )}
 
@@ -107,12 +117,16 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           <>
             <div className="admin-nav-section">Financials</div>
             <NavLink href="/admin/reports/financial" label="Financial Reports" pathname={pathname} />
+            <NavLink href="/admin/finance/payments" label="Payments" pathname={pathname} />
+            <NavLink href="/admin/finance/payouts" label="Payouts" pathname={pathname} />
+            <NavLink href="/admin/finance/refunds" label="Refunds" pathname={pathname} />
+            <NavLink href="/admin/finance/commissions" label="Commissions" pathname={pathname} />
             <NavLink href="/admin/receipts" label="Receipts" pathname={pathname} />
             <NavLink href="/admin/invoices" label="Invoices" pathname={pathname} />
           </>
         )}
 
-        {(role === 'SUPER_ADMIN' || role === 'SUPPORT') && (
+        {(role === 'SUPER_ADMIN' || role === 'ADMIN') && (
           <>
             <div className="admin-nav-section">Support & Comms</div>
             <NavLink href="/admin/disputes" label="Disputes & Cases" pathname={pathname} />
@@ -142,13 +156,17 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </>
         )}
 
-        <div className="admin-nav-section">System</div>
-        <NavLink href="/admin/reliability" label="Backup & Reliability" pathname={pathname} />
+        {(role === 'SUPER_ADMIN' || role === 'ADMIN') && (
+          <>
+            <div className="admin-nav-section">System</div>
+            <NavLink href="/admin/reliability" label="Backup & Reliability" pathname={pathname} />
+          </>
+        )}
       </>
     );
   }, [pathname, role]);
 
-  if (pathname === '/admin/login') {
+  if (pathname === '/login') {
     return <>{children}</>;
   }
 
@@ -157,34 +175,34 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <aside className="admin-sidebar">
         <div className="admin-brand">
           <h1>WedWithMe</h1>
-          <p>Admin Console</p>
+          <p>{role === 'SUPPORT' ? 'Support Console' : 'Admin Console'}</p>
         </div>
         <nav className="admin-nav">{nav || <Link href="/admin">Dashboard</Link>}</nav>
       </aside>
 
       <main className="admin-main">
         <header className="admin-header">
-          <h2>Admin Portal</h2>
+          <h2>{role === 'SUPPORT' ? 'Support Portal' : 'Admin Portal'}</h2>
           <div className="admin-header-user">
             <div>
               <div className="name">{user?.name || 'Administrator'}</div>
               <div className="role">{roleDisplay || 'LOADING'}</div>
             </div>
-            <form
-              action="/api/auth/logout"
-              method="POST"
-              onSubmit={() => {
+            <button
+              type="button"
+              className="admin-logout"
+              onClick={async () => {
                 try {
                   sessionStorage.removeItem('wwm_admin_user');
                 } catch {
                   /* ignore */
                 }
+                await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => undefined);
+                window.location.assign('/');
               }}
             >
-              <button type="submit" className="admin-logout">
-                Logout
-              </button>
-            </form>
+              Logout
+            </button>
           </div>
         </header>
         <div className="admin-content">

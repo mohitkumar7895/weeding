@@ -13,7 +13,7 @@ const DEFAULT_CONFIG = {
 
 export async function GET() {
   try {
-    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN', 'SUPPORT']);
+    const auth = await verifyAdminRole(['SUPER_ADMIN', 'ADMIN']);
     if (!auth.ok) return auth.response!;
     await ensureOpsTables();
     const rows = await safeSelect<any[]>(`SELECT * FROM backup_configuration WHERE id = 1`);

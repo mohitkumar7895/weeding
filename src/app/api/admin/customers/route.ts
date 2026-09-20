@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    sql += ` ORDER BY u.created_at DESC LIMIT 200`;
+    sql += ` ORDER BY u.created_at DESC LIMIT 2`;
     const data = await query<any[]>(sql, params);
     return NextResponse.json({ success: true, data });
   } catch (error: any) {

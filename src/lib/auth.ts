@@ -60,7 +60,10 @@ export async function getSessionUser(): Promise<TokenPayload | null> {
       }
     }
     if (!token) return null;
-    return verifyToken(token);
+    const payload = verifyToken(token);
+    if (!payload) return null;
+    payload.role = String(payload.role || '').trim().toUpperCase() as TokenPayload['role'];
+    return payload;
   } catch (error) {
     return null;
   }

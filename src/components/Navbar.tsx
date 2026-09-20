@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppContext } from '@/context';
+import { homePathForRole, isStaffRole, logoutAndGoHome } from '@/lib/roleHome';
 
 interface NavbarProps {
   onOpenLogin?: () => void;
@@ -14,12 +15,12 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname() || '/';
-  const { user, setUser } = useAppContext();
+  const { user, setUser, isLoading: sessionLoading } = useAppContext();
 
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'Vendors', href: '/vendors' },
-    { name: 'Matches', href: '/matches' },
+    ...(user && isStaffRole(user.role) ? [] : [{ name: 'Matches', href: '/matches' }]),
     { name: 'Bookings', href: '/bookings' },
     { name: 'About Us', href: '/about' },
   ];
@@ -113,10 +114,12 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           </button>
 
           {/* If user is logged in, show user badge */}
-          {user ? (
+          {sessionLoading ? (
+            <span style={{ fontSize: 12, color: '#9cb1a6' }}>…</span>
+          ) : user ? (
             <div className="user-profile-badge">
               <Link
-                href={user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? '/admin' : user.role === 'VENDOR' ? '/vendor' : '/dashboard'}
+                href={homePathForRole(user.role)}
                 style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}
               >
                 <div className="user-avatar-circle">
@@ -130,10 +133,7 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
               <button
                 className="btn-logout"
                 title="Sign out"
-                onClick={async () => {
-                  await fetch('/api/auth/logout', { method: 'POST' });
-                  setUser(null);
-                }}
+                onClick={() => logoutAndGoHome()}
               >
                 Logout
               </button>
@@ -203,10 +203,18 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
               </Link>
             ))}
             <div className="mobile-auth-actions">
-              {user ? (
+              {sessionLoading ? null : user ? (
                 <div className="mobile-user-row">
-                  <span className="user-display-name">Hi, {user.name}</span>
-                  <button className="btn-login" onClick={() => setUser(null)}>
+                  <Link href={homePathForRole(user.role)} className="user-display-name" onClick={() => setMobileMenuOpen(false)}>
+                    Hi, {user.name}
+                  </Link>
+                  <button
+                    className="btn-login"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      logoutAndGoHome();
+                    }}
+                  >
                     Logout
                   </button>
                 </div>

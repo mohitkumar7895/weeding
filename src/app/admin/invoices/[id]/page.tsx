@@ -16,9 +16,9 @@ export default function AdminInvoiceDetail() {
 
   const fetchInvoiceDetails = async () => {
     try {
-      const res = await fetch(`/api/admin/invoices/${invoiceId}`);
-      if (res.status === 401 || res.status === 403) {
-        router.push('/admin/login');
+      const res = await fetch(`/api/admin/invoices/${invoiceId}`, { credentials: 'include' });
+      if (res.status === 401) {
+        router.push('/login');
         return;
       }
       const data = await res.json();
