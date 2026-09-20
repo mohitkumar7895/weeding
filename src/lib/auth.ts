@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { query } from './db';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'wedwithme_super_secret_jwt_key_2026_production';
@@ -50,12 +50,11 @@ export function verifyToken(token: string): TokenPayload | null {
  */
 export async function getSessionUser(): Promise<TokenPayload | null> {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     let token = cookieStore.get(COOKIE_NAME)?.value;
-    // Fallback to Authorization header (Bearer token)
     if (!token) {
-      const { headers } = await import('next/headers');
-      const authHeader = headers().get('authorization');
+      const headerStore = await headers();
+      const authHeader = headerStore.get('authorization');
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7).trim();
       }
