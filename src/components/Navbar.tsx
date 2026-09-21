@@ -113,6 +113,14 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
             </svg>
           </button>
 
+          {/* Vendor Partner Button */}
+          <Link
+            href="/vendor/register"
+            className="btn-vendor-nav hide-mobile"
+          >
+            For Vendors &rarr;
+          </Link>
+
           {/* If user is logged in, show user badge */}
           {sessionLoading ? (
             <span style={{ fontSize: 12, color: '#9cb1a6' }}>…</span>
@@ -311,10 +319,10 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
         .desktop-nav {
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 4px;
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%);
+          flex: 1;
+          margin: 0 16px;
         }
 
         .desktop-nav :global(a),
@@ -433,6 +441,24 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           transform: translateY(-1px);
           box-shadow: 0 6px 20px rgba(230, 0, 92, 0.55);
           filter: brightness(1.08);
+        }
+
+        .btn-vendor-nav {
+          color: #e5c158;
+          font-size: 13.5px;
+          font-weight: 700;
+          padding: 7px 18px;
+          border-radius: 9999px;
+          border: 1px dashed rgba(229, 193, 88, 0.6);
+          background: rgba(229, 193, 88, 0.08);
+          text-decoration: none;
+          transition: all 0.2s ease;
+        }
+
+        .btn-vendor-nav:hover {
+          background: rgba(229, 193, 88, 0.15);
+          border-style: solid;
+          transform: translateY(-1px);
         }
 
         .user-profile-badge {
@@ -640,6 +666,9 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
             align-items: center;
             justify-content: space-between;
             width: 100%;
+          }
+          .hide-mobile {
+            display: none !important;
           }
         }
 

@@ -95,7 +95,23 @@ export default function HeroSection() {
 
             <div className="pill-divider"></div>
 
-            <div className="pill-field date-field">
+            <div 
+              className="pill-field date-field clickable"
+              onClick={() => {
+                const dateInput = document.getElementById('dateInput') as HTMLInputElement;
+                if (dateInput) {
+                  try {
+                    if ('showPicker' in HTMLInputElement.prototype) {
+                      dateInput.showPicker();
+                    } else {
+                      dateInput.focus();
+                    }
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }
+              }}
+            >
               <div className="pill-icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#25382e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />

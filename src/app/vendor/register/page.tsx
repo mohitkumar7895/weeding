@@ -246,9 +246,7 @@ export default function VendorRegisterPage() {
           <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#fff', letterSpacing: '-0.5px' }}>
             Register as a WedWithMe Vendor Partner
           </h1>
-          <p style={{ fontSize: '14px', color: '#a0aec0', maxWidth: '600px', margin: '8px auto 0', lineHeight: '1.6' }}>
-            Showcase your wedding services to thousands of verified couples, receive guaranteed escrow payments, and manage client bookings seamlessly.
-          </p>
+
         </div>
 
         {/* Status Messages */}

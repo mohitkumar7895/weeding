@@ -596,5 +596,37 @@ nextjs-portal,
   animation: blinkInkCursor 0.75s infinite;
 }
 
+/* =========================================================
+   USER REQUESTED TWEAKS
+   ========================================================= */
 
+/* Lighter placeholders for all forms */
+::placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+  opacity: 1 !important; /* Firefox overrides */
+}
+::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+::-moz-placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+:-ms-input-placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
 
+/* Hand cursor on all clickable elements */
+a, 
+button, 
+select, 
+input[type="submit"], 
+input[type="button"], 
+input[type="reset"], 
+input[type="radio"], 
+input[type="checkbox"], 
+label,
+.clickable,
+[role="button"],
+summary {
+  cursor: pointer !important;
+}

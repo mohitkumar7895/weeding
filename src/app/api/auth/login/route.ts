@@ -161,8 +161,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            'Account not found on this server. Register on this website, or login as admin with admin@wedwithme.com / Admin@123456',
+          message: 'Account not found. Please register on this website.',
         },
         { status: 401 }
       );

@@ -692,28 +692,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         {/* ---------------------------------------------------- */}
         {mode === 'register' && (
           <form onSubmit={handleRegister} className="auth-form">
-            {/* Role Selection */}
-            <div className="role-selector-wrap">
-              <label className="input-label">SELECT YOUR PROFILE TYPE</label>
-              <div className="role-selector">
-                <button
-                  type="button"
-                  className={`role-chip ${role === 'customer' ? 'role-selected' : ''}`}
-                  onClick={() => setRole('customer')}
-                >
-                  <span className="role-icon">👤</span>
-                  <span className="role-name">Customer</span>
-                </button>
-                <button
-                  type="button"
-                  className={`role-chip ${role === 'vendor' ? 'role-selected' : ''}`}
-                  onClick={() => setRole('vendor')}
-                >
-                  <span className="role-icon">👑</span>
-                  <span className="role-name">Vendor</span>
-                </button>
-              </div>
-            </div>
+
 
             {/* Full Name */}
             <div className="input-group">

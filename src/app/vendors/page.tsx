@@ -247,10 +247,6 @@ export default function VendorsPage() {
             <div className="hero-text-center">
               <span className="hero-badge">Verified Indian Wedding Marketplace</span>
               <h1 className="hero-title">Book Top Wedding Vendors with Escrow Protection</h1>
-              <p className="hero-subtitle">
-                Explore handpicked venues, floral designers, cinematographers, and royal banquet caterers. 
-                Guaranteed zero double-booking policy with 100% money-back escrow security.
-              </p>
 
               {/* Search & Location Bar */}
               <div className="search-filter-card">
@@ -284,47 +280,7 @@ export default function VendorsPage() {
                 </button>
               </div>
 
-              {/* Vendor Partner Registration Banner */}
-              <div style={{
-                marginTop: '20px',
-                background: 'rgba(6, 34, 24, 0.9)',
-                border: '1px solid rgba(229,193,88,0.3)',
-                borderRadius: '12px',
-                padding: '14px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '12px',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '22px' }}>💼</span>
-                  <div>
-                    <div style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold' }}>
-                      Are you a Wedding Vendor or Service Provider?
-                    </div>
-                    <div style={{ color: '#a0aec0', fontSize: '12px', marginTop: '2px' }}>
-                      Partner with WedWithMe to reach verified couples with guaranteed escrow payouts and zero double-booking risk.
-                    </div>
-                  </div>
-                </div>
-                <Link
-                  href="/vendor/register"
-                  style={{
-                    background: 'linear-gradient(135deg, #ff2a73 0%, #e6005c 100%)',
-                    color: '#fff',
-                    padding: '8px 18px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    textDecoration: 'none',
-                    boxShadow: '0 4px 12px rgba(230,0,92,0.3)',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Register as Vendor Partner →
-                </Link>
-              </div>
+
             </div>
           </div>
         </section>
