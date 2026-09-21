@@ -113,14 +113,6 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
             </svg>
           </button>
 
-          {/* Vendor Partner Button */}
-          <Link
-            href="/vendor/register"
-            className="btn-vendor-nav hide-mobile"
-          >
-            For Vendors &rarr;
-          </Link>
-
           {/* If user is logged in, show user badge */}
           {sessionLoading ? (
             <span style={{ fontSize: 12, color: '#9cb1a6' }}>…</span>

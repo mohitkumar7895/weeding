@@ -24,6 +24,27 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
   const [name, setName] = useState('');
   const [role, setRole] = useState<'customer' | 'vendor'>('customer');
   
+  // Vendor specific states
+  const [phone, setPhone] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [categoryId, setCategoryId] = useState('cat_photographers');
+  const [city, setCity] = useState('Delhi NCR');
+  const [address, setAddress] = useState('');
+  const [description, setDescription] = useState('');
+  const [startingPrice, setStartingPrice] = useState('25000');
+  const [agreeTerms, setAgreeTerms] = useState(false);
+
+  const majorCities = ['Delhi NCR', 'Mumbai', 'Jaipur', 'Bengaluru', 'Lucknow', 'Udaipur', 'Goa', 'Chandigarh', 'Hyderabad', 'Kolkata', 'Pune', 'Ahmedabad'];
+  const categoriesList = [
+    { id: 'cat_photographers', name: 'Photographers' },
+    { id: 'cat_caterers', name: 'Caterers' },
+    { id: 'cat_decorators', name: 'Decorators' },
+    { id: 'cat_venues', name: 'Venues' },
+    { id: 'cat_makeup', name: 'Bridal Makeup' },
+    { id: 'cat_mehendi', name: 'Mehendi Artists' },
+    { id: 'cat_dj', name: 'DJ & Music' },
+  ];
+
   // OTP & Reset states
   const [otp, setOtp] = useState('');
   const [otpToken, setOtpToken] = useState<string | null>(null);
@@ -235,6 +256,26 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
       return;
     }
 
+    if (role === 'vendor') {
+      if (password !== confirmPassword) {
+        setError('Passwords do not match.');
+        return;
+      }
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      if (cleanPhone.length < 10) {
+        setError('Please enter a valid 10-digit mobile number for vendor registration.');
+        return;
+      }
+      if (!businessName.trim() || !address.trim()) {
+        setError('Business name and physical address are required for vendor registration.');
+        return;
+      }
+      if (!agreeTerms) {
+        setError('You must agree to the WedWithMe Vendor Partner Terms and Escrow policy.');
+        return;
+      }
+    }
+
     // Require OTP verification for registration
     if (!otpSent) {
       await handleSendOtp('REGISTER');
@@ -261,9 +302,17 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           otp: otp.trim(),
           otpToken: otpToken || undefined,
           role: mappedRole,
-          business_name: role === 'vendor' ? name + ' Studio' : undefined,
-          category_id: role === 'vendor' ? 'cat_photographers' : undefined,
-          city: 'Delhi',
+          ...(role === 'vendor' ? {
+            phone: phone.replace(/[^0-9]/g, ''),
+            business_name: businessName.trim() || name + ' Studio',
+            category_id: categoryId,
+            city: city,
+            address: address.trim(),
+            description: description.trim(),
+            starting_price: parseFloat(startingPrice) || 25000,
+          } : {
+            city: 'Delhi',
+          }),
         }),
       });
 
@@ -693,100 +742,193 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
         {mode === 'register' && (
           <form onSubmit={handleRegister} className="auth-form">
 
-
-            {/* Full Name */}
-            <div className="input-group">
-              <label className="input-label" htmlFor="reg-name">FULL NAME</label>
-              <div className="input-field-wrap">
-                <span className="field-icon">👤</span>
-                <input
-                  id="reg-name"
-                  type="text"
-                  required
-                  placeholder="e.g. Mohit Kumar"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="auth-input"
-                />
+            {/* Role Selector */}
+            <div className="role-selector-wrap" style={{ marginBottom: '15px' }}>
+              <label className="input-label">I AM REGISTERING AS A</label>
+              <div className="role-selector">
+                <button
+                  type="button"
+                  className={`role-chip ${role === 'customer' ? 'role-selected' : ''}`}
+                  onClick={() => setRole('customer')}
+                >
+                  <span className="role-icon">💍</span>
+                  <span className="role-name">Customer</span>
+                </button>
+                <button
+                  type="button"
+                  className={`role-chip ${role === 'vendor' ? 'role-selected' : ''}`}
+                  onClick={() => setRole('vendor')}
+                >
+                  <span className="role-icon">🏪</span>
+                  <span className="role-name">Vendor Partner</span>
+                </button>
               </div>
             </div>
 
-            {/* Email Address with Send OTP inline */}
-            <div className="input-group">
-              <div className="password-label-row">
-                <label className="input-label" htmlFor="reg-email">EMAIL ADDRESS</label>
+            {role === 'customer' && (
+              <>
+                {/* Full Name */}
+                <div className="input-group">
+                  <label className="input-label" htmlFor="reg-name">FULL NAME</label>
+                  <div className="input-field-wrap">
+                    <span className="field-icon">👤</span>
+                    <input id="reg-name" type="text" required placeholder="e.g. Mohit Kumar" value={name} onChange={(e) => setName(e.target.value)} className="auth-input" />
+                  </div>
+                </div>
+
+                {/* Email Address with Send OTP inline */}
+                <div className="input-group">
+                  <div className="password-label-row">
+                    <label className="input-label" htmlFor="reg-email">EMAIL ADDRESS</label>
+                    {otpSent && (
+                      <button type="button" disabled={otpCooldown > 0 || loading} onClick={() => handleSendOtp('REGISTER', true)} className="resend-link-btn">
+                        {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend Code'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="input-field-wrap">
+                    <span className="field-icon">✉️</span>
+                    <input id="reg-email" type="email" required disabled={otpSent} placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="auth-input" />
+                    {!otpSent && (
+                      <button type="button" onClick={() => handleSendOtp('REGISTER')} disabled={loading || !email.includes('@')} className="inline-otp-btn">
+                        {loading ? '...' : 'Verify Email'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* OTP Code (Revealed once sent) */}
                 {otpSent && (
-                  <button
-                    type="button"
-                    disabled={otpCooldown > 0 || loading}
-                    onClick={() => handleSendOtp('REGISTER', true)}
-                    className="resend-link-btn"
-                  >
-                    {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend Code'}
-                  </button>
+                  <div className="input-group">
+                    <label className="input-label" htmlFor="reg-otp">6-DIGIT EMAIL VERIFICATION CODE</label>
+                    <div className="input-field-wrap">
+                      <span className="field-icon">🔢</span>
+                      <input id="reg-otp" type="text" maxLength={6} required placeholder="Enter 6-digit code" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} className="auth-input otp-highlight-input" />
+                    </div>
+                  </div>
                 )}
-              </div>
-              <div className="input-field-wrap">
-                <span className="field-icon">✉️</span>
-                <input
-                  id="reg-email"
-                  type="email"
-                  required
-                  disabled={otpSent}
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="auth-input"
-                />
-                {!otpSent && (
-                  <button
-                    type="button"
-                    onClick={() => handleSendOtp('REGISTER')}
-                    disabled={loading || !email.includes('@')}
-                    className="inline-otp-btn"
-                  >
-                    {loading ? '...' : 'Verify Email'}
-                  </button>
-                )}
-              </div>
-            </div>
 
-            {/* OTP Code (Revealed once sent) */}
-            {otpSent && (
-              <div className="input-group">
-                <label className="input-label" htmlFor="reg-otp">6-DIGIT EMAIL VERIFICATION CODE</label>
-                <div className="input-field-wrap">
-                  <span className="field-icon">🔢</span>
-                  <input
-                    id="reg-otp"
-                    type="text"
-                    maxLength={6}
-                    required
-                    placeholder="Enter 6-digit code"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    className="auth-input otp-highlight-input"
-                  />
+                {/* Password */}
+                <div className="input-group">
+                  <label className="input-label" htmlFor="reg-password">CREATE PASSWORD</label>
+                  <div className="input-field-wrap">
+                    <span className="field-icon">🔒</span>
+                    <input id="reg-password" type="password" required placeholder="At least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} className="auth-input" />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {role === 'vendor' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Section 1 */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(229,193,88,0.1)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
+                    <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'linear-gradient(135deg, #ff2a73, #e6005c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>1</span>
+                    <h2 style={{ fontSize: '14px', fontWeight: 'bold', color: '#e5c158' }}>Account Credentials</h2>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="input-group">
+                      <label className="input-label">OWNER / CONTACT PERSON NAME *</label>
+                      <input type="text" required placeholder="e.g. Vikramaditya Rathore" value={name} onChange={(e) => setName(e.target.value)} className="auth-input" />
+                    </div>
+                    
+                    <div className="input-group">
+                      <div className="password-label-row">
+                        <label className="input-label">BUSINESS EMAIL ADDRESS *</label>
+                        {otpSent && (
+                          <button type="button" disabled={otpCooldown > 0 || loading} onClick={() => handleSendOtp('REGISTER', true)} className="resend-link-btn">
+                            {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend Code'}
+                          </button>
+                        )}
+                      </div>
+                      <div className="input-field-wrap">
+                        <input type="email" required disabled={otpSent} placeholder="partner@studio.com" value={email} onChange={(e) => setEmail(e.target.value)} className="auth-input" />
+                        {!otpSent && (
+                          <button type="button" onClick={() => handleSendOtp('REGISTER')} disabled={loading || !email.includes('@')} className="inline-otp-btn">
+                            Verify
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {otpSent && (
+                      <div className="input-group">
+                        <label className="input-label">6-DIGIT EMAIL VERIFICATION CODE</label>
+                        <input type="text" maxLength={6} required placeholder="Enter 6-digit code" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} className="auth-input otp-highlight-input" />
+                      </div>
+                    )}
+
+                    <div className="input-group">
+                      <label className="input-label">MOBILE NUMBER (10 DIGITS) *</label>
+                      <input type="tel" maxLength={10} required placeholder="9876543210" value={phone} onChange={(e) => setPhone(e.target.value)} className="auth-input" />
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <div className="input-group" style={{ flex: 1 }}>
+                        <label className="input-label">PASSWORD *</label>
+                        <input type="password" required placeholder="Min 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} className="auth-input" />
+                      </div>
+                      <div className="input-group" style={{ flex: 1 }}>
+                        <label className="input-label">CONFIRM *</label>
+                        <input type="password" required placeholder="Re-type password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="auth-input" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2 */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(229,193,88,0.1)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
+                    <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'linear-gradient(135deg, #ff2a73, #e6005c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>2</span>
+                    <h2 style={{ fontSize: '14px', fontWeight: 'bold', color: '#e5c158' }}>Storefront Details</h2>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="input-group">
+                      <label className="input-label">BUSINESS / BRAND NAME *</label>
+                      <input type="text" required placeholder="e.g. Royal Shringar Studio" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="auth-input" />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <div className="input-group" style={{ flex: 1 }}>
+                        <label className="input-label">CATEGORY *</label>
+                        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="auth-input" style={{ paddingLeft: '10px' }}>
+                          {categoriesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="input-group" style={{ flex: 1 }}>
+                        <label className="input-label">CITY *</label>
+                        <select value={city} onChange={(e) => setCity(e.target.value)} className="auth-input" style={{ paddingLeft: '10px' }}>
+                          {majorCities.map(ct => <option key={ct} value={ct}>{ct}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="input-group">
+                      <label className="input-label">STARTING PACKAGE PRICE (₹) *</label>
+                      <input type="number" required min={1000} step={500} value={startingPrice} onChange={(e) => setStartingPrice(e.target.value)} className="auth-input" />
+                    </div>
+
+                    <div className="input-group">
+                      <label className="input-label">STUDIO / PHYSICAL ADDRESS *</label>
+                      <input type="text" required placeholder="Shop 14, Heritage Square..." value={address} onChange={(e) => setAddress(e.target.value)} className="auth-input" />
+                    </div>
+
+                    <div className="input-group">
+                      <label className="input-label">BUSINESS OVERVIEW</label>
+                      <textarea rows={3} placeholder="Describe your style, experience..." value={description} onChange={(e) => setDescription(e.target.value)} className="auth-input" style={{ paddingTop: '10px' }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ padding: '12px', borderRadius: '10px', background: '#061d15', border: '1px solid rgba(229,193,88,0.18)' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', fontSize: '12px', color: '#cbd5e0', lineHeight: 1.4 }}>
+                    <input type="checkbox" required checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} style={{ marginTop: '3px', accentColor: '#ff2a73' }} />
+                    <span>I agree to the <strong style={{ color: '#e5c158' }}>WedWithMe Vendor Partner Agreement</strong>, Escrow settlement rules, and declare details are authentic.</span>
+                  </label>
                 </div>
               </div>
             )}
-
-            {/* Password */}
-            <div className="input-group">
-              <label className="input-label" htmlFor="reg-password">CREATE PASSWORD</label>
-              <div className="input-field-wrap">
-                <span className="field-icon">🔒</span>
-                <input
-                  id="reg-password"
-                  type="password"
-                  required
-                  placeholder="At least 6 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="auth-input"
-                />
-              </div>
-            </div>
 
             {/* Submit Button */}
             <button type="submit" disabled={loading} className="btn-submit-auth">
