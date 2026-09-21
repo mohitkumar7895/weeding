@@ -162,14 +162,12 @@ export default function VendorRegisterPage() {
       }
 
       setSuccess(true);
-      if (data.user) {
-        setUser(data.user);
-      }
+      // We don't set user state here because the vendor must be verified by admin first.
 
-      // Redirect immediately to vendor dashboard / onboarding tab
+      // Redirect to homepage after showing the success message
       setTimeout(() => {
-        router.push('/vendor');
-      }, 1200);
+        router.push('/');
+      }, 3500);
     } catch (err: any) {
       setError(err.message || 'Failed to complete registration.');
       setLoading(false);
@@ -260,7 +258,7 @@ export default function VendorRegisterPage() {
         {success && (
           <div style={{ background: 'rgba(56,161,105,0.2)', border: '1.5px solid #38a169', color: '#9ae6b4', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px', fontSize: '14px', textAlign: 'center' }}>
             <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>✓ Vendor Partner Account Created!</div>
-            <div>Redirecting to your Onboarding Checklist and KYC Dossier...</div>
+            <div>Your profile is currently under review. You can log in once an admin approves it. Redirecting to home...</div>
           </div>
         )}
 
@@ -508,7 +506,7 @@ export default function VendorRegisterPage() {
               opacity: loading || success ? 0.75 : 1,
             }}
           >
-            {loading ? 'Creating Vendor Partner Account...' : success ? '✓ Account Created — Loading Dashboard...' : 'Complete Vendor Registration & Go to Onboarding'}
+            {loading ? 'Creating Vendor Partner Account...' : success ? '✓ Account Created — Awaiting Approval...' : 'Complete Vendor Registration'}
           </button>
 
           <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '13px', color: '#a0aec0' }}>

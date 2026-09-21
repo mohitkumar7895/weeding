@@ -169,15 +169,6 @@ export async function POST(req: NextRequest) {
       console.warn('[register] DB transaction warning (offline standby):', dbErr.message);
     }
 
-    // Generate JWT token
-    const token = signToken({
-      id: userId,
-      email: email.toLowerCase(),
-      name,
-      role: userRole,
-      vendor_id: assignedVendorId,
-    });
-
     await logAudit({
       userId,
       role: userRole,
@@ -194,6 +185,24 @@ export async function POST(req: NextRequest) {
       role: userRole,
       vendor_id: assignedVendorId,
     };
+
+    if (userRole === 'VENDOR') {
+      return NextResponse.json({
+        success: true,
+        message: 'Registration successful. Your account is pending admin verification.',
+        user: null, // Don't return user to prevent frontend login
+        data: { user: null },
+      });
+    }
+
+    // Generate JWT token for non-vendors (Customers)
+    const token = signToken({
+      id: userId,
+      email: email.toLowerCase(),
+      name,
+      role: userRole,
+      vendor_id: assignedVendorId,
+    });
 
     const response = NextResponse.json({
       success: true,

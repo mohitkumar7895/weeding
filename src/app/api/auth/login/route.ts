@@ -185,7 +185,23 @@ export async function POST(req: NextRequest) {
     let vendorRows: any[] = [];
     let profileRows: any[] = [];
     try {
-      vendorRows = asRows(await query<any[]>(`SELECT id, business_name FROM vendors WHERE user_id = ? LIMIT 1`, [user.id]));
+      vendorRows = asRows(await query<any[]>(`SELECT id, business_name, verification_status FROM vendors WHERE user_id = ? LIMIT 1`, [user.id]));
+      
+      if (String(user.role).toUpperCase() === 'VENDOR' && vendorRows.length > 0) {
+        if (vendorRows[0].verification_status === 'PENDING') {
+          return NextResponse.json(
+            { success: false, message: 'Your vendor account is pending admin verification. You will be able to log in once approved.' },
+            { status: 403 }
+          );
+        }
+        if (vendorRows[0].verification_status === 'REJECTED') {
+          return NextResponse.json(
+            { success: false, message: 'Your vendor account registration was rejected. Please contact support.' },
+            { status: 403 }
+          );
+        }
+      }
+
       profileRows = asRows(await query<any[]>(`SELECT id FROM customer_profiles WHERE user_id = ? LIMIT 1`, [user.id]));
     } catch (linkErr: any) {
       console.warn('[login] profile lookup skipped:', linkErr.message);
