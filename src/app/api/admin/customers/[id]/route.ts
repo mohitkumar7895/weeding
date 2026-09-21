@@ -31,7 +31,10 @@ export async function GET(
       `SELECT * FROM blocked_profiles WHERE user_id = ? OR blocked_user_id = ? ORDER BY created_at DESC LIMIT 50`,
       [id, id]
     );
-    const prefs = await query<any[]>(`SELECT * FROM partner_preferences WHERE user_id = ? LIMIT 1`, [id]);
+    let prefs: any[] = [];
+    if (users[0].profile_id) {
+      prefs = await query<any[]>(`SELECT * FROM partner_preferences WHERE profile_id = ? LIMIT 1`, [users[0].profile_id]);
+    }
 
     return NextResponse.json({
       success: true,
@@ -96,7 +99,14 @@ export async function PUT(
       await query(`UPDATE customer_profiles SET ${profileUpdates.join(', ')} WHERE user_id = ?`, profileParams);
     }
 
-    await logAudit(admin!.id, 'UPDATE_CUSTOMER', 'users', id, body);
+    await logAudit({
+      userId: admin!.id,
+      role: admin!.role,
+      action: 'UPDATE_CUSTOMER',
+      entityType: 'users',
+      entityId: id,
+      newValues: body,
+    });
     return NextResponse.json({ success: true, message: 'Customer updated' });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
