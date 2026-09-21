@@ -203,6 +203,62 @@ const OPS_TABLES = [
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       INDEX idx_saved_user (user_id, updated_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS receipts (
+      id VARCHAR(36) PRIMARY KEY,
+      receipt_reference VARCHAR(50) UNIQUE NOT NULL,
+      payment_id VARCHAR(36) NOT NULL UNIQUE,
+      booking_id VARCHAR(36) NOT NULL,
+      invoice_id VARCHAR(36) NULL,
+      amount DECIMAL(12, 2) NOT NULL,
+      payment_date DATETIME NOT NULL,
+      status VARCHAR(20) DEFAULT 'ISSUED',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS system_configuration (
+        config_key VARCHAR(100) PRIMARY KEY,
+        category VARCHAR(50) NOT NULL,
+        config_value JSON NOT NULL,
+        description TEXT,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        updated_by VARCHAR(36) NULL,
+        FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_category (category)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS system_notification_settings (
+        event_type VARCHAR(100) PRIMARY KEY,
+        category ENUM('ACCOUNT', 'BOOKING', 'PAYMENT', 'DISPUTE', 'SYSTEM') NOT NULL,
+        in_app_enabled BOOLEAN DEFAULT TRUE,
+        email_enabled BOOLEAN DEFAULT TRUE,
+        sms_enabled BOOLEAN DEFAULT FALSE,
+        push_enabled BOOLEAN DEFAULT FALSE,
+        whatsapp_enabled BOOLEAN DEFAULT FALSE,
+        is_mandatory BOOLEAN DEFAULT FALSE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS backup_logs (
+        id VARCHAR(36) PRIMARY KEY,
+        status ENUM('SUCCESS', 'FAILED', 'IN_PROGRESS') NOT NULL,
+        destination_reference VARCHAR(255) NULL,
+        file_size_bytes BIGINT NULL,
+        failure_reason TEXT NULL,
+        started_at DATETIME NOT NULL,
+        completed_at DATETIME NULL,
+        INDEX idx_backup_status (status),
+        INDEX idx_backup_started_at (started_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS restore_test_records (
+        id VARCHAR(36) PRIMARY KEY,
+        test_environment VARCHAR(100) NOT NULL,
+        backup_reference VARCHAR(255) NOT NULL,
+        status ENUM('PLANNED', 'IN_PROGRESS', 'PASSED', 'FAILED') NOT NULL DEFAULT 'PLANNED',
+        tested_by VARCHAR(36) NULL,
+        notes_and_results TEXT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (tested_by) REFERENCES users(id) ON DELETE SET NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
 ];
 
 let ensured = false;
@@ -214,6 +270,57 @@ export async function ensureOpsTables() {
       await query(sql);
     } catch (err: any) {
       console.warn('[ensureOpsTables]', err.message);
+    }
+  }
+
+  // Seed default notification configurations
+  const defaultEvents = [
+    { event_type: 'ACCOUNT_CREATED', category: 'ACCOUNT', is_mandatory: false },
+    { event_type: 'PASSWORD_RESET', category: 'ACCOUNT', is_mandatory: true },
+    { event_type: 'SECURITY_ALERT', category: 'ACCOUNT', is_mandatory: true },
+    { event_type: 'BOOKING_REQUESTED', category: 'BOOKING', is_mandatory: false },
+    { event_type: 'BOOKING_CONFIRMED', category: 'BOOKING', is_mandatory: true },
+    { event_type: 'BOOKING_CANCELLED', category: 'BOOKING', is_mandatory: true },
+    { event_type: 'PAYMENT_SUCCESS', category: 'PAYMENT', is_mandatory: true },
+    { event_type: 'PAYMENT_FAILED', category: 'PAYMENT', is_mandatory: true },
+    { event_type: 'REFUND_PROCESSED', category: 'PAYMENT', is_mandatory: true },
+    { event_type: 'PAYOUT_INITIATED', category: 'PAYMENT', is_mandatory: true },
+    { event_type: 'DISPUTE_OPENED', category: 'DISPUTE', is_mandatory: true },
+    { event_type: 'DISPUTE_RESOLVED', category: 'DISPUTE', is_mandatory: true },
+    { event_type: 'MARKETPLACE_UPDATE', category: 'SYSTEM', is_mandatory: false },
+    { event_type: 'VENDOR_APPROVED', category: 'SYSTEM', is_mandatory: true }
+  ];
+  
+  for (const ev of defaultEvents) {
+    try {
+      await query(`
+        INSERT INTO system_notification_settings (event_type, category, is_mandatory)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE category = VALUES(category), is_mandatory = VALUES(is_mandatory)
+      `, [ev.event_type, ev.category, ev.is_mandatory]);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Seed default configurations
+  const defaultConfigs = [
+    { key: 'GST_RATE', category: 'FINANCIAL', value: { rate: 18, type: 'PERCENTAGE' }, description: 'GST rate used for invoices.' },
+    { key: 'PAYOUT_DELAY_DAYS', category: 'FINANCIAL', value: { days: 3 }, description: 'Days after booking completion before payout eligibility.' },
+    { key: 'MATRIMONIAL_CHAT_ENABLED', category: 'PRODUCT', value: { enabled: true }, description: 'Enable customer-to-customer matrimonial chat.' },
+    { key: 'AUTO_REFUND_ENABLED', category: 'FINANCIAL', value: { enabled: true }, description: 'Automatically process refunds for cancellations matching the policy.' },
+    { key: 'DISCOVERY_DEFAULT_RADIUS', category: 'MARKETPLACE', value: { radius_km: 50 }, description: 'Default discovery search radius for customers.' },
+    { key: 'MAX_PENDING_BOOKINGS', category: 'MARKETPLACE', value: { limit: 20 }, description: 'Max pending booking requests allowed per vendor.' }
+  ];
+  for (const conf of defaultConfigs) {
+    try {
+      await query(`
+        INSERT INTO system_configuration (config_key, category, config_value, description)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE description = VALUES(description)
+      `, [conf.key, conf.category, JSON.stringify(conf.value), conf.description]);
+    } catch {
+      /* ignore */
     }
   }
   try {
