@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
@@ -30,6 +30,7 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedStatusTab, setSelectedStatusTab] = useState('ALL');
   const [statusActionLoading, setStatusActionLoading] = useState<string | null>(null);
+  const payLockRef = useRef(false);
   const [notificationMsg, setNotificationMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Review Modal state
@@ -92,12 +93,15 @@ export default function BookingsPage() {
   };
 
   const handlePayEscrow = async (booking: Booking) => {
+    if (payLockRef.current) return;
+    payLockRef.current = true;
     setStatusActionLoading(booking.id);
     setNotificationMsg(null);
     try {
       const res = await fetch(`/api/bookings/${booking.id}/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           provider: 'razorpay',
         })
@@ -118,6 +122,7 @@ export default function BookingsPage() {
     } catch (err: any) {
       setNotificationMsg({ type: 'error', text: err.message });
     } finally {
+      payLockRef.current = false;
       setStatusActionLoading(null);
     }
   };

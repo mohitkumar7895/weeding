@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { homePathForRole, isCustomerRole, isStaffRole, isVendorRole, persistStaffSession } from '@/lib/roleHome';
@@ -51,6 +51,7 @@ export default function CustomerDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [payingBookingId, setPayingBookingId] = useState<string | null>(null);
+  const payingLockRef = useRef(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [chatPeerUserId, setChatPeerUserId] = useState<string | null>(null);
@@ -266,17 +267,21 @@ export default function CustomerDashboardPage() {
   };
 
   const handlePayEscrow = async (bookingId: string) => {
+    if (payingLockRef.current) return;
+    payingLockRef.current = true;
     setPayingBookingId(bookingId);
     setError(null);
     try {
       const res = await fetch(`/api/bookings/${bookingId}/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ provider: 'razorpay' }),
       });
       const data = await res.json();
       if (!data.success) {
         setError(data.message);
+        payingLockRef.current = false;
         setPayingBookingId(null);
         return;
       }
@@ -284,6 +289,7 @@ export default function CustomerDashboardPage() {
       const loaded = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
       if (!loaded) {
         setError('Failed to load Razorpay SDK. Please check your internet connection.');
+        payingLockRef.current = false;
         setPayingBookingId(null);
         return;
       }
@@ -300,6 +306,7 @@ export default function CustomerDashboardPage() {
             const verifyRes = await fetch('/api/payments/verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
               body: JSON.stringify({
                 booking_id: bookingId,
                 payment_transaction_id: data.data.payment_transaction_id,
@@ -318,6 +325,7 @@ export default function CustomerDashboardPage() {
           } catch (err: any) {
             setError('Error verifying payment: ' + err.message);
           } finally {
+            payingLockRef.current = false;
             setPayingBookingId(null);
           }
         },
@@ -328,17 +336,25 @@ export default function CustomerDashboardPage() {
         theme: {
           color: '#e6005c',
         },
+        modal: {
+          ondismiss: function () {
+            payingLockRef.current = false;
+            setPayingBookingId(null);
+          },
+        },
       };
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
-        setError(response.error.description || 'Payment failed');
+        setError(response.error?.description || 'Payment failed');
+        payingLockRef.current = false;
         setPayingBookingId(null);
       });
       rzp.open();
 
     } catch (err: any) {
       setError(err.message);
+      payingLockRef.current = false;
       setPayingBookingId(null);
     }
   };
