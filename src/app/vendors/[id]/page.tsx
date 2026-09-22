@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
+import VendorBookPayPanel from '@/components/VendorBookPayPanel';
 
 export default function VendorDetailPage() {
   const params = useParams();
@@ -18,6 +19,14 @@ export default function VendorDetailPage() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   
   const [activeTab, setActiveTab] = useState<'portfolio' | 'packages' | 'services'>('packages');
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+
+  const openBookPanel = (packageId?: string) => {
+    if (packageId) setSelectedPackageId(packageId);
+    requestAnimationFrame(() => {
+      document.getElementById('vendor-book-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
 
   useEffect(() => {
     if (vendorId) {
@@ -41,6 +50,12 @@ export default function VendorDetailPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!loading && vendor && typeof window !== 'undefined' && window.location.hash === '#vendor-book-panel') {
+      document.getElementById('vendor-book-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [loading, vendor]);
 
   if (loading) {
     return (
@@ -115,7 +130,11 @@ export default function VendorDetailPage() {
                 />
               )}
             </div>
-            <button className="btn-search-primary" style={{ padding: '16px 32px', fontSize: '16px', whiteSpace: 'nowrap' }}>
+            <button
+              className="btn-search-primary"
+              style={{ padding: '16px 32px', fontSize: '16px', whiteSpace: 'nowrap' }}
+              onClick={() => openBookPanel()}
+            >
               Check Availability & Book
             </button>
           </div>
@@ -197,6 +216,14 @@ export default function VendorDetailPage() {
                         {pkg.guest_capacity && (
                           <div style={{ marginTop: '12px', color: '#cbd5e0', fontSize: '14px' }}>👤 Up to {pkg.guest_capacity} guests</div>
                         )}
+                        <button
+                          type="button"
+                          className="btn-search-primary"
+                          onClick={() => openBookPanel(pkg.id)}
+                          style={{ marginTop: '16px', padding: '10px 18px', fontSize: '14px' }}
+                        >
+                          Check availability & book this package
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -261,7 +288,7 @@ export default function VendorDetailPage() {
 
         {/* Right Column: Contact & Location */}
         <div style={{ flex: '1 1 30%', minWidth: '300px' }}>
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '24px', position: 'sticky', top: '100px' }}>
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '24px' }}>
             <h3 style={{ color: '#fff', fontSize: '18px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
               Service Areas & Contact
             </h3>
@@ -284,12 +311,14 @@ export default function VendorDetailPage() {
               </div>
             )}
 
-            <button className="btn-search-primary" style={{ width: '100%', padding: '14px', fontSize: '16px', marginTop: '16px' }}>
-              Check Availability
-            </button>
-            <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '13px', color: '#a0aec0' }}>
-              Escrow protected booking via WedWithMe
-            </div>
+            <VendorBookPayPanel
+              vendor={vendor}
+              selectedPackageId={selectedPackageId}
+              onNeedLogin={() => {
+                setAuthMode('login');
+                setAuthModalOpen(true);
+              }}
+            />
           </div>
         </div>
       </main>

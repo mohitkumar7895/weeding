@@ -257,8 +257,8 @@ export async function POST(req: NextRequest) {
       // Mark provisional hold in vendor_availability
       await conn.execute(
         `INSERT INTO vendor_availability (id, vendor_id, service_id, date, status, is_booked, reason, notes)
-         VALUES (?, ?, ?, ?, 'BOOKED', TRUE, 'BOOKING_REQUEST', ?)
-         ON DUPLICATE KEY UPDATE status = 'BOOKED', is_booked = TRUE, notes = ?`,
+         VALUES (?, ?, ?, ?, 'BOOKING_LOCKED', TRUE, 'BOOKING_REQUEST', ?)
+         ON DUPLICATE KEY UPDATE status = 'BOOKING_LOCKED', is_booked = TRUE, notes = ?`,
         [randomUUID(), vendor_id, service_id || 'ALL', event_date, `Held for booking #${bookingNumber}`, `Held for booking #${bookingNumber}`]
       );
     });

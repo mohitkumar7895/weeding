@@ -411,7 +411,7 @@ export default function VendorsPage() {
 
                           <button
                             className="btn-view-book"
-                            onClick={() => handleOpenBookingModal(vendor)}
+                            onClick={() => { window.location.href = `/vendors/${vendor.id}#vendor-book-panel`; }}
                           >
                             Check Availability & Book
                           </button>
