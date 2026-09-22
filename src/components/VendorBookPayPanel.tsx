@@ -242,26 +242,31 @@ export default function VendorBookPayPanel({
   };
 
   return (
-    <div id="vendor-book-panel">
-      <h3 style={{ color: '#fff', fontSize: '18px', marginBottom: '12px' }}>Check availability & pay</h3>
-      <p style={{ color: '#a0aec0', fontSize: '13px', marginBottom: '16px', lineHeight: 1.5 }}>
-        Dates shown are for <strong style={{ color: '#fff' }}>{vendor.business_name}</strong>. Pay escrow on this page after you book — money is held until the event is delivered.
+    <div id="vendor-book-panel" className="vd-book">
+      <h3>Check availability & pay</h3>
+      <p className="vd-book-copy">
+        Dates and payment are for <strong>{vendor.business_name}</strong>. Escrow holds the amount until the event is delivered.
       </p>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <button type="button" onClick={() => setMonth((m) => shiftMonth(m, -1))} style={navBtn}>
-          ‹
-        </button>
-        <strong style={{ color: '#fff', fontSize: '14px' }}>{monthTitle}</strong>
-        <button type="button" onClick={() => setMonth((m) => shiftMonth(m, 1))} style={navBtn}>
-          ›
-        </button>
+      <div className="vd-month">
+        <button type="button" className="vd-nav" onClick={() => setMonth((m) => shiftMonth(m, -1))}>‹</button>
+        <strong>{monthTitle}</strong>
+        <button type="button" className="vd-nav" onClick={() => setMonth((m) => shiftMonth(m, 1))}>›</button>
+      </div>
+
+      <div className="vd-week">
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+          <span key={`${d}-${i}`}>{d}</span>
+        ))}
       </div>
 
       {loadingDays ? (
-        <p style={{ color: '#a0aec0', fontSize: '13px' }}>Loading dates…</p>
+        <p className="vd-legend">Loading dates…</p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', marginBottom: '16px' }}>
+        <div className="vd-cal">
+          {Array.from({ length: days[0] ? new Date(`${days[0].date}T00:00:00`).getDay() : 0 }).map((_, i) => (
+            <span key={`pad-${i}`} />
+          ))}
           {days.map((d) => {
             const past = d.date < today;
             const disabled = past || !d.available;
@@ -273,15 +278,7 @@ export default function VendorBookPayPanel({
                 disabled={disabled}
                 onClick={() => setEventDate(d.date)}
                 title={disabled ? 'Not available' : d.date}
-                style={{
-                  border: selected ? '1px solid #ff4d79' : '1px solid rgba(255,255,255,0.08)',
-                  background: selected ? 'rgba(255,77,121,0.25)' : disabled ? 'rgba(255,255,255,0.03)' : 'rgba(56,161,105,0.15)',
-                  color: disabled ? '#4a5568' : '#fff',
-                  borderRadius: '8px',
-                  padding: '8px 0',
-                  fontSize: '12px',
-                  cursor: disabled ? 'not-allowed' : 'pointer',
-                }}
+                className={`vd-day ${selected ? 'is-pick' : disabled ? 'is-off' : 'is-open'}`}
               >
                 {d.date.slice(8)}
               </button>
@@ -289,18 +286,16 @@ export default function VendorBookPayPanel({
           })}
         </div>
       )}
-      <div style={{ fontSize: '12px', color: '#718096', marginBottom: '16px' }}>
-        Green = available · Grey = booked/blocked
-      </div>
+      <div className="vd-legend">Green = available · Grey = booked or blocked · Pink = selected</div>
 
       <form onSubmit={handleBookAndPay}>
-        <label style={label}>Event date</label>
-        <input value={eventDate} readOnly placeholder="Pick from calendar" style={input} />
+        <label className="vd-label">Event date</label>
+        <input className="vd-field" value={eventDate} readOnly placeholder="Tap a green date" />
 
         {(vendor.packages || []).length > 0 && (
           <>
-            <label style={label}>Package</label>
-            <select value={packageId} onChange={(e) => setPackageId(e.target.value)} style={{ ...input, color: '#fff' }}>
+            <label className="vd-label">Package</label>
+            <select className="vd-field" value={packageId} onChange={(e) => setPackageId(e.target.value)}>
               <option value="">Starting price ₹{Number(vendor.starting_price || 0).toLocaleString('en-IN')}</option>
               {(vendor.packages || []).map((pkg: any) => (
                 <option key={pkg.id} value={pkg.id}>
@@ -311,79 +306,30 @@ export default function VendorBookPayPanel({
           </>
         )}
 
-        <label style={label}>Guests</label>
-        <input value={guestCount} onChange={(e) => setGuestCount(e.target.value)} type="number" min={1} style={input} />
+        <label className="vd-label">Guests</label>
+        <input className="vd-field" value={guestCount} onChange={(e) => setGuestCount(e.target.value)} type="number" min={1} />
 
-        <label style={label}>Notes for vendor</label>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} style={{ ...input, resize: 'vertical' }} />
+        <label className="vd-label">Notes for vendor</label>
+        <textarea className="vd-field" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Venue, timing, special requests" />
 
-        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '12px', margin: '12px 0' }}>
-          <div style={{ color: '#718096', fontSize: '12px' }}>Pay to</div>
-          <div style={{ color: '#fff', fontWeight: 700 }}>{vendor.business_name}</div>
-          <div style={{ color: '#cbd5e0', fontSize: '13px', marginTop: '4px' }}>
-            {eventDate || 'Date not selected'} · ₹{amount.toLocaleString('en-IN')} escrow advance
-          </div>
+        <div className="vd-paybox">
+          <small>Pay to</small>
+          <b>{vendor.business_name}</b>
+          <p>{eventDate || 'Pick a date'} · ₹{amount.toLocaleString('en-IN')} escrow advance</p>
         </div>
 
-        {message && (
-          <div
-            style={{
-              marginBottom: '12px',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              background: message.type === 'ok' ? 'rgba(56,161,105,0.15)' : 'rgba(252,129,129,0.15)',
-              color: message.type === 'ok' ? '#9ae6b4' : '#feb2b2',
-            }}
-          >
-            {message.text}
-          </div>
-        )}
+        {message && <div className={`vd-alert ${message.type}`}>{message.text}</div>}
 
-        <button className="btn-search-primary" type="submit" disabled={busy} style={{ width: '100%', padding: '14px', fontSize: '16px' }}>
+        <button className="btn-search-primary" type="submit" disabled={busy} style={{ width: '100%', padding: '14px', fontSize: 16 }}>
           {busy ? 'Processing…' : 'Book & pay escrow'}
         </button>
       </form>
 
       {pendingPay && (
-        <button
-          type="button"
-          className="btn-search-primary"
-          disabled={busy}
-          onClick={() => openCheckout(pendingPay.bookingId, pendingPay.amount, pendingPay.date)}
-          style={{ width: '100%', padding: '12px', marginTop: '10px', background: '#2f855a' }}
-        >
+        <button type="button" className="vd-retry" disabled={busy} onClick={() => openCheckout(pendingPay.bookingId, pendingPay.amount, pendingPay.date)}>
           Retry payment for #{pendingPay.bookingNumber}
         </button>
       )}
     </div>
   );
 }
-
-const navBtn: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.08)',
-  border: 'none',
-  color: '#fff',
-  width: 32,
-  height: 32,
-  borderRadius: 8,
-  cursor: 'pointer',
-};
-
-const label: React.CSSProperties = {
-  display: 'block',
-  color: '#a0aec0',
-  fontSize: 12,
-  marginBottom: 6,
-};
-
-const input: React.CSSProperties = {
-  width: '100%',
-  marginBottom: 12,
-  background: 'rgba(0,0,0,0.35)',
-  border: '1px solid rgba(255,255,255,0.12)',
-  borderRadius: 8,
-  color: '#fff',
-  padding: '10px 12px',
-  fontSize: 14,
-};
