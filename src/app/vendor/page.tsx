@@ -224,8 +224,8 @@ export default function VendorDashboardPage() {
 
       setAuthNeeded(false);
 
-      // Load parallel vendor data
-      await Promise.all([
+      // Load parallel vendor data without blocking UI
+      Promise.all([
         loadVendorOverview(),
         loadBusinessProfileData(),
         loadOnboardingAndDocs(),
@@ -233,7 +233,7 @@ export default function VendorDashboardPage() {
         loadBookings(),
         loadAvailability(),
         loadPortfoliosAndReels(),
-      ]);
+      ]).catch(err => console.error('Error loading vendor data:', err));
     } catch (err: any) {
       setError(err.message);
     } finally {

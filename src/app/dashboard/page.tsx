@@ -102,8 +102,8 @@ export default function CustomerDashboardPage() {
       setUser(authData.user);
       setAuthNeeded(false);
 
-      // Load parallel data
-      await Promise.all([
+      // Load parallel data without blocking UI
+      Promise.all([
         loadMatches(),
         loadBookings(),
         loadPrivacy(),
@@ -111,7 +111,7 @@ export default function CustomerDashboardPage() {
         loadProfile(),
         loadBlockedUsers(),
         loadNotifications(),
-      ]);
+      ]).catch(err => console.error('Error loading dashboard data:', err));
     } catch (err: any) {
       setError(err.message);
     } finally {
