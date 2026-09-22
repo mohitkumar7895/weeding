@@ -119,19 +119,41 @@ export class RazorpayPaymentAdapter implements PaymentProvider {
       process.env.RAZORPAY_KEY_SECRET as string
     );
 
-    if (!signaturesMatch(expected, params.signature || null)) return false;
+    let verified = signaturesMatch(expected, params.signature || null);
 
-    const existing = await query<any[]>(
-      `SELECT id FROM payment_provider_events WHERE event_id = ? AND status = 'PROCESSED'`,
-      [params.paymentId]
-    );
-    if (existing.length > 0) return true;
+    if (!verified) {
+      try {
+        const response = await fetch(`https://api.razorpay.com/v1/payments/${params.paymentId}`, {
+          headers: { Authorization: razorpayAuthHeader() },
+        });
+        const data = await response.json();
+        verified = Boolean(
+          response.ok &&
+            ['captured', 'authorized'].includes(String(data.status || '').toLowerCase()) &&
+            data.order_id === params.orderId
+        );
+      } catch {
+        verified = false;
+      }
+    }
 
-    await query(
-      `INSERT INTO payment_provider_events (id, provider, event_id, event_type, payload_json, status, processed_at)
-       VALUES (?, ?, ?, 'payment.captured', ?, 'PROCESSED', CURRENT_TIMESTAMP)`,
-      [randomUUID(), this.providerName, params.paymentId, JSON.stringify(params)]
-    );
+    if (!verified) return false;
+
+    try {
+      const existing = await query<any[]>(
+        `SELECT id FROM payment_provider_events WHERE event_id = ? AND status = 'PROCESSED'`,
+        [params.paymentId]
+      );
+      if (existing.length === 0) {
+        await query(
+          `INSERT INTO payment_provider_events (id, provider, event_id, event_type, payload_json, status, processed_at)
+           VALUES (?, ?, ?, 'payment.captured', ?, 'PROCESSED', CURRENT_TIMESTAMP)`,
+          [randomUUID(), this.providerName, params.paymentId, JSON.stringify(params)]
+        );
+      }
+    } catch (err) {
+      console.error('payment_provider_events write skipped:', err);
+    }
     return true;
   }
 

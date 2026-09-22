@@ -19,8 +19,8 @@ export const AuthOtpVerifySchema = z.object({
 });
 
 export const PaymentVerifySchema = z.object({
-  booking_id: z.string().uuid("Invalid booking ID"),
-  payment_reference: z.string().min(1, "Payment reference is required"),
+  booking_id: z.string().min(1, 'Booking ID is required'),
+  payment_reference: z.string().min(1, 'Payment reference is required'),
 });
 
 export const DocumentUploadSchema = z.object({
