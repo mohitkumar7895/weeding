@@ -3,13 +3,18 @@ import { query, transaction } from '@/lib/db';
 import { getSessionUser, logAudit } from '@/lib/auth';
 import { randomUUID } from 'crypto';
 
-function paymentInitResponse(booking: any, txn: { id: string; transaction_ref: string; currency?: string; provider?: string }) {
+function escrowAdvance(total: number) {
+  return Math.round(Number(total) * 25) / 100;
+}
+
+function paymentInitResponse(booking: any, txn: { id: string; transaction_ref: string; amount?: number; currency?: string; provider?: string }) {
   return NextResponse.json({
     success: true,
     message: 'Payment initiated successfully.',
     data: {
       order_id: txn.transaction_ref,
-      amount: booking.total_amount,
+      amount: Number(txn.amount) || escrowAdvance(booking.total_amount),
+      total_amount: booking.total_amount,
       currency: txn.currency || 'INR',
       provider: txn.provider || 'razorpay',
       key_id: process.env.RAZORPAY_KEY_ID || null,
@@ -59,12 +64,13 @@ export async function POST(
       return paymentInitResponse(booking, pendingTxn);
     }
 
+    const chargeAmount = escrowAdvance(booking.total_amount);
     const { defaultPaymentProvider } = await import('@/services/paymentProvider');
     const paymentId = randomUUID();
     const receiptNumber = `RCPT_${booking.booking_number}_${Date.now()}`;
 
     const order = await defaultPaymentProvider.createOrder({
-      amount: booking.total_amount,
+      amount: chargeAmount,
       currency: 'INR',
       bookingId: id,
       receiptNumber,
@@ -102,7 +108,7 @@ export async function POST(
           paymentId,
           id,
           order.orderId,
-          booking.total_amount,
+          chargeAmount,
           order.currency,
           order.provider,
           JSON.stringify({
@@ -135,13 +141,14 @@ export async function POST(
 
     await logAudit(user.id, 'INITIATE_PAYMENT', 'payment_transactions', paymentId, {
       booking_id: id,
-      amount: booking.total_amount,
+      amount: chargeAmount,
       order_id: order.orderId,
     });
 
     return paymentInitResponse(booking, {
       id: paymentId,
       transaction_ref: order.orderId,
+      amount: chargeAmount,
       currency: order.currency,
       provider: order.provider,
     });

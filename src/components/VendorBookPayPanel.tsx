@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { displayPackages, GUEST_OPTIONS } from '@/lib/vendorPackages';
 
 type DayStatus = { date: string; available: boolean; status: string };
 
@@ -43,8 +44,8 @@ export default function VendorBookPayPanel({
   const [days, setDays] = useState<DayStatus[]>([]);
   const [loadingDays, setLoadingDays] = useState(false);
   const [eventDate, setEventDate] = useState('');
-  const [packageId, setPackageId] = useState(selectedPackageId || '');
-  const [guestCount, setGuestCount] = useState('200');
+  const [selectedKey, setSelectedKey] = useState('');
+  const [guestCount, setGuestCount] = useState('150');
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
@@ -56,9 +57,23 @@ export default function VendorBookPayPanel({
   } | null>(null);
   const payLock = useRef(false);
 
+  const packages = useMemo(
+    () => displayPackages(vendor.packages, vendor.starting_price),
+    [vendor.packages, vendor.starting_price]
+  );
+
   useEffect(() => {
-    if (selectedPackageId) setPackageId(selectedPackageId);
-  }, [selectedPackageId]);
+    if (selectedPackageId) {
+      const match = packages.find((p) => p.id === selectedPackageId || p.package_tier === selectedPackageId);
+      if (match) setSelectedKey(match.id || match.package_tier);
+    } else if (!selectedKey && packages[0]) {
+      setSelectedKey(packages[0].id || packages[0].package_tier);
+    }
+  }, [selectedPackageId, packages]);
+
+  const selectedPkg = packages.find((p) => (p.id || p.package_tier) === selectedKey) || packages[0];
+  const amount = Number(selectedPkg?.price || vendor.starting_price || 0);
+  const advance = Math.round(amount * 0.25);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,11 +94,6 @@ export default function VendorBookPayPanel({
     };
   }, [vendor.id, month]);
 
-  const selectedPkg = useMemo(
-    () => (vendor.packages || []).find((p: any) => p.id === packageId) || null,
-    [vendor.packages, packageId]
-  );
-  const amount = Number(selectedPkg?.price || vendor.starting_price || 0);
   const today = new Date().toISOString().slice(0, 10);
   const monthTitle = useMemo(() => {
     const [y, m] = month.split('-').map(Number);
@@ -208,10 +218,11 @@ export default function VendorBookPayPanel({
         credentials: 'include',
         body: JSON.stringify({
           vendor_id: vendor.id,
-          package_id: packageId || null,
+          package_id: selectedPkg?.id || null,
+          package_tier: selectedPkg?.id ? undefined : selectedPkg?.package_tier,
           event_date: eventDate,
-          guest_count: Number(guestCount) || 200,
-          notes: notes || `Booking for ${vendor.business_name}`,
+          guest_count: Number(guestCount) || 150,
+          notes: notes || `Booking for ${vendor.business_name} · ${selectedPkg?.name || 'package'}`,
           lock_token: lockToken,
         }),
       });
@@ -289,39 +300,51 @@ export default function VendorBookPayPanel({
       <div className="vd-legend">Green = available · Grey = booked or blocked · Pink = selected</div>
 
       <form onSubmit={handleBookAndPay}>
+        <label className="vd-label">Package details</label>
+        <div className="vd-pkg-list">
+          {packages.map((pkg) => {
+            const key = pkg.id || pkg.package_tier;
+            const active = selectedKey === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                className={`vd-pkg-choice${active ? ' is-active' : ''}`}
+                onClick={() => setSelectedKey(key)}
+              >
+                <span>
+                  <b>{pkg.name}</b>
+                  <small>{pkg.description}</small>
+                </span>
+                <strong>₹{pkg.price.toLocaleString('en-IN')}</strong>
+              </button>
+            );
+          })}
+        </div>
+
         <label className="vd-label">Event date</label>
         <input className="vd-field" value={eventDate} readOnly placeholder="Tap a green date" />
 
-        {(vendor.packages || []).length > 0 && (
-          <>
-            <label className="vd-label">Package</label>
-            <select className="vd-field" value={packageId} onChange={(e) => setPackageId(e.target.value)}>
-              <option value="">Starting price ₹{Number(vendor.starting_price || 0).toLocaleString('en-IN')}</option>
-              {(vendor.packages || []).map((pkg: any) => (
-                <option key={pkg.id} value={pkg.id}>
-                  {pkg.name} — ₹{Number(pkg.price).toLocaleString('en-IN')}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
+        <label className="vd-label">Expected guests</label>
+        <select className="vd-field" value={guestCount} onChange={(e) => setGuestCount(e.target.value)}>
+          {GUEST_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
 
-        <label className="vd-label">Guests</label>
-        <input className="vd-field" value={guestCount} onChange={(e) => setGuestCount(e.target.value)} type="number" min={1} />
-
-        <label className="vd-label">Notes for vendor</label>
-        <textarea className="vd-field" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Venue, timing, special requests" />
+        <label className="vd-label">Special requirements / notes</label>
+        <textarea className="vd-field" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="e.g. Traditional theme, Jain food, drone coverage..." />
 
         <div className="vd-paybox">
-          <small>Pay to</small>
-          <b>{vendor.business_name}</b>
-          <p>{eventDate || 'Pick a date'} · ₹{amount.toLocaleString('en-IN')} escrow advance</p>
+          <small>Pay to {vendor.business_name} · 25% escrow advance</small>
+          <b>₹{advance.toLocaleString('en-IN')} / ₹{amount.toLocaleString('en-IN')} total</b>
+          <p>{eventDate || 'Pick a date'} · {selectedPkg?.name}</p>
         </div>
 
         {message && <div className={`vd-alert ${message.type}`}>{message.text}</div>}
 
         <button className="btn-search-primary" type="submit" disabled={busy} style={{ width: '100%', padding: '14px', fontSize: 16 }}>
-          {busy ? 'Processing…' : 'Book & pay escrow'}
+          {busy ? 'Processing…' : 'Confirm & pay advance →'}
         </button>
       </form>
 

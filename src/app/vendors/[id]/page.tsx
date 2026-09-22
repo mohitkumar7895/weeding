@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
 import VendorBookPayPanel from '@/components/VendorBookPayPanel';
+import { displayPackages } from '@/lib/vendorPackages';
 import './vendor-detail.css';
 
 export default function VendorDetailPage() {
@@ -70,9 +71,12 @@ export default function VendorDetailPage() {
     );
   }
 
-  const ratingNum = Number(vendor.rating) || 4.8;
+  const ratingNum = Number(vendor.rating) || 0;
   const reviewsNum = vendor.review_count || 0;
   const locationBits = [vendor.address, vendor.city, vendor.state, vendor.pincode].filter(Boolean);
+  const packages = displayPackages(vendor.packages, vendor.starting_price);
+  const years = Number(vendor.experience_years);
+  const experienceLabel = Number.isFinite(years) && years > 0 ? `${years} Years` : 'Listed vendor';
 
   return (
     <div className="vd-page">
@@ -126,7 +130,7 @@ export default function VendorDetailPage() {
             <div className="vd-stats">
               <div className="vd-stat">
                 <div className="vd-stat-label">Experience</div>
-                <div className="vd-stat-value">{vendor.experience_years || 1} Years</div>
+                <div className="vd-stat-value">{experienceLabel}</div>
               </div>
               <div className="vd-stat">
                 <div className="vd-stat-label">Starting price</div>
@@ -155,24 +159,24 @@ export default function VendorDetailPage() {
           </div>
 
           {activeTab === 'packages' && (
-            vendor.packages?.length ? (
-              vendor.packages.map((pkg: any) => (
-                <div key={pkg.id} className="vd-pkg">
+            packages.length ? (
+              packages.map((pkg) => (
+                <div key={pkg.id || pkg.package_tier} className="vd-pkg">
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                     <div>
-                      {pkg.package_tier && <span className="vd-kicker">{pkg.package_tier}</span>}
+                      <span className="vd-kicker">{pkg.package_tier}</span>
                       <h3>{pkg.name}</h3>
                     </div>
-                    <div className="vd-price">₹{Number(pkg.price).toLocaleString('en-IN')}</div>
+                    <div className="vd-price">₹{pkg.price.toLocaleString('en-IN')}</div>
                   </div>
-                  {pkg.description && <p className="vd-copy" style={{ marginTop: 8 }}>{pkg.description}</p>}
-                  <button className="btn-search-primary" type="button" onClick={() => openBookPanel(pkg.id)} style={{ marginTop: 14, padding: '10px 16px' }}>
+                  <p className="vd-copy" style={{ marginTop: 8 }}>{pkg.description}</p>
+                  <button className="btn-search-primary" type="button" onClick={() => openBookPanel(pkg.id || pkg.package_tier)} style={{ marginTop: 14, padding: '10px 16px' }}>
                     Book this package
                   </button>
                 </div>
               ))
             ) : (
-              <p className="vd-empty">No packages listed yet. You can still book using the starting price of ₹{Number(vendor.starting_price || 0).toLocaleString('en-IN')}.</p>
+              <p className="vd-empty">No packages listed yet.</p>
             )
           )}
 

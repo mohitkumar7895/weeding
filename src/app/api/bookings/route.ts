@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db';
 import { getSessionUser, logAudit } from '@/lib/auth';
 import { randomUUID } from 'crypto';
+import { PACKAGE_TIER_MULTIPLIER, amountForPackageTier } from '@/lib/vendorPackages';
 
 export async function GET(req: NextRequest) {
   try {
@@ -124,6 +125,7 @@ export async function POST(req: NextRequest) {
     const {
       vendor_id,
       package_id,
+      package_tier,
       service_id,
       event_date,
       event_location,
@@ -182,6 +184,8 @@ export async function POST(req: NextRequest) {
     } else if (service_id) {
       const srvs = await query<any[]>(`SELECT starting_price FROM vendor_services WHERE id = ? AND vendor_id = ?`, [service_id, vendor_id]);
       if (srvs.length > 0) totalAmount = parseFloat(srvs[0].starting_price);
+    } else if (package_tier && PACKAGE_TIER_MULTIPLIER[String(package_tier).toUpperCase()]) {
+      totalAmount = amountForPackageTier(vendors[0]?.starting_price, package_tier);
     }
 
     if (totalAmount === 0) {
