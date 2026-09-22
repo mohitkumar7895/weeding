@@ -36,44 +36,7 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
         {/* Brand Logo */}
         <Link href="/" className="brand-logo" aria-label="WedWithMe Home">
           <div className="logo-icon-svg">
-            <svg width="56" height="42" viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="wwmPinkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ff2a73" />
-                  <stop offset="100%" stopColor="#e6005c" />
-                </linearGradient>
-                <linearGradient id="heartPinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ff528c" />
-                  <stop offset="100%" stopColor="#d8004f" />
-                </linearGradient>
-                <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#ff2a73" floodOpacity="0.4" />
-                </filter>
-              </defs>
-              {/* Left W (Vibrant Celebratory Pink) */}
-              <path
-                d="M4 10L11 32L17 14L22 30L26 12"
-                stroke="url(#wwmPinkGradient)"
-                strokeWidth="4.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter="url(#logoGlow)"
-              />
-              {/* Central Entwined Heart (Pink) */}
-              <path
-                d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z"
-                fill="url(#heartPinkGrad)"
-              />
-              {/* Right W (Vibrant Celebratory Pink) */}
-              <path
-                d="M28 12L32 30L37 14L43 32L50 10"
-                stroke="url(#wwmPinkGradient)"
-                strokeWidth="4.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter="url(#logoGlow)"
-              />
-            </svg>
+            <img src="/logo.png" alt="WedWithMe Logo" style={{ height: '42px', width: 'auto', borderRadius: '4px' }} />
           </div>
           <div className="brand-text-block">
             <span className="brand-name-text">WedWithMe</span>
@@ -299,12 +262,10 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           display: flex;
           align-items: center;
           transition: transform 0.25s ease;
-          filter: drop-shadow(0 2px 8px rgba(230, 0, 92, 0.45));
         }
 
         .brand-logo:hover .logo-icon-svg {
           transform: scale(1.06);
-          filter: drop-shadow(0 3px 12px rgba(230, 0, 92, 0.65));
         }
 
         /* Desktop Nav: ALL BUTTONS PINK AS REQUESTED */

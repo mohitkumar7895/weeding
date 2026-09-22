@@ -12,41 +12,7 @@ export default function Footer() {
           <div className="footer-brand-col">
             <div className="footer-brand-header">
               <div className="footer-logo-svg">
-                <svg width="48" height="36" viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <linearGradient id="footerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#ff2a73" />
-                      <stop offset="100%" stopColor="#e6005c" />
-                    </linearGradient>
-                    <linearGradient id="footerHeart" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#ff528c" />
-                      <stop offset="100%" stopColor="#d8004f" />
-                    </linearGradient>
-                    <filter id="footerGlow" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#ff2a73" floodOpacity="0.35" />
-                    </filter>
-                  </defs>
-                  <path
-                    d="M4 10L11 32L17 14L22 30L26 12"
-                    stroke="url(#footerGrad)"
-                    strokeWidth="4.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    filter="url(#footerGlow)"
-                  />
-                  <path
-                    d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z"
-                    fill="url(#footerHeart)"
-                  />
-                  <path
-                    d="M28 12L32 30L37 14L43 32L50 10"
-                    stroke="url(#footerGrad)"
-                    strokeWidth="4.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    filter="url(#footerGlow)"
-                  />
-                </svg>
+                <img src="/logo.png" alt="WedWithMe Logo" style={{ height: '36px', width: 'auto', borderRadius: '4px' }} />
               </div>
 
               <div className="brand-text-block">
