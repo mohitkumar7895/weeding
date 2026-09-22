@@ -12,6 +12,16 @@ import CustomerShortlistSection from '@/components/CustomerShortlistSection';
 import CustomerInterestsSection from '@/components/CustomerInterestsSection';
 import CustomerMatrimonialChat from '@/components/CustomerMatrimonialChat';
 
+function loadScript(src: string) {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export default function CustomerDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'preferences' | 'matches' | 'shortlist' | 'search' | 'saved_searches' | 'bookings' | 'privacy' | 'checklist' | 'notifications' | 'interests' | 'chat'>('dashboard');
@@ -142,7 +152,8 @@ export default function CustomerDashboardPage() {
         fetch('/api/privacy/settings'),
         fetch('/api/privacy/consent'),
       ]);
-      const [pData, cData] = await pRes.json();
+      const pData = await pRes.json();
+      const cData = await cRes.json();
       if (pData.success) setPrivacySettings(pData.data);
       if (cData.success) setConsents(cData.data || []);
     } catch {}
@@ -264,15 +275,70 @@ export default function CustomerDashboardPage() {
         body: JSON.stringify({ provider: 'razorpay' }),
       });
       const data = await res.json();
-      if (data.success) {
-        setSuccessMsg('Payment confirmed! Booking is now guaranteed under WedWithMe Escrow Protection.');
-        loadBookings();
-      } else {
+      if (!data.success) {
         setError(data.message);
+        setPayingBookingId(null);
+        return;
       }
+
+      const loaded = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+      if (!loaded) {
+        setError('Failed to load Razorpay SDK. Please check your internet connection.');
+        setPayingBookingId(null);
+        return;
+      }
+
+      const options = {
+        key: data.data.key_id,
+        amount: Math.round(Number(data.data.amount) * 100),
+        currency: data.data.currency || 'INR',
+        name: 'WedWithMe',
+        description: 'Escrow Booking Payment',
+        order_id: data.data.order_id,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await fetch('/api/payments/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                booking_id: bookingId,
+                payment_transaction_id: data.data.payment_transaction_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              setSuccessMsg('Payment confirmed! Booking is now guaranteed under WedWithMe Escrow Protection.');
+              loadBookings();
+            } else {
+              setError(verifyData.message || 'Payment verification failed');
+            }
+          } catch (err: any) {
+            setError('Error verifying payment: ' + err.message);
+          } finally {
+            setPayingBookingId(null);
+          }
+        },
+        prefill: {
+          name: user?.name,
+          email: user?.email,
+        },
+        theme: {
+          color: '#e6005c',
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        setError(response.error.description || 'Payment failed');
+        setPayingBookingId(null);
+      });
+      rzp.open();
+
     } catch (err: any) {
       setError(err.message);
-    } finally {
       setPayingBookingId(null);
     }
   };

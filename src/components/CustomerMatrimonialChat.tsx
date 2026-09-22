@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 type Thread = {
   id: string;
@@ -32,6 +32,7 @@ export default function CustomerMatrimonialChat({
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const loadThreads = async () => {
     const res = await fetch('/api/matrimonial/chat');
@@ -56,15 +57,31 @@ export default function CustomerMatrimonialChat({
   const loadMessages = async (id: string) => {
     const res = await fetch(`/api/matrimonial/chat?thread_id=${encodeURIComponent(id)}`);
     const data = await res.json();
-    if (data.success) setMessages(data.data || []);
+    if (data.success) {
+      setMessages(data.data || []);
+      // setTimeout to allow render before scroll
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+    }
   };
 
   useEffect(() => {
     loadThreads();
+    const interval = setInterval(() => {
+      loadThreads();
+    }, 10000); // Poll threads every 10 seconds
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    if (threadId) loadMessages(threadId);
+    if (threadId) {
+      loadMessages(threadId);
+      const interval = setInterval(() => {
+        loadMessages(threadId);
+      }, 5000); // Poll messages every 5 seconds
+      return () => clearInterval(interval);
+    }
   }, [threadId]);
 
   useEffect(() => {
@@ -144,6 +161,7 @@ export default function CustomerMatrimonialChat({
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
           {!messages.length && <p style={{ color: '#9cb1a6' }}>Select a conversation or accept an interest first.</p>}
         </div>
         {error && <p style={{ color: '#ff8fab' }}>{error}</p>}

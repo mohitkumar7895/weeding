@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSessionUser, logAudit } from '@/lib/auth';
-import { randomUUID } from 'crypto';
+
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,7 +17,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: consents });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    console.error('Consent GET Error:', error);
+    return NextResponse.json({ success: false, message: error?.message || 'Unknown error' }, { status: 500 });
   }
 }
 
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
        ON DUPLICATE KEY UPDATE
         is_granted = VALUES(is_granted),
         revoked_at = VALUES(revoked_at)`,
-      [randomUUID(), user.id, consent_type, consent_version, is_granted ? 1 : 0, revokedAt]
+      [crypto.randomUUID(), user.id, consent_type, consent_version, is_granted ? 1 : 0, revokedAt]
     );
 
     await logAudit(user.id, 'UPDATE_CONSENT', 'user_consents', user.id, { consent_type, is_granted });
