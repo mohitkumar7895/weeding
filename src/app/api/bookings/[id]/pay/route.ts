@@ -41,9 +41,9 @@ export async function POST(
       return NextResponse.json({ success: false, message: 'A successful payment already exists for this booking. Duplicate charge prevented.' }, { status: 400 });
     }
 
-    const recentPending = existingTxns.find(t => t.status === 'PENDING' && (new Date().getTime() - new Date(t.created_at).getTime()) < 15 * 60 * 1000);
+    const recentPending = existingTxns.find(t => t.status === 'PENDING' && (new Date().getTime() - new Date(t.created_at).getTime()) < 1 * 60 * 1000);
     if (recentPending) {
-      return NextResponse.json({ success: false, message: 'A payment is currently processing. Please wait a few minutes before retrying to prevent double-charging.' }, { status: 409 });
+      return NextResponse.json({ success: false, message: 'A payment is currently processing. Please wait 1 minute before retrying.' }, { status: 409 });
     }
     // -------------------------------------------
 

@@ -37,7 +37,9 @@ export async function POST(req: NextRequest) {
 
     const txn = txns[0];
     
-    if (txn.status !== 'PENDING') {
+    if (txn.status === 'SUCCESS') {
+      return NextResponse.json({ success: true, message: 'Payment already verified successfully.', data: { status: 'CONFIRMED' } });
+    } else if (txn.status !== 'PENDING') {
       return NextResponse.json({ success: false, message: `Payment transaction already processed with status: ${txn.status}` }, { status: 400 });
     }
 
