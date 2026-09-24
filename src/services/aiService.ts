@@ -1,5 +1,6 @@
 import { query } from '@/lib/db';
 import { randomUUID } from 'crypto';
+import { getSagunSystemPrompt, isWedWithMeTopic, loadWedWithMeKnowledge, offTopicReply } from '@/lib/sagunSiteContext';
 
 async function ensureAiTables() {
   await query(`
@@ -118,6 +119,21 @@ async function processAIChatInner(
   const normalizedMsg = message.toLowerCase().trim();
   const currentConvId = await persistConversation(userId, conversationId);
   await persistMessage(currentConvId, 'USER', message, null);
+
+  if (!isWedWithMeTopic(message)) {
+    const reply = offTopicReply(message);
+    await persistMessage(currentConvId, 'SAGUN', reply, null);
+    return {
+      conversationId: currentConvId,
+      reply,
+      structuredData: null,
+      suggestedPrompts: [
+        'Show vendors saved on WedWithMe',
+        'How does 25% escrow booking work?',
+        'Open matches on this site',
+      ],
+    };
+  }
 
   // 3. Intent Detection & Live Database Querying
   let reply = '';
@@ -243,7 +259,7 @@ async function processAIChatInner(
       budgetTotal = parseInt(lakhMatch[1], 10) * 100000;
     }
 
-    reply = `Here is an optimal Indian wedding budget allocation for ₹${(budgetTotal / 100000).toFixed(0)} Lakhs based on historical industry averages. WedWithMe helps you lock in contracts with 100% verified vendors within these target ranges.`;
+    reply = `₹${(budgetTotal / 100000).toFixed(0)} Lakh ke around WedWithMe par booking plan karne ke liye live vendor prices aur 25% escrow advance use karo. Exact names LIVE DATA se hi lo.`;
     structuredData = {
       type: 'BUDGET_BREAKDOWN',
       items: [
@@ -263,7 +279,8 @@ async function processAIChatInner(
     ];
   }
 
-  const { generateSagunResult, getSagunSystemPrompt } = await import('@/services/sagunProvider');
+  const { generateSagunResult } = await import('@/services/sagunProvider');
+  const siteKnowledge = await loadWedWithMeKnowledge(userId);
   let facts = '';
   if (structuredData?.type === 'VENDORS' && structuredData.items?.length) {
     facts = structuredData.items
@@ -273,18 +290,14 @@ async function processAIChatInner(
     facts = structuredData.items
       .map((p: any) => `- ${p.name}, ${p.age}, ${p.city}, ${p.profession || ''}`)
       .join('\n');
-  } else if (structuredData?.type === 'BUDGET_BREAKDOWN' && structuredData.items?.length) {
-    facts = structuredData.items
-      .map((b: any) => `- ${b.category}: ${b.percentage}%`)
-      .join('\n');
   }
 
   const llm = await generateSagunResult([
     {
       role: 'SYSTEM',
-      content:
-        getSagunSystemPrompt() +
-        (facts ? `\n\nUse this live WedWithMe data if relevant:\n${facts}` : ''),
+      content: getSagunSystemPrompt(
+        siteKnowledge + (facts ? `\nQUERY MATCHES:\n${facts}` : '')
+      ),
     },
     { role: 'USER', content: message },
   ]);

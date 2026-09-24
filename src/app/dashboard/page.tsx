@@ -11,6 +11,7 @@ import CustomerSearchSection from '@/components/CustomerSearchSection';
 import CustomerShortlistSection from '@/components/CustomerShortlistSection';
 import CustomerInterestsSection from '@/components/CustomerInterestsSection';
 import CustomerMatrimonialChat from '@/components/CustomerMatrimonialChat';
+import ReelsExperience from '@/components/ReelsExperience';
 
 function loadScript(src: string) {
   return new Promise((resolve) => {
@@ -24,7 +25,7 @@ function loadScript(src: string) {
 
 export default function CustomerDashboardPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'preferences' | 'matches' | 'shortlist' | 'search' | 'saved_searches' | 'bookings' | 'privacy' | 'checklist' | 'notifications' | 'interests' | 'chat'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'profile' | 'preferences' | 'matches' | 'shortlist' | 'search' | 'saved_searches' | 'bookings' | 'privacy' | 'checklist' | 'notifications' | 'interests' | 'chat' | 'reels'>('dashboard');
   const [user, setUser] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
@@ -72,7 +73,7 @@ export default function CustomerDashboardPage() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam && ['dashboard', 'profile', 'preferences', 'matches', 'shortlist', 'search', 'saved_searches', 'bookings', 'privacy', 'checklist', 'notifications', 'interests', 'chat'].includes(tabParam)) {
+      if (tabParam && ['dashboard', 'profile', 'preferences', 'matches', 'shortlist', 'search', 'saved_searches', 'bookings', 'privacy', 'checklist', 'notifications', 'interests', 'chat', 'reels'].includes(tabParam)) {
         setActiveTab(tabParam as any);
       }
     }
@@ -546,6 +547,7 @@ export default function CustomerDashboardPage() {
     { id: 'search', label: 'Search Profiles', icon: '🔍' },
     { id: 'saved_searches', label: 'Saved Searches', icon: '💾' },
     { id: 'bookings', label: 'My Bookings & Escrow', icon: '🛎️', count: bookings.length },
+    { id: 'reels', label: 'Reels', icon: '🎬' },
     { id: 'checklist', label: 'Wedding Checklist', icon: '📋' },
     { id: 'privacy', label: 'Privacy & Security', icon: '🔒' },
     { id: 'notifications', label: 'Notifications', icon: '🔔', count: unreadCount },
@@ -725,6 +727,7 @@ export default function CustomerDashboardPage() {
               {activeTab === 'search' && '🔍 Advanced Matrimonial Profile Search'}
               {activeTab === 'saved_searches' && '💾 My Saved Search Configurations'}
               {activeTab === 'bookings' && '🛎️ My Wedding Bookings & Platform Escrow'}
+              {activeTab === 'reels' && '🎬 Wedding Reels'}
               {activeTab === 'checklist' && '📋 Wedding Planning Milestones'}
               {activeTab === 'privacy' && '🔒 Personal Data Privacy & Security Controls'}
               {activeTab === 'notifications' && '🔔 In-app notifications'}
@@ -1317,6 +1320,8 @@ export default function CustomerDashboardPage() {
           {activeTab === 'saved_searches' && (
             <CustomerSearchSection initialSubTab="saved" />
           )}
+
+          {activeTab === 'reels' && <ReelsExperience title="Your wedding reels" />}
 
           {/* ================= TAB 2: BOOKINGS ================= */}
           {activeTab === 'bookings' && (

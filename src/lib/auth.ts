@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies, headers } from 'next/headers';
+import { NextRequest } from 'next/server';
 import { query } from './db';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'wedwithme_super_secret_jwt_key_2026_production';
@@ -45,19 +46,45 @@ export function verifyToken(token: string): TokenPayload | null {
   }
 }
 
+export function tokenFromRequest(req?: { cookies?: { get: (name: string) => { value: string } | undefined }; headers?: Headers }): string | null {
+  if (!req) return null;
+  const fromCookie = req.cookies?.get(COOKIE_NAME)?.value;
+  if (fromCookie) {
+    try {
+      return decodeURIComponent(fromCookie);
+    } catch {
+      return fromCookie;
+    }
+  }
+  const authHeader = req.headers?.get?.('authorization') || req.headers?.get?.('Authorization');
+  if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+  const raw = req.headers?.get?.('cookie') || '';
+  const match = raw.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`));
+  if (match?.[1]) {
+    try {
+      return decodeURIComponent(match[1]);
+    } catch {
+      return match[1];
+    }
+  }
+  return null;
+}
+
 /**
  * Get current authenticated user from request cookies or Authorization header
  */
-export async function getSessionUser(): Promise<TokenPayload | null> {
+export async function getSessionUser(req?: NextRequest): Promise<TokenPayload | null> {
   try {
-    const cookieStore = await cookies();
-    let token = cookieStore.get(COOKIE_NAME)?.value;
+    let token = tokenFromRequest(req);
+    if (!token) {
+      const cookieStore = await cookies();
+      token = cookieStore.get(COOKIE_NAME)?.value || null;
+    }
     if (!token) {
       const headerStore = await headers();
-      const authHeader = headerStore.get('authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.substring(7).trim();
-      }
+      token = tokenFromRequest({ headers: headerStore as any });
     }
     if (!token) return null;
     const payload = verifyToken(token);

@@ -5,6 +5,12 @@ const razorpayOrigins =
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  experimental: {
+    proxyClientMaxBodySize: "70mb",
+    serverActions: {
+      bodySizeLimit: "70mb",
+    },
+  },
   async headers() {
     return [
       {

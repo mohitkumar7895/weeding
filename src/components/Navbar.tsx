@@ -19,6 +19,7 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
 
   const navLinks = [
     { name: 'Home', href: '/' },
+    { name: 'Reels', href: '/reels' },
     { name: 'Vendors', href: '/vendors' },
     ...(user && isStaffRole(user.role) ? [] : [{ name: 'Matches', href: '/matches' }]),
     { name: 'Bookings', href: '/bookings' },
@@ -52,6 +53,14 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
               href={item.href}
               className={`nav-item ${isLinkActive(item.href) ? 'nav-item-active' : ''}`}
             >
+              {item.name === 'Reels' && (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <rect x="3" y="5" width="14" height="16" rx="3" />
+                  <path d="M7 5V3M13 5V3" />
+                  <path d="M3 10h14" />
+                  <polygon points="17 9 22 12 17 15 17 9" />
+                </svg>
+              )}
               <span>{item.name}</span>
             </Link>
           ))}
@@ -292,6 +301,7 @@ export default function Navbar({ onOpenLogin, onOpenRegister }: NavbarProps) {
           display: inline-flex;
           align-items: center;
           justify-content: center;
+          gap: 6px;
           background: transparent !important;
           border: none !important;
           box-shadow: none !important;

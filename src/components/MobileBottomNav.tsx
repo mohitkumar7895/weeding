@@ -27,6 +27,19 @@ export default function MobileBottomNav() {
       isActive: pathname === '/',
     },
     {
+      label: 'Reels',
+      href: '/reels',
+      icon: (active: boolean) => (
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={active ? '#ff2a73' : '#c5d8cf'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="5" width="14" height="16" rx="3" />
+          <path d="M7 5V3M13 5V3" />
+          <path d="M3 10h14" />
+          <polygon points="17 9 22 12 17 15 17 9" fill={active ? '#ff2a73' : 'none'} />
+        </svg>
+      ),
+      isActive: pathname.startsWith('/reels'),
+    },
+    {
       label: 'Matches',
       href: '/matches',
       icon: (active: boolean) => (

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import ReelsLikesBadge from '@/components/ReelsLikesBadge';
 
 interface ProfileFields {
   gender: string;
@@ -691,6 +692,8 @@ export default function CustomerProfileEditor({ user, onProfileUpdated }: Custom
           </div>
         )}
       </div>
+
+      <ReelsLikesBadge />
 
       <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* ================= 1. PROFILE PHOTO ================= */}

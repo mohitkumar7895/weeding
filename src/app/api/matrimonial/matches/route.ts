@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
       params.push(`%${filterCity.toLowerCase()}%`);
     }
 
-    sql += ' LIMIT 100';
+    sql += ' LIMIT 24';
 
     let candidates = await safeQuery<any[]>(sql, params);
     if (!candidates.length) {
@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
          JOIN users u ON cp.user_id = u.id
          WHERE u.status = 'ACTIVE'
          ${excludeUserId ? 'AND cp.user_id != ?' : ''}
-         LIMIT 100`,
+         LIMIT 24`,
         excludeUserId ? [excludeUserId] : []
       );
     }

@@ -21,9 +21,9 @@ export function getPool(): mysql.Pool {
     global._mysqlPool = mysql.createPool({
       ...envDbConfig(),
       waitForConnections: true,
-      connectionLimit: process.env.VERCEL ? 5 : 20,
-      queueLimit: 0,
-      connectTimeout: 15000,
+      connectionLimit: process.env.VERCEL ? 5 : 10,
+      queueLimit: 40,
+      connectTimeout: 8000,
       enableKeepAlive: true,
       keepAliveInitialDelay: 10000,
       decimalNumbers: true,

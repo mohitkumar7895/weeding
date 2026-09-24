@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { query } from '@/lib/db';
-import { ensureOpsTables } from '@/lib/ensureOpsTables';
 
 export async function GET() {
   try {
@@ -9,8 +8,6 @@ export async function GET() {
     if (!session) {
       return NextResponse.json({ success: false, authenticated: false, user: null }, { status: 200 });
     }
-
-    await ensureOpsTables();
 
     const users = await query<any[]>(
       `SELECT u.id, u.email, u.phone, u.name, u.role, u.status, u.created_at,

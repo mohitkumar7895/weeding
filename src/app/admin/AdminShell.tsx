@@ -108,6 +108,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             <NavLink href="/admin/customers" label="Customers" pathname={pathname} />
             <NavLink href="/admin/vendors" label="Vendors Management" pathname={pathname} />
             <NavLink href="/admin/reels" label="Reels moderation" pathname={pathname} />
+            <NavLink href="/reels" label="Post & watch reels" pathname={pathname} />
             <NavLink href="/admin/matching/weights" label="Match weights" pathname={pathname} />
             <NavLink href="/admin/marketplace" label="Marketplace Settings" pathname={pathname} />
           </>

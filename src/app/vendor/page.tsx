@@ -4,11 +4,13 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import PackageComparisonModal from '@/components/PackageComparisonModal';
+import ReelsExperience from '@/components/ReelsExperience';
+import ReelsLikesBadge from '@/components/ReelsLikesBadge';
 import { homePathForRole } from '@/lib/roleHome';
 
 export default function VendorDashboardPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'services' | 'onboarding' | 'packages' | 'calendar' | 'bookings' | 'portfolio'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'services' | 'onboarding' | 'packages' | 'calendar' | 'bookings' | 'portfolio' | 'reels'>('overview');
   const [vendorData, setVendorData] = useState<any>(null);
   const [onboardingData, setOnboardingData] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
@@ -1710,6 +1712,7 @@ export default function VendorDashboardPage() {
             { id: 'calendar', label: 'Availability Calendar', icon: '📅' },
             { id: 'bookings', label: 'Bookings & Leads', icon: '💌', count: bookings.length },
             { id: 'portfolio', label: 'Portfolio & Reels', icon: '📸', count: reels.length },
+            { id: 'reels', label: 'Reels studio', icon: '🎬' },
           ].map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -1824,6 +1827,7 @@ export default function VendorDashboardPage() {
               {activeTab === 'calendar' && 'Availability & Slot Management'}
               {activeTab === 'bookings' && 'Client Inquiries & Order Fulfillment'}
               {activeTab === 'portfolio' && 'High-Definition Portfolio & Reels'}
+              {activeTab === 'reels' && 'Instagram-style Reels'}
             </div>
             <div style={{ fontSize: '12px', color: '#a0aec0' }}>
               Partner: {vendorData?.business_name || 'Vendor Partner'} • Status: {onboardingStatus}
@@ -7850,6 +7854,14 @@ export default function VendorDashboardPage() {
               </div>
             );
           })()}
+
+          {/* ================= TAB: SOCIAL REELS ================= */}
+          {activeTab === 'reels' && (
+            <div>
+              <ReelsLikesBadge href="/reels" />
+              <ReelsExperience title="Vendor reels studio" />
+            </div>
+          )}
 
           {/* ================= TAB 6: PORTFOLIO & REELS ================= */}
           {activeTab === 'portfolio' && (

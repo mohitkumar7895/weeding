@@ -262,9 +262,18 @@ const OPS_TABLES = [
 ];
 
 let ensured = false;
+let ensuring: Promise<void> | null = null;
 
 export async function ensureOpsTables() {
   if (ensured) return;
+  if (ensuring) return ensuring;
+  ensuring = runEnsureOpsTables().finally(() => {
+    ensuring = null;
+  });
+  return ensuring;
+}
+
+async function runEnsureOpsTables() {
   for (const sql of OPS_TABLES) {
     try {
       await query(sql);
@@ -332,6 +341,12 @@ export async function ensureOpsTables() {
     await query(`ALTER TABLE vendor_reels ADD COLUMN status VARCHAR(20) DEFAULT 'PENDING'`);
   } catch {
     /* already exists */
+  }
+  try {
+    const { ensureReelsSocialTables } = await import('@/lib/reelsSocial');
+    await ensureReelsSocialTables();
+  } catch {
+    /* ignore */
   }
   try {
     await query(

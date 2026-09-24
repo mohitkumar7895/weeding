@@ -38,25 +38,20 @@ function readEnv(name: string): string {
   return '';
 }
 
-function isGeminiKey(value: string): boolean {
-  return value.startsWith('AIza') || value.startsWith('AQ.');
-}
-
 function listProviders(): { name: ProviderName; apiKey: string }[] {
-  const geminiKey = readEnv('AI_API_KEY') || readEnv('GEMINI_API_KEY');
-  const groqKey = readEnv('GROQ_API_KEY');
   const sagunKey = readEnv('SAGUN_AI_KEY');
+  const geminiKey = readEnv('AI_API_KEY') || readEnv('GEMINI_API_KEY') || readEnv('AI_PROVIDER_API_KEY');
+  const groqKey = readEnv('GROQ_API_KEY');
   const providers: { name: ProviderName; apiKey: string }[] = [];
 
-  if (geminiKey) providers.push({ name: 'gemini', apiKey: geminiKey });
-  if (isGeminiKey(sagunKey) && sagunKey !== geminiKey) {
-    providers.push({ name: 'gemini', apiKey: sagunKey });
+  if (sagunKey) {
+    if (sagunKey.startsWith('gsk_')) providers.push({ name: 'groq', apiKey: sagunKey });
+    else if (sagunKey.startsWith('sk-')) providers.push({ name: 'openai', apiKey: sagunKey });
+    else providers.push({ name: 'gemini', apiKey: sagunKey });
   }
-  if (groqKey) providers.push({ name: 'groq', apiKey: groqKey });
-  // Paid OpenAI only if no free Gemini/Groq key is set
-  if (!providers.length && sagunKey.startsWith('sk-')) {
-    providers.push({ name: 'openai', apiKey: sagunKey });
-  }
+
+  if (geminiKey && geminiKey !== sagunKey) providers.push({ name: 'gemini', apiKey: geminiKey });
+  if (groqKey && groqKey !== sagunKey) providers.push({ name: 'groq', apiKey: groqKey });
 
   return providers;
 }
@@ -114,8 +109,8 @@ async function completeOpenAICompatible(
         body: JSON.stringify({
           model,
           messages,
-          temperature: 0.5,
-          max_tokens: 400,
+          temperature: 0.2,
+          max_tokens: 350,
         }),
       },
       20000
@@ -169,6 +164,7 @@ async function completeGemini(apiKey: string, messages: SagunMessage[]): Promise
         body: JSON.stringify({
           systemInstruction: system ? { parts: [{ text: system }] } : undefined,
           contents,
+          generationConfig: { temperature: 0.2, maxOutputTokens: 350 },
         }),
       },
       20000
@@ -223,7 +219,7 @@ export async function generateSagunResult(messages: SagunMessage[]): Promise<Sag
 
   if (!providers.length) {
     return {
-      text: 'Sagun key load nahi hui. .env mein AI_API_KEY save karke `npm run dev` dubara start karo.',
+      text: 'Sagun key load nahi hui. .env mein SAGUN_AI_KEY save karke `npm run dev` dubara start karo.',
       error: 'missing_key',
     };
   }
@@ -252,12 +248,4 @@ export async function generateSagunResult(messages: SagunMessage[]): Promise<Sag
   };
 }
 
-export function getSagunSystemPrompt(): string {
-  return `You are Sagun, the helpful WedWithMe assistant. Reply in the user's language (Hindi or English). Keep answers short and practical.
-Rules:
-1. Help with vendor discovery, matrimonial matching, and booking guidance.
-2. NEVER expose private PII, emails, passwords, or payment secrets.
-3. If platform data is provided below, use those names/prices only. Do not invent vendors.
-4. Matching and recommendations are informational, not a guarantee.
-5. Be polite, concise, and warm.`;
-}
+export { getSagunSystemPrompt } from '@/lib/sagunSiteContext';

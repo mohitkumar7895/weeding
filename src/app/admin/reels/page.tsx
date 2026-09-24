@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import ReelsExperience from '@/components/ReelsExperience';
 
 export default function AdminReelsPage() {
   const [rows, setRows] = useState<any[]>([]);
@@ -32,7 +33,9 @@ export default function AdminReelsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800">Vendor Reels Moderation</h1>
+      <h1 className="text-2xl font-bold text-slate-800">Reels</h1>
+      <ReelsExperience title="Admin / Super Admin reels" />
+      <h2 className="text-lg font-semibold text-slate-800">Moderation queue</h2>
       <select value={status} onChange={(e) => setStatus(e.target.value)} className="border rounded-md px-3 py-2 text-sm">
         <option value="">All</option>
         <option value="PENDING">Pending</option>

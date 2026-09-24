@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 import { randomUUID } from 'crypto';
-import { generateSagunResponse, getSagunSystemPrompt, SagunMessage } from '@/services/sagunProvider';
+import { generateSagunResponse, SagunMessage } from '@/services/sagunProvider';
+import { getSagunSystemPrompt, isWedWithMeTopic, loadWedWithMeKnowledge, offTopicReply } from '@/lib/sagunSiteContext';
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await getSessionUser();
+    const user = await getSessionUser(req);
     if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
 
     const sessionId = req.nextUrl.searchParams.get('sessionId');
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getSessionUser();
+    const user = await getSessionUser(req);
     if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
@@ -55,8 +56,23 @@ export async function POST(req: NextRequest) {
       [sessionId]
     );
 
+    if (!isWedWithMeTopic(String(content))) {
+      const refused = offTopicReply(String(content));
+      const assistantMsgId = randomUUID();
+      await query(
+        `INSERT INTO sagun_messages (id, session_id, role, content) VALUES (?, ?, 'ASSISTANT', ?)`,
+        [assistantMsgId, sessionId, refused]
+      );
+      return NextResponse.json({
+        success: true,
+        user_message: { id: userMsgId, role: 'USER', content },
+        assistant_message: { id: assistantMsgId, role: 'ASSISTANT', content: refused },
+      });
+    }
+
+    const liveData = await loadWedWithMeKnowledge(user.id);
     const llmMessages: SagunMessage[] = [
-      { role: 'SYSTEM', content: getSagunSystemPrompt() }
+      { role: 'SYSTEM', content: getSagunSystemPrompt(liveData) }
     ];
 
     // Inject dynamic platform context if VENDOR_DISCOVERY
