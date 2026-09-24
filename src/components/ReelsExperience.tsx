@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import './reels.css';
 
@@ -245,21 +246,29 @@ export default function ReelsExperience({
       return;
     }
     setPosting(true);
-    setUploadPct(1);
+    setUploadPct(8);
     setError('');
+    let fakeTimer: ReturnType<typeof setInterval> | null = null;
     try {
       const form = new FormData();
       form.append('file', videoFile);
       form.append('title', caption);
       form.append('caption', caption);
       form.append('description', caption);
+      fakeTimer = setInterval(() => {
+        setUploadPct((p) => (p >= 90 ? p : Math.min(90, p + 3)));
+      }, 180);
       const { status, data } = await new Promise<{ status: number; data: any }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/api/reels');
         xhr.withCredentials = true;
         xhr.upload.onprogress = (ev) => {
-          if (!ev.lengthComputable) return;
-          const pct = Math.max(1, Math.min(99, Math.round((ev.loaded / ev.total) * 100)));
+          if (!ev.lengthComputable || ev.total <= 0) return;
+          if (fakeTimer) {
+            clearInterval(fakeTimer);
+            fakeTimer = null;
+          }
+          const pct = Math.max(8, Math.min(95, Math.round((ev.loaded / ev.total) * 100)));
           setUploadPct(pct);
         };
         xhr.onload = () => {
@@ -299,6 +308,9 @@ export default function ReelsExperience({
     } catch (err: any) {
       setError(err.message);
     } finally {
+      if (fakeTimer) clearInterval(fakeTimer);
+      setUploadPct(100);
+      await new Promise((r) => setTimeout(r, 350));
       setPosting(false);
       setUploadPct(0);
     }
@@ -544,14 +556,17 @@ export default function ReelsExperience({
         </div>
       )}
 
-      {posting && (
-        <div className="ig-upload-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={uploadPct}>
-          <div className="ig-upload-bar-track">
-            <div className="ig-upload-bar-fill" style={{ width: `${uploadPct}%` }} />
-          </div>
-          <span>{uploadPct < 100 ? `Uploading ${uploadPct}%` : 'Posting…'}</span>
-        </div>
-      )}
+      {posting &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="ig-upload-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={uploadPct}>
+            <div className="ig-upload-bar-track">
+              <div className="ig-upload-bar-fill" style={{ width: `${Math.max(uploadPct, 8)}%` }} />
+            </div>
+            <span>{uploadPct < 100 ? `Uploading ${uploadPct}%` : 'Posting…'}</span>
+          </div>,
+          document.body
+        )}
       {composeOpen && (
         <div className="ig-modal" onClick={() => { if (!posting) setComposeOpen(false); }}>
           <form className="ig-sheet" onClick={(e) => e.stopPropagation()} onSubmit={postReel}>
@@ -575,6 +590,14 @@ export default function ReelsExperience({
               rows={3}
               disabled={posting}
             />
+            {posting && (
+              <div className="ig-sheet-progress-wrap">
+                <div className="ig-sheet-progress">
+                  <div className="ig-sheet-progress-fill" style={{ width: `${Math.max(uploadPct, 8)}%` }} />
+                </div>
+                <p className="ig-sheet-progress-label">{uploadPct < 100 ? `Uploading ${uploadPct}%` : 'Posting…'}</p>
+              </div>
+            )}
             <div className="ig-sheet-actions">
               <button type="button" disabled={posting} onClick={() => setComposeOpen(false)}>Cancel</button>
               <button type="submit" disabled={posting}>{posting ? `${uploadPct}%` : 'Post & save'}</button>
