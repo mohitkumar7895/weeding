@@ -52,6 +52,10 @@ export const ALLOWED_PORTFOLIO_VIDEO_MIMES = [
   'video/mp4',
   'video/webm',
   'video/quicktime',
+  'video/x-quicktime',
+  'video/3gpp',
+  'video/3gpp2',
+  'video/x-m4v',
 ];
 
 export interface IStorageProvider {

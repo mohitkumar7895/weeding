@@ -223,7 +223,7 @@ export default function ReelsExperience({
 
   const pickVideo = (file?: File) => {
     if (!file) return;
-    if (!file.type.startsWith('video/')) {
+    if (!file.type.startsWith('video/') && !/\.(mp4|webm|mov|m4v)$/i.test(file.name || '')) {
       setError('Choose an MP4, WebM, or MOV video file.');
       return;
     }
@@ -266,8 +266,8 @@ export default function ReelsExperience({
         router.push('/login?next=/reels');
         throw new Error(data.message || 'Sign in to post a reel');
       }
-      if (res.status === 413) {
-        throw new Error('Video too large for upload. Use a smaller clip.');
+      if (res.status === 413 || res.status === 500) {
+        throw new Error(data.message || (res.status === 413 ? 'Video too large for upload. Use a smaller clip.' : 'Could not post reel'));
       }
       if (!res.ok || !data.success) throw new Error(data.message || 'Could not post');
       setComposeOpen(false);

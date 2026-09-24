@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { query } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
-import { applyGuestCookie, ensureReelsSocialTables, reelActorId, vendorIdForUser } from '@/lib/reelsSocial';
+import { applyGuestCookie, ensureReelsSocialTables, insertVendorReel, reelActorId, saveReelBinary, vendorIdForUser } from '@/lib/reelsSocial';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -131,6 +131,21 @@ export async function GET(req: NextRequest) {
   }
 }
 
+function coerceVideoMime(file: File): string {
+  const type = String(file.type || '').toLowerCase();
+  const name = String(file.name || '').toLowerCase();
+  if (type === 'video/webm' || name.endsWith('.webm')) return 'video/webm';
+  if (type === 'video/quicktime' || type === 'video/x-quicktime' || name.endsWith('.mov')) return 'video/quicktime';
+  if (type.startsWith('video/') || name.endsWith('.mp4') || name.endsWith('.m4v') || type === 'application/octet-stream') {
+    return 'video/mp4';
+  }
+  return type || 'video/mp4';
+}
+
+function canWritePublicUploads() {
+  return process.env.VERCEL !== '1' && !process.env.AWS_LAMBDA_FUNCTION_NAME;
+}
+
 export async function POST(req: NextRequest) {
   try {
     await ensureReelsSocialTables();
@@ -162,25 +177,52 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'Add a caption' }, { status: 400 });
     }
 
-    const mimeType = (file.type || 'video/mp4').toLowerCase();
-    const { storageService } = await import('@/services/storageService');
-    const validation = storageService.validatePortfolioMedia(file.size, mimeType, 'VIDEO');
-    if (!validation.valid) {
-      return NextResponse.json({ success: false, message: validation.error }, { status: 400 });
+    const mimeType = coerceVideoMime(file);
+    if (!mimeType.startsWith('video/')) {
+      return NextResponse.json({ success: false, message: 'Choose an MP4, WebM, or MOV video file.' }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const stored = await storageService.saveFile(buffer, file.name || 'reel.mp4', mimeType, 'reels');
+    const reelId = randomUUID();
+    let videoUrl = '';
+
+    if (canWritePublicUploads()) {
+      try {
+        const { storageService } = await import('@/services/storageService');
+        const validation = storageService.validatePortfolioMedia(buffer.length, mimeType, 'VIDEO');
+        if (!validation.valid) {
+          return NextResponse.json({ success: false, message: validation.error }, { status: 400 });
+        }
+        const stored = await storageService.saveFile(buffer, file.name || 'reel.mp4', mimeType, 'reels');
+        videoUrl = stored.url;
+      } catch (err: any) {
+        console.warn('[reels] disk save failed:', err?.message);
+      }
+    }
+
+    if (!videoUrl) {
+      try {
+        videoUrl = await saveReelBinary(reelId, buffer, mimeType, file.name || 'reel.mp4');
+      } catch (err: any) {
+        const msg = String(err?.message || 'Could not save video');
+        const tooBig = /max_allowed_packet|ER_NET_PACKET_TOO_LARGE|too large/i.test(msg);
+        return NextResponse.json(
+          { success: false, message: tooBig ? 'Video too large for server. Use a shorter clip.' : msg },
+          { status: tooBig ? 400 : 500 }
+        );
+      }
+    }
 
     const vendorId = user.role === 'VENDOR' ? (await vendorIdForUser(user.id)) || user.vendor_id || null : null;
-    const reelId = randomUUID();
-    await query(
-      `INSERT INTO vendor_reels (
-         id, vendor_id, author_user_id, author_role, video_url, thumbnail_url, title, description,
-         status, is_approved, likes_count, comments_count, shares_count, views_count
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'APPROVED', TRUE, 0, 0, 0, 0)`,
-      [reelId, vendorId, user.id, user.role, stored.url, null, title.slice(0, 180), description]
-    );
+    await insertVendorReel({
+      id: reelId,
+      vendorId,
+      userId: user.id,
+      role: user.role,
+      videoUrl,
+      title,
+      description,
+    });
 
     const [reel] = await query<any[]>(
       `SELECT r.*, COALESCE(v.business_name, u.name, ?) AS author_name,
@@ -200,6 +242,7 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ success: true, reel, data: reel });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    console.error('[reels POST]', error);
+    return NextResponse.json({ success: false, message: error.message || 'Could not post reel' }, { status: 500 });
   }
 }

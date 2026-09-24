@@ -4,7 +4,7 @@ import { query } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 
 let appliedGen = 0;
-const SCHEMA_GEN = 3;
+const SCHEMA_GEN = 4;
 let reelsEnsuring: Promise<void> | null = null;
 
 export async function ensureReelsSocialTables() {
@@ -38,23 +38,43 @@ async function runReelsEnsure() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
 
-  const cols = asRows(await query<any[]>(`SHOW COLUMNS FROM vendor_reels LIKE 'author_user_id'`));
-  if (!cols?.length) {
-    const alters = [
-      `ALTER TABLE vendor_reels MODIFY COLUMN vendor_id VARCHAR(36) NULL`,
-      `ALTER TABLE vendor_reels MODIFY COLUMN video_url MEDIUMTEXT NOT NULL`,
-      `ALTER TABLE vendor_reels MODIFY COLUMN thumbnail_url TEXT NULL`,
-      `ALTER TABLE vendor_reels ADD COLUMN author_user_id VARCHAR(36) NULL`,
-      `ALTER TABLE vendor_reels ADD COLUMN author_role VARCHAR(32) NULL`,
-      `ALTER TABLE vendor_reels ADD COLUMN comments_count INT DEFAULT 0`,
-      `ALTER TABLE vendor_reels ADD COLUMN shares_count INT DEFAULT 0`,
-    ];
-    for (const sql of alters) {
+  try {
+    const fks = asRows(
+      await query<any[]>(
+        `SELECT CONSTRAINT_NAME AS name
+         FROM information_schema.TABLE_CONSTRAINTS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'vendor_reels'
+           AND CONSTRAINT_TYPE = 'FOREIGN KEY'`
+      )
+    );
+    for (const fk of fks) {
+      if (!fk?.name) continue;
       try {
-        await query(sql);
+        await query(`ALTER TABLE vendor_reels DROP FOREIGN KEY \`${String(fk.name).replace(/`/g, '')}\``);
       } catch {
-        /* already applied */
+        /* already dropped */
       }
+    }
+  } catch {
+    /* information_schema may be restricted */
+  }
+
+  const alters = [
+    `ALTER TABLE vendor_reels MODIFY COLUMN vendor_id VARCHAR(36) NULL`,
+    `ALTER TABLE vendor_reels MODIFY COLUMN video_url MEDIUMTEXT NOT NULL`,
+    `ALTER TABLE vendor_reels MODIFY COLUMN thumbnail_url TEXT NULL`,
+    `ALTER TABLE vendor_reels ADD COLUMN author_user_id VARCHAR(36) NULL`,
+    `ALTER TABLE vendor_reels ADD COLUMN author_role VARCHAR(32) NULL`,
+    `ALTER TABLE vendor_reels ADD COLUMN comments_count INT DEFAULT 0`,
+    `ALTER TABLE vendor_reels ADD COLUMN shares_count INT DEFAULT 0`,
+    `ALTER TABLE vendor_reels ADD COLUMN saves_count INT DEFAULT 0`,
+  ];
+  for (const sql of alters) {
+    try {
+      await query(sql);
+    } catch {
+      /* already applied */
     }
   }
 
@@ -97,11 +117,15 @@ async function runReelsEnsure() {
       INDEX idx_reel_saves_user (user_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
-  try {
-    await query(`ALTER TABLE vendor_reels ADD COLUMN saves_count INT DEFAULT 0`);
-  } catch {
-    /* already exists */
-  }
+  await query(`
+    CREATE TABLE IF NOT EXISTS reel_files (
+      reel_id VARCHAR(64) PRIMARY KEY,
+      mime_type VARCHAR(80) NOT NULL,
+      file_name VARCHAR(191) NOT NULL,
+      data LONGBLOB NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
   try {
     await query(`ALTER TABLE reel_likes MODIFY COLUMN reel_id VARCHAR(64) NOT NULL`);
     await query(`ALTER TABLE reel_likes MODIFY COLUMN user_id VARCHAR(64) NOT NULL`);
@@ -109,6 +133,53 @@ async function runReelsEnsure() {
     /* already compatible */
   }
   appliedGen = SCHEMA_GEN;
+}
+
+export async function saveReelBinary(reelId: string, buffer: Buffer, mimeType: string, fileName: string) {
+  await query(
+    `INSERT INTO reel_files (reel_id, mime_type, file_name, data)
+     VALUES (?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE mime_type = VALUES(mime_type), file_name = VALUES(file_name), data = VALUES(data)`,
+    [reelId, mimeType || 'video/mp4', String(fileName || 'reel.mp4').slice(0, 180), buffer]
+  );
+  return `/api/reels/${encodeURIComponent(reelId)}/file`;
+}
+
+export async function insertVendorReel(row: {
+  id: string;
+  vendorId: string | null;
+  userId: string;
+  role: string;
+  videoUrl: string;
+  title: string;
+  description: string;
+}) {
+  try {
+    await query(
+      `INSERT INTO vendor_reels (
+         id, vendor_id, author_user_id, author_role, video_url, thumbnail_url, title, description,
+         status, is_approved, likes_count, comments_count, shares_count, views_count
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'APPROVED', TRUE, 0, 0, 0, 0)`,
+      [
+        row.id,
+        row.vendorId,
+        row.userId,
+        row.role,
+        row.videoUrl,
+        '',
+        row.title.slice(0, 180),
+        row.description,
+      ]
+    );
+    return;
+  } catch (err: any) {
+    console.warn('[reels] modern insert failed:', err?.message);
+  }
+  await query(
+    `INSERT INTO vendor_reels (id, vendor_id, video_url, thumbnail_url, title, description, is_approved)
+     VALUES (?, ?, ?, ?, ?, ?, TRUE)`,
+    [row.id, row.vendorId || row.userId, row.videoUrl, '', row.title.slice(0, 180), row.description]
+  );
 }
 
 function asRows(result: any): any[] {
