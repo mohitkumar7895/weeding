@@ -149,6 +149,7 @@ export default function ReelsExperience({
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState('');
   const [posting, setPosting] = useState(false);
+  const [uploadPct, setUploadPct] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [authorFilter, setAuthorFilter] = useState('');
   const [toast, setToast] = useState('');
@@ -244,6 +245,7 @@ export default function ReelsExperience({
       return;
     }
     setPosting(true);
+    setUploadPct(1);
     setError('');
     try {
       const form = new FormData();
@@ -251,25 +253,36 @@ export default function ReelsExperience({
       form.append('title', caption);
       form.append('caption', caption);
       form.append('description', caption);
-      const res = await fetch('/api/reels', {
-        method: 'POST',
-        credentials: 'include',
-        body: form,
+      const { status, data } = await new Promise<{ status: number; data: any }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/reels');
+        xhr.withCredentials = true;
+        xhr.upload.onprogress = (ev) => {
+          if (!ev.lengthComputable) return;
+          const pct = Math.max(1, Math.min(99, Math.round((ev.loaded / ev.total) * 100)));
+          setUploadPct(pct);
+        };
+        xhr.onload = () => {
+          setUploadPct(100);
+          let parsed: any = {};
+          try {
+            parsed = JSON.parse(xhr.responseText || '{}');
+          } catch {
+            parsed = {};
+          }
+          resolve({ status: xhr.status, data: parsed });
+        };
+        xhr.onerror = () => reject(new Error('Upload failed. Check your connection.'));
+        xhr.send(form);
       });
-      let data: any = {};
-      try {
-        data = await res.json();
-      } catch {
-        data = {};
-      }
-      if (res.status === 401) {
+      if (status === 401) {
         router.push('/login?next=/reels');
         throw new Error(data.message || 'Sign in to post a reel');
       }
-      if (res.status === 413 || res.status === 500) {
-        throw new Error(data.message || (res.status === 413 ? 'Video too large for upload. Use a smaller clip.' : 'Could not post reel'));
+      if (status === 413 || status === 500) {
+        throw new Error(data.message || (status === 413 ? 'Video too large for upload. Use a smaller clip.' : 'Could not post reel'));
       }
-      if (!res.ok || !data.success) throw new Error(data.message || 'Could not post');
+      if (status >= 400 || !data.success) throw new Error(data.message || 'Could not post');
       setComposeOpen(false);
       setCaption('');
       setVideoFile(null);
@@ -287,6 +300,7 @@ export default function ReelsExperience({
       setError(err.message);
     } finally {
       setPosting(false);
+      setUploadPct(0);
     }
   };
 
@@ -530,8 +544,16 @@ export default function ReelsExperience({
         </div>
       )}
 
+      {posting && (
+        <div className="ig-upload-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={uploadPct}>
+          <div className="ig-upload-bar-track">
+            <div className="ig-upload-bar-fill" style={{ width: `${uploadPct}%` }} />
+          </div>
+          <span>{uploadPct < 100 ? `Uploading ${uploadPct}%` : 'Posting…'}</span>
+        </div>
+      )}
       {composeOpen && (
-        <div className="ig-modal" onClick={() => setComposeOpen(false)}>
+        <div className="ig-modal" onClick={() => { if (!posting) setComposeOpen(false); }}>
           <form className="ig-sheet" onClick={(e) => e.stopPropagation()} onSubmit={postReel}>
             <h3>New reel</h3>
             <p>Pick a video from camera or gallery. MP4 / WebM / MOV, up to 60 MB.</p>
@@ -539,6 +561,7 @@ export default function ReelsExperience({
               type="file"
               accept="video/mp4,video/webm,video/quicktime,video/*"
               required
+              disabled={posting}
               onChange={(e) => pickVideo(e.target.files?.[0])}
             />
             {videoPreview && (
@@ -550,10 +573,11 @@ export default function ReelsExperience({
               onChange={(e) => setCaption(e.target.value)}
               placeholder="Write a caption…"
               rows={3}
+              disabled={posting}
             />
             <div className="ig-sheet-actions">
-              <button type="button" onClick={() => setComposeOpen(false)}>Cancel</button>
-              <button type="submit" disabled={posting}>{posting ? 'Saving…' : 'Post & save'}</button>
+              <button type="button" disabled={posting} onClick={() => setComposeOpen(false)}>Cancel</button>
+              <button type="submit" disabled={posting}>{posting ? `${uploadPct}%` : 'Post & save'}</button>
             </div>
           </form>
         </div>
