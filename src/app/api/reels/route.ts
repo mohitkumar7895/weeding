@@ -4,6 +4,8 @@ import { query } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 import { applyGuestCookie, ensureReelsSocialTables, reelActorId, vendorIdForUser } from '@/lib/reelsSocial';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 async function feedRows(viewerId?: string, authorId?: string) {
@@ -134,7 +136,10 @@ export async function POST(req: NextRequest) {
     await ensureReelsSocialTables();
     const user = await getSessionUser(req);
     if (!user) {
-      return NextResponse.json({ success: false, message: 'Sign in to post a reel' }, { status: 401 });
+      return NextResponse.json(
+        { success: false, code: 'AUTH_REQUIRED', message: 'Sign in to post a reel', login: '/login?next=/reels' },
+        { status: 401 }
+      );
     }
 
     const contentType = req.headers.get('content-type') || '';

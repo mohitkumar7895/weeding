@@ -151,9 +151,27 @@ export default function ReelsExperience({
   const [posting, setPosting] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [authorFilter, setAuthorFilter] = useState('');
+  const [toast, setToast] = useState('');
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const feedRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
+
+  const showToast = (line: string) => {
+    setToast(line);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(''), 2800);
+  };
+
+  const requireSession = async () => {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      const data = await res.json();
+      return Boolean(data.authenticated && data.user?.id);
+    } catch {
+      return false;
+    }
+  };
 
   const load = async (author?: string) => {
     setLoading(true);
@@ -178,6 +196,9 @@ export default function ReelsExperience({
     const who = new URLSearchParams(window.location.search).get('user') || '';
     setAuthorFilter(who);
     load(who);
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -235,13 +256,26 @@ export default function ReelsExperience({
         credentials: 'include',
         body: form,
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message || 'Could not post');
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
+      if (res.status === 401) {
+        router.push('/login?next=/reels');
+        throw new Error(data.message || 'Sign in to post a reel');
+      }
+      if (res.status === 413) {
+        throw new Error('Video too large for upload. Use a smaller clip.');
+      }
+      if (!res.ok || !data.success) throw new Error(data.message || 'Could not post');
       setComposeOpen(false);
       setCaption('');
       setVideoFile(null);
       if (videoPreview) URL.revokeObjectURL(videoPreview);
       setVideoPreview('');
+      showToast('Video post ho gayi');
       const posted = data.reel || data.data;
       if (posted?.id) {
         setReels((prev) => [{ ...posted, saved_by_me: 1, saves_count: posted.saves_count || 1 }, ...prev.filter((r) => r.id !== posted.id)]);
@@ -360,7 +394,15 @@ export default function ReelsExperience({
     load(pid);
   };
 
-  const openComposer = () => setComposeOpen(true);
+  const openComposer = async () => {
+    const ok = await requireSession();
+    if (!ok) {
+      showToast('Sign in to post a reel');
+      router.push('/login?next=/reels');
+      return;
+    }
+    setComposeOpen(true);
+  };
   const plus = showComposer ? (
     <button type="button" className="ig-plus" aria-label="Add reel" onClick={openComposer}>
       <IconCameraPlus />
@@ -369,6 +411,11 @@ export default function ReelsExperience({
 
   return (
     <div className="ig-reels">
+      {toast && (
+        <div className="ig-toast" role="status">
+          {toast}
+        </div>
+      )}
       {authorFilter && (
         <div className="ig-author-bar">
           <button type="button" onClick={() => { setAuthorFilter(''); router.push('/reels'); load(''); }}>

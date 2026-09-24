@@ -63,12 +63,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
     let dest = homePathForRole(roleUser?.role);
     try {
       const next = new URLSearchParams(window.location.search).get('next') || '';
-      if (
-        next.startsWith('/') &&
-        !next.startsWith('//') &&
-        isStaffRole(roleUser?.role) &&
-        next.startsWith('/admin')
-      ) {
+      if (next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/api')) {
         dest = next;
       }
     } catch {

@@ -4,8 +4,36 @@ import { cookies, headers } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { query } from './db';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'wedwithme_super_secret_jwt_key_2026_production';
+function jwtSecret(): string {
+  return (process.env.JWT_SECRET || 'wedwithme_super_secret_jwt_key_2026_production')
+    .trim()
+    .replace(/^["']+|["']+$/g, '');
+}
+
 const COOKIE_NAME = 'wwm_auth_token';
+
+function normalizeToken(raw?: string | null): string | null {
+  if (!raw) return null;
+  let token = String(raw).trim().replace(/^["']+|["']+$/g, '');
+  try {
+    token = decodeURIComponent(token);
+  } catch {
+    /* already decoded */
+  }
+  token = token.replace(/^Bearer\s+/i, '').trim();
+  return token || null;
+}
+
+function parseCookieHeader(header: string, name: string): string | null {
+  if (!header) return null;
+  for (const part of header.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq < 0) continue;
+    if (part.slice(0, eq).trim() !== name) continue;
+    return normalizeToken(part.slice(eq + 1));
+  }
+  return null;
+}
 
 export interface TokenPayload {
   id: string;
@@ -35,65 +63,77 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export function signToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, jwtSecret(), { expiresIn: '7d' });
 }
 
 export function verifyToken(token: string): TokenPayload | null {
-  try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
-  } catch (error) {
-    return null;
-  }
-}
-
-export function tokenFromRequest(req?: { cookies?: { get: (name: string) => { value: string } | undefined }; headers?: Headers }): string | null {
-  if (!req) return null;
-  const fromCookie = req.cookies?.get(COOKIE_NAME)?.value;
-  if (fromCookie) {
+  if (!token) return null;
+  const secret = jwtSecret();
+  const variants = [...new Set([token, normalizeToken(token) || ''].filter(Boolean))];
+  for (const candidate of variants) {
     try {
-      return decodeURIComponent(fromCookie);
+      return jwt.verify(candidate, secret) as TokenPayload;
     } catch {
-      return fromCookie;
-    }
-  }
-  const authHeader = req.headers?.get?.('authorization') || req.headers?.get?.('Authorization');
-  if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
-    return authHeader.slice(7).trim();
-  }
-  const raw = req.headers?.get?.('cookie') || '';
-  const match = raw.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`));
-  if (match?.[1]) {
-    try {
-      return decodeURIComponent(match[1]);
-    } catch {
-      return match[1];
+      /* try next */
     }
   }
   return null;
+}
+
+export function tokenFromRequest(req?: {
+  cookies?: { get: (name: string) => { value: string } | undefined };
+  headers?: Headers;
+}): string | null {
+  if (!req) return null;
+  try {
+    const header = req.headers?.get?.('cookie') || req.headers?.get?.('Cookie') || '';
+    const fromHeader = parseCookieHeader(header, COOKIE_NAME);
+    if (fromHeader) return fromHeader;
+  } catch {
+    /* ignore */
+  }
+  try {
+    const fromCookie = normalizeToken(req.cookies?.get(COOKIE_NAME)?.value);
+    if (fromCookie) return fromCookie;
+  } catch {
+    /* multipart POST on some hosts throws here */
+  }
+  const authHeader = req.headers?.get?.('authorization') || req.headers?.get?.('Authorization');
+  if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+    return normalizeToken(authHeader.slice(7));
+  }
+  return null;
+}
+
+function withRole(payload: TokenPayload): TokenPayload {
+  payload.role = String(payload.role || '').trim().toUpperCase() as TokenPayload['role'];
+  return payload;
 }
 
 /**
  * Get current authenticated user from request cookies or Authorization header
  */
 export async function getSessionUser(req?: NextRequest): Promise<TokenPayload | null> {
+  const fromReq = verifyToken(tokenFromRequest(req) || '');
+  if (fromReq) return withRole(fromReq);
+
   try {
-    let token = tokenFromRequest(req);
-    if (!token) {
-      const cookieStore = await cookies();
-      token = cookieStore.get(COOKIE_NAME)?.value || null;
-    }
-    if (!token) {
-      const headerStore = await headers();
-      token = tokenFromRequest({ headers: headerStore as any });
-    }
-    if (!token) return null;
-    const payload = verifyToken(token);
-    if (!payload) return null;
-    payload.role = String(payload.role || '').trim().toUpperCase() as TokenPayload['role'];
-    return payload;
-  } catch (error) {
-    return null;
+    const cookieStore = await cookies();
+    const fromStore = verifyToken(normalizeToken(cookieStore.get(COOKIE_NAME)?.value) || '');
+    if (fromStore) return withRole(fromStore);
+  } catch {
+    /* cookies() can throw on multipart Route Handlers */
   }
+
+  try {
+    const headerStore = await headers();
+    const fromHeaders = verifyToken(tokenFromRequest({ headers: headerStore as any }) || '');
+    if (fromHeaders) return withRole(fromHeaders);
+  } catch {
+    /* ignore */
+  }
+
+  return null;
 }
 
 /**
