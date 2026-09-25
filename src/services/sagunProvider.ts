@@ -12,7 +12,7 @@ export interface SagunLlmResult {
   error?: string;
 }
 
-type ProviderName = 'gemini' | 'groq' | 'openai';
+type ProviderName = 'gemini' | 'groq' | 'openai' | 'openrouter';
 
 function cleanKey(value?: string): string {
   return (value || '').trim().replace(/^["']+|["']+$/g, '');
@@ -46,6 +46,7 @@ function listProviders(): { name: ProviderName; apiKey: string }[] {
 
   if (sagunKey) {
     if (sagunKey.startsWith('gsk_')) providers.push({ name: 'groq', apiKey: sagunKey });
+    else if (sagunKey.startsWith('sk-or-')) providers.push({ name: 'openrouter', apiKey: sagunKey });
     else if (sagunKey.startsWith('sk-')) providers.push({ name: 'openai', apiKey: sagunKey });
     else providers.push({ name: 'gemini', apiKey: sagunKey });
   }
@@ -56,9 +57,43 @@ function listProviders(): { name: ProviderName; apiKey: string }[] {
   return providers;
 }
 
+const DEAD_GROQ_MODELS = new Set([
+  'llama3-8b-8192',
+  'llama3-70b-8192',
+  'mixtral-8x7b-32768',
+  'gemma2-9b-it',
+  'gemma-7b-it',
+  'llama-3.1-70b-versatile',
+]);
+
+const GROQ_FALLBACK_MODELS = [
+  'openai/gpt-oss-20b',
+  'openai/gpt-oss-120b',
+  'llama-3.1-8b-instant',
+  'llama-3.3-70b-versatile',
+];
+
+function groqModelList(): string[] {
+  const preferred = cleanKey(process.env.GROQ_MODEL);
+  const ordered = [preferred, ...GROQ_FALLBACK_MODELS].filter((id) => id && !DEAD_GROQ_MODELS.has(id));
+  return [...new Set(ordered.length ? ordered : GROQ_FALLBACK_MODELS)];
+}
+
 function shouldRetryModel(status: number, message: string): boolean {
   const m = message.toLowerCase();
-  if (status === 404) return true;
+  if (status === 404 || status === 400) {
+    if (
+      m.includes('decommissioned') ||
+      m.includes('deprecated') ||
+      m.includes('no longer supported') ||
+      m.includes('not found') ||
+      m.includes('does not exist') ||
+      m.includes('does not have access') ||
+      m.includes('model')
+    ) {
+      return true;
+    }
+  }
   return m.includes('model') && (m.includes('not found') || m.includes('does not exist') || m.includes('does not have access'));
 }
 
@@ -116,8 +151,11 @@ async function completeOpenAICompatible(
       20000
     );
 
-    const text = data.choices?.[0]?.message?.content;
-    if (response.ok && text) return String(text).trim();
+    const message = data.choices?.[0]?.message;
+    const text = Array.isArray(message?.content)
+      ? message.content.map((part: any) => (typeof part === 'string' ? part : part?.text || '')).join('')
+      : message?.content || message?.reasoning || '';
+    if (response.ok && String(text).trim()) return String(text).trim();
 
     lastError = data.error?.message || `AI ${response.status} for model ${model}`;
     if (response.status === 401 || response.status === 403 || response.status === 429 || isQuotaError(lastError)) {
@@ -189,11 +227,19 @@ async function completeProvider(
   chatMessages: { role: string; content: string }[]
 ): Promise<string> {
   if (name === 'gemini') return completeGemini(apiKey, messages);
+  if (name === 'openrouter') {
+    return completeOpenAICompatible(
+      'https://openrouter.ai/api/v1/chat/completions',
+      apiKey,
+      ['meta-llama/llama-3.1-8b-instruct:free', 'google/gemini-2.0-flash-exp:free'],
+      chatMessages
+    );
+  }
   if (name === 'groq') {
     return completeOpenAICompatible(
       'https://api.groq.com/openai/v1/chat/completions',
       apiKey,
-      [...new Set([cleanKey(process.env.GROQ_MODEL), 'llama-3.1-8b-instant', 'llama-3.3-70b-versatile'].filter(Boolean))],
+      groqModelList(),
       chatMessages
     );
   }

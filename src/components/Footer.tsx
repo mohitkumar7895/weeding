@@ -40,6 +40,7 @@ export default function Footer() {
             <ul className="footer-link-list">
               <li><Link href="#" className="footer-link">Help Center</Link></li>
               <li><Link href="#" className="footer-link">Contact Us</Link></li>
+              <li><a href="mailto:primepixelgmb@gmail.com" className="footer-link">primepixelgmb@gmail.com</a></li>
               <li><Link href="#" className="footer-link">Terms & Conditions</Link></li>
               <li><Link href="#" className="footer-link">Privacy Policy</Link></li>
               <li><Link href="#" className="footer-link">FAQs</Link></li>
