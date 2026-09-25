@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context';
+import { VENDOR_CATEGORIES } from '@/lib/vendorCategories';
 
 export default function VendorRegisterPage() {
   const router = useRouter();
@@ -57,25 +58,13 @@ export default function VendorRegisterPage() {
           }
         } else {
           setCategories([
-            { id: 'cat_photographers', name: 'Photographers' },
-            { id: 'cat_caterers', name: 'Caterers' },
-            { id: 'cat_decorators', name: 'Decorators' },
-            { id: 'cat_venues', name: 'Venues' },
-            { id: 'cat_makeup', name: 'Bridal Makeup' },
-            { id: 'cat_mehendi', name: 'Mehendi Artists' },
-            { id: 'cat_dj', name: 'DJ & Music' },
+            ...VENDOR_CATEGORIES.map((c) => ({ id: c.id, name: c.name })),
           ]);
         }
       })
       .catch(() => {
         setCategories([
-          { id: 'cat_photographers', name: 'Photographers' },
-          { id: 'cat_caterers', name: 'Caterers' },
-          { id: 'cat_decorators', name: 'Decorators' },
-          { id: 'cat_venues', name: 'Venues' },
-          { id: 'cat_makeup', name: 'Bridal Makeup' },
-          { id: 'cat_mehendi', name: 'Mehendi Artists' },
-          { id: 'cat_dj', name: 'DJ & Music' },
+          ...VENDOR_CATEGORIES.map((c) => ({ id: c.id, name: c.name })),
         ]);
       });
   }, []);

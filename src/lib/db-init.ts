@@ -664,14 +664,22 @@ async function seedInitialData(db: mysql.Connection) {
   }
 
   // 4. Marketplace Categories
+  const { VENDOR_CATEGORIES } = await import('@/lib/vendorCategories');
   const categories = [
-    { id: 'cat_photographers', slug: 'photographers', name: 'Photographers', desc: 'Capture Your Special Moments', order: 1 },
-    { id: 'cat_caterers', slug: 'caterers', name: 'Caterers', desc: 'Delicious Food for Every Moment', order: 2 },
-    { id: 'cat_decorators', slug: 'decorators', name: 'Decorators', desc: 'Turn Dreams into Reality', order: 3 },
-    { id: 'cat_venues', slug: 'venues', name: 'Venues', desc: 'Stunning Spaces for Your Big Day', order: 4 },
-    { id: 'cat_makeup', slug: 'makeup', name: 'Bridal Makeup', desc: 'Flawless Beauty for Your Big Day', order: 5 },
-    { id: 'cat_mehendi', slug: 'mehendi', name: 'Mehendi Artists', desc: 'Intricate & Traditional Henna Designs', order: 6 },
-    { id: 'cat_dj', slug: 'dj-music', name: 'DJ & Music', desc: 'Energetic Sound & Entertainment', order: 7 },
+    ...VENDOR_CATEGORIES.map((c) => ({
+      id: c.id,
+      slug: c.slug,
+      name: c.name,
+      desc: c.description,
+      order: c.display_order,
+    })),
+    {
+      id: 'cat_mehendi',
+      slug: 'mehendi',
+      name: 'Mehendi Artists',
+      desc: 'Intricate & Traditional Henna Designs',
+      order: 11,
+    },
   ];
   for (const c of categories) {
     await db.query(

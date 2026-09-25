@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context';
 import { homePathForRole, isStaffRole, persistStaffSession } from '@/lib/roleHome';
+import { VENDOR_CATEGORIES } from '@/lib/vendorCategories';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -35,15 +36,7 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
   const [agreeTerms, setAgreeTerms] = useState(false);
 
   const majorCities = ['Delhi NCR', 'Mumbai', 'Jaipur', 'Bengaluru', 'Lucknow', 'Udaipur', 'Goa', 'Chandigarh', 'Hyderabad', 'Kolkata', 'Pune', 'Ahmedabad'];
-  const categoriesList = [
-    { id: 'cat_photographers', name: 'Photographers' },
-    { id: 'cat_caterers', name: 'Caterers' },
-    { id: 'cat_decorators', name: 'Decorators' },
-    { id: 'cat_venues', name: 'Venues' },
-    { id: 'cat_makeup', name: 'Bridal Makeup' },
-    { id: 'cat_mehendi', name: 'Mehendi Artists' },
-    { id: 'cat_dj', name: 'DJ & Music' },
-  ];
+  const categoriesList = VENDOR_CATEGORIES.map((c) => ({ id: c.id, name: c.name }));
 
   // OTP & Reset states
   const [otp, setOtp] = useState('');

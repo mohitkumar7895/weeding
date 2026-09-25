@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { calculateVendorScore } from '@/services/rankingEngine';
 import { locationService } from '@/services/locationService';
+import { findVendorCategory } from '@/lib/vendorCategories';
 
 async function safeQuery<T = any[]>(sql: string, params: any[] = []): Promise<T> {
   try {
@@ -52,8 +53,18 @@ export async function GET(req: NextRequest) {
     `;
 
     if (category && category !== 'ALL') {
-      sql += ` AND (c.slug = ? OR c.name = ? OR c.id = ?)`;
-      params.push(category, category, category);
+      const def = findVendorCategory(category);
+      const tokens = [...new Set((def ? [def.slug, def.id, def.name, ...def.aliases] : [category]).map((t) => String(t).toLowerCase()))];
+      const parts: string[] = [];
+      for (const token of tokens) {
+        parts.push(`LOWER(IFNULL(c.slug,'')) = ?`);
+        params.push(token);
+        parts.push(`LOWER(IFNULL(c.id,'')) = ?`);
+        params.push(token);
+        parts.push(`LOWER(IFNULL(c.name,'')) LIKE ?`);
+        params.push(`%${token}%`);
+      }
+      sql += ` AND (${parts.join(' OR ')})`;
     }
 
     if (minPrice) {
@@ -81,7 +92,7 @@ export async function GET(req: NextRequest) {
     }
 
     let rawVendors = await safeQuery<any[]>(sql, params);
-    if (!rawVendors.length) {
+    if (!rawVendors.length && (!category || category === 'ALL')) {
       rawVendors = await safeQuery<any[]>(
         `SELECT v.id, v.business_name, v.city, v.address, v.description, v.rating, v.review_count,
                 v.starting_price, v.cover_image, v.verification_status, v.is_featured, v.is_sponsored
