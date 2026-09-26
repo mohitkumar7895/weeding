@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const category = searchParams.get('category');
     const city = searchParams.get('city');
+    const location = searchParams.get('location');
     const minPrice = searchParams.get('min_price');
     const maxPrice = searchParams.get('max_price');
     const minRating = searchParams.get('rating');
@@ -87,8 +88,13 @@ export async function GET(req: NextRequest) {
     }
 
     if (search) {
-      sql += ` AND (LOWER(v.business_name) LIKE LOWER(?) OR LOWER(IFNULL(v.description,'')) LIKE LOWER(?) OR LOWER(v.city) LIKE LOWER(?))`;
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      sql += ` AND (LOWER(v.business_name) LIKE LOWER(?) OR LOWER(IFNULL(v.description,'')) LIKE LOWER(?) OR LOWER(v.city) LIKE LOWER(?) OR LOWER(IFNULL(v.address,'')) LIKE LOWER(?))`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    if (location) {
+      sql += ` AND (LOWER(v.city) LIKE LOWER(?) OR LOWER(IFNULL(v.address,'')) LIKE LOWER(?))`;
+      params.push(`%${location}%`, `%${location}%`);
     }
 
     let rawVendors = await safeQuery<any[]>(sql, params);
@@ -109,20 +115,26 @@ export async function GET(req: NextRequest) {
 
         if (city && city !== 'ALL') {
           const vendorCity = String(v.city || '');
+          const vendorAddress = String(v.address || '');
           try {
             distance_km = await locationService.getDistanceBetweenCities(city, vendorCity);
             const searchRadius = Number.isFinite(radius) ? radius : 50;
             if (distance_km !== null) {
               isWithinRadius = distance_km <= searchRadius;
+              if (!isWithinRadius) {
+                 isWithinRadius = vendorCity.toLowerCase().includes(city.toLowerCase()) || vendorAddress.toLowerCase().includes(city.toLowerCase());
+              }
             } else {
               isWithinRadius =
                 vendorCity.toLowerCase() === city.toLowerCase() ||
-                vendorCity.toLowerCase().includes(city.toLowerCase());
+                vendorCity.toLowerCase().includes(city.toLowerCase()) ||
+                vendorAddress.toLowerCase().includes(city.toLowerCase());
             }
           } catch {
             isWithinRadius =
               vendorCity.toLowerCase() === city.toLowerCase() ||
-              vendorCity.toLowerCase().includes(city.toLowerCase());
+              vendorCity.toLowerCase().includes(city.toLowerCase()) ||
+              vendorAddress.toLowerCase().includes(city.toLowerCase());
           }
         }
 
