@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import QuickFeatures from '@/components/QuickFeatures';
-import TopVendors from '@/components/TopVendors';
 import VendorCategoryGrid from '@/components/VendorCategoryGrid';
 import AIAssistantBanner from '@/components/AIAssistantBanner';
 import WhyChooseUs from '@/components/WhyChooseUs';
@@ -62,7 +61,6 @@ export default function Home() {
             <VendorCategoryGrid />
           </div>
         </section>
-        <TopVendors />
         <AIAssistantBanner onOpenSagun={() => setSagunModalOpen(true)} />
         <WhyChooseUs />
         <StatsBar />
