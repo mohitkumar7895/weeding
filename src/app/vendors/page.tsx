@@ -34,6 +34,23 @@ export default function VendorsPage() {
     router.push(qs ? `/vendors/category/${hit.slug}?${qs}` : `/vendors/category/${hit.slug}`);
   };
 
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        router.push(`/vendors/category/all?lat=${lat}&lng=${lng}&radius=15`);
+      },
+      (error) => {
+        alert("Unable to retrieve your location.");
+      }
+    );
+  };
+
   return (
     <div className="vendors-page-root">
       <Navbar
@@ -87,6 +104,9 @@ export default function VendorsPage() {
 
                 <button type="button" className="btn-search-primary" onClick={goFind}>
                   Find Vendors
+                </button>
+                <button type="button" className="btn-location" onClick={useMyLocation} title="Find vendors near me">
+                  📍
                 </button>
               </div>
             </div>
@@ -213,6 +233,21 @@ export default function VendorsPage() {
 
         .btn-search-primary:hover {
           transform: scale(1.02);
+        }
+
+        .btn-location {
+          background: #fdfbf9;
+          border: 1px solid #ddd;
+          border-radius: 10px;
+          padding: 12px 16px;
+          cursor: pointer;
+          font-size: 18px;
+          transition: transform 0.15s ease, background 0.15s ease;
+        }
+
+        .btn-location:hover {
+          background: #f0f0f0;
+          transform: scale(1.05);
         }
 
         .category-mosaic-section {

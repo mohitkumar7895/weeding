@@ -25,9 +25,23 @@ export default function VendorCategoryPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = String(params.slug || '');
-  const category = findVendorCategory(slug);
+  let category = findVendorCategory(slug);
+  if (slug === 'all') {
+    category = {
+      id: 'all',
+      slug: 'all',
+      name: 'All Vendors',
+      description: 'Search results for all verified vendors.',
+      image: '/images/photographer.jpg',
+      display_order: 0,
+      aliases: []
+    };
+  }
   const city = searchParams.get('city') || '';
   const search = searchParams.get('search') || '';
+  const lat = searchParams.get('lat') || '';
+  const lng = searchParams.get('lng') || '';
+  const radius = searchParams.get('radius') || '';
 
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +58,9 @@ export default function VendorCategoryPage() {
     qs.set('limit', '40');
     if (city) qs.set('city', city);
     if (search) qs.set('search', search);
+    if (lat) qs.set('lat', lat);
+    if (lng) qs.set('lng', lng);
+    if (radius) qs.set('radius', radius);
     fetch(`/api/vendors?${qs.toString()}`)
       .then((r) => r.json())
       .then((data) => {
@@ -51,7 +68,7 @@ export default function VendorCategoryPage() {
       })
       .catch(() => setVendors([]))
       .finally(() => setLoading(false));
-  }, [category?.slug, city, search]);
+  }, [category?.slug, city, search, lat, lng, radius]);
 
   if (!category) {
     return (
@@ -73,17 +90,26 @@ export default function VendorCategoryPage() {
   return (
     <div className="vcat-page">
       <Navbar onOpenLogin={() => setAuthOpen(true)} onOpenRegister={() => setAuthOpen(true)} />
-      <section className="vcat-hero">
-        <img src={category.image} alt={category.name} />
-        <div className="vcat-hero-shade" />
-        <div className="vcat-hero-inner">
-          <Link href="/vendors" className="vcat-back">
-            ← All vendors
+      {slug === 'all' ? (
+        <div style={{ padding: '80px 5% 0px' }}>
+          <Link href="/vendors" className="vcat-back" style={{ color: '#333', fontSize: 14 }}>
+            ← Back to Search
           </Link>
-          <h1>{category.name}</h1>
-          <p>{category.description}</p>
+          <h1 style={{ marginTop: 12, fontSize: 32 }}>Nearby Vendors</h1>
         </div>
-      </section>
+      ) : (
+        <section className="vcat-hero">
+          <img src={category.image} alt={category.name} />
+          <div className="vcat-hero-shade" />
+          <div className="vcat-hero-inner">
+            <Link href="/vendors" className="vcat-back">
+              ← All vendors
+            </Link>
+            <h1>{category.name}</h1>
+            <p>{category.description}</p>
+          </div>
+        </section>
+      )}
 
       <div className="vcat-body">
         <p className="vcat-count">
@@ -121,8 +147,12 @@ export default function VendorCategoryPage() {
           </div>
         )}
 
-        <h2 style={{ margin: '40px 0 16px', fontSize: 22 }}>Other categories</h2>
-        <VendorCategoryGrid />
+        {slug !== 'all' && (
+          <>
+            <h2 style={{ margin: '40px 0 16px', fontSize: 22 }}>Other categories</h2>
+            <VendorCategoryGrid />
+          </>
+        )}
       </div>
 
       <Footer />

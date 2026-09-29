@@ -25,14 +25,15 @@ export async function GET(req: NextRequest) {
     const minRating = searchParams.get('rating');
     const search = searchParams.get('search');
     const featured = searchParams.get('featured');
+    const latStr = searchParams.get('lat');
+    const lngStr = searchParams.get('lng');
     const radius = searchParams.get('radius') ? parseInt(searchParams.get('radius') as string, 10) : 50;
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const offset = (page - 1) * limit;
 
     const params: any[] = [];
-    let sql = `
-      SELECT
+    let selectFields = `
         v.id,
         v.business_name,
         v.city,
@@ -45,9 +46,23 @@ export async function GET(req: NextRequest) {
         v.verification_status,
         v.is_featured,
         v.is_sponsored,
+        v.latitude,
+        v.longitude,
         c.id as category_id,
         c.name as category_name,
         c.slug as category_slug
+    `;
+
+    if (latStr && lngStr) {
+      const lat = parseFloat(latStr);
+      const lng = parseFloat(lngStr);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        selectFields += `, ( 6371 * acos( cos( radians(${lat}) ) * cos( radians( IFNULL(v.latitude, 0) ) ) * cos( radians( IFNULL(v.longitude, 0) ) - radians(${lng}) ) + sin( radians(${lat}) ) * sin( radians( IFNULL(v.latitude, 0) ) ) ) ) AS distance_km_sql`;
+      }
+    }
+
+    let sql = `
+      SELECT ${selectFields}
       FROM vendors v
       LEFT JOIN categories c ON v.category_id = c.id
       WHERE v.verification_status IN ('VERIFIED', 'APPROVED')
@@ -100,9 +115,9 @@ export async function GET(req: NextRequest) {
     let rawVendors = await safeQuery<any[]>(sql, params);
     if (!rawVendors.length && (!category || category === 'ALL')) {
       rawVendors = await safeQuery<any[]>(
-        `SELECT v.id, v.business_name, v.city, v.address, v.description, v.rating, v.review_count,
-                v.starting_price, v.cover_image, v.verification_status, v.is_featured, v.is_sponsored
+        `SELECT ${selectFields}
          FROM vendors v
+         LEFT JOIN categories c ON v.category_id = c.id
          WHERE v.verification_status IN ('VERIFIED', 'APPROVED', 'PENDING')
          LIMIT 100`
       );
@@ -110,10 +125,13 @@ export async function GET(req: NextRequest) {
 
     const processedVendors = await Promise.all(
       rawVendors.map(async (v) => {
-        let distance_km: number | null = null;
+        let distance_km: number | null = v.distance_km_sql !== undefined ? v.distance_km_sql : null;
         let isWithinRadius = true;
 
-        if (city && city !== 'ALL') {
+        if (distance_km !== null) {
+          const searchRadius = Number.isFinite(radius) ? radius : 50;
+          isWithinRadius = distance_km <= searchRadius;
+        } else if (city && city !== 'ALL') {
           const vendorCity = String(v.city || '');
           const vendorAddress = String(v.address || '');
           try {

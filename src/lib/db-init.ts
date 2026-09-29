@@ -207,6 +207,8 @@ export async function initializeDatabase() {
       category_id VARCHAR(36) NOT NULL,
       city VARCHAR(50) NOT NULL,
       address TEXT,
+      latitude DECIMAL(10, 8),
+      longitude DECIMAL(11, 8),
       description TEXT,
       rating DECIMAL(3, 2) DEFAULT 4.80,
       review_count INT DEFAULT 0,
