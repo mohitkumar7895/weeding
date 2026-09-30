@@ -212,21 +212,7 @@ export default function MobileAppView({ onOpenLoginModal }: MobileAppViewProps) 
         {/* Center: Brand Monogram */}
         <div className="header-center">
           <div className="brand-monogram">
-            <svg width="34" height="24" viewBox="0 0 54 40" fill="none">
-              <defs>
-                <linearGradient id="mobGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ff2a73" />
-                  <stop offset="100%" stopColor="#e6005c" />
-                </linearGradient>
-                <linearGradient id="mobHeart" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ff528c" />
-                  <stop offset="100%" stopColor="#d8004f" />
-                </linearGradient>
-              </defs>
-              <path d="M4 10L11 32L17 14L22 30L26 12" stroke="url(#mobGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z" fill="url(#mobHeart)" />
-              <path d="M28 12L32 30L37 14L43 32L50 10" stroke="url(#mobGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <img src="/logo.png" alt="WedWithMe Logo" style={{ height: '32px', width: 'auto', borderRadius: '4px' }} />
           </div>
         </div>
 
@@ -869,11 +855,7 @@ export default function MobileAppView({ onOpenLoginModal }: MobileAppViewProps) 
         <div className="splash-overlay" onClick={() => setShowWelcomeSplash(false)}>
           <div className="splash-card" onClick={(e) => e.stopPropagation()}>
             <div className="splash-logo">
-              <svg width="60" height="42" viewBox="0 0 54 40" fill="none">
-                <path d="M4 10L11 32L17 14L22 30L26 12" stroke="url(#mobGrad)" strokeWidth="4.5" strokeLinecap="round" />
-                <path d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z" fill="url(#mobHeart)" />
-                <path d="M28 12L32 30L37 14L43 32L50 10" stroke="url(#mobGrad)" strokeWidth="4.5" strokeLinecap="round" />
-              </svg>
+              <img src="/logo.png" alt="WedWithMe Logo" style={{ height: '52px', width: 'auto', borderRadius: '6px' }} />
             </div>
 
             <h1 className="splash-brand brand-name-text">WedWithMe</h1>

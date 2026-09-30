@@ -181,21 +181,7 @@ export default function VendorRegisterPage() {
         }}
       >
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <svg width="34" height="26" viewBox="0 0 54 40" fill="none">
-            <defs>
-              <linearGradient id="vrPinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#ff2a73" />
-                <stop offset="100%" stopColor="#e6005c" />
-              </linearGradient>
-              <linearGradient id="vrHeartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#ff528c" />
-                <stop offset="100%" stopColor="#d8004f" />
-              </linearGradient>
-            </defs>
-            <path d="M4 10L11 32L17 14L22 30L26 12" stroke="url(#vrPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M27 10C24 6 20 8 20 12C20 17 27 22 27 22C27 22 34 17 34 12C34 8 30 6 27 10Z" fill="url(#vrHeartGrad)" />
-            <path d="M28 12L32 30L37 14L43 32L50 10" stroke="url(#vrPinkGrad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <img src="/logo.png" alt="WedWithMe Logo" style={{ height: '36px', width: 'auto', borderRadius: '4px' }} />
           <span style={{ fontSize: '24px', fontWeight: '800', color: '#e5c158', letterSpacing: '-0.5px' }}>WedWithMe</span>
           <span style={{ fontSize: '11px', background: 'rgba(229,193,88,0.12)', color: '#e5c158', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(229,193,88,0.25)', fontWeight: 600 }}>
             Vendor Partner
