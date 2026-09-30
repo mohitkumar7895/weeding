@@ -81,11 +81,15 @@ function groqModelList(): string[] {
 
 function shouldRetryModel(status: number, message: string): boolean {
   const m = message.toLowerCase();
+  if (status === 503 || status === 429 || m.includes('high demand') || m.includes('overloaded') || m.includes('unavailable')) {
+    return true;
+  }
   if (status === 404 || status === 400) {
     if (
       m.includes('decommissioned') ||
       m.includes('deprecated') ||
       m.includes('no longer supported') ||
+      m.includes('no longer available') ||
       m.includes('not found') ||
       m.includes('does not exist') ||
       m.includes('does not have access') ||
@@ -173,11 +177,13 @@ async function completeGemini(apiKey: string, messages: SagunMessage[]): Promise
     ...new Set(
       [
         cleanKey(process.env.AI_MODEL),
-        'gemini-2.5-flash',
-        'gemini-2.0-flash',
-        'gemini-2.5-flash-lite',
+        cleanKey(process.env.SAGUN_AI_MODEL),
+        'gemini-3.5-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-3.8-flash',
+        'gemini-3.7-flash',
         'gemini-flash-latest',
-        'gemini-1.5-flash',
+        'gemini-2.5-flash',
       ].filter(Boolean)
     ),
   ];
@@ -213,7 +219,7 @@ async function completeGemini(apiKey: string, messages: SagunMessage[]): Promise
     if (String(lastError).toLowerCase().includes('api key not valid')) {
       throw new Error(lastError);
     }
-    if (!shouldRetryModel(response.status, lastError) && response.status !== 404 && response.status !== 400) {
+    if (!shouldRetryModel(response.status, lastError) && response.status !== 404 && response.status !== 400 && response.status !== 503) {
       throw new Error(lastError);
     }
   }
