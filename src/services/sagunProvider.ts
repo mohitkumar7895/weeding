@@ -176,14 +176,14 @@ async function completeGemini(apiKey: string, messages: SagunMessage[]): Promise
   const models = [
     ...new Set(
       [
-        cleanKey(process.env.AI_MODEL),
-        cleanKey(process.env.SAGUN_AI_MODEL),
         'gemini-3.5-flash',
         'gemini-3.5-flash-lite',
+        'gemini-flash-latest',
+        'gemini-flash-lite-latest',
+        readEnv('SAGUN_AI_MODEL'),
+        readEnv('AI_MODEL'),
         'gemini-3.8-flash',
         'gemini-3.7-flash',
-        'gemini-flash-latest',
-        'gemini-2.5-flash',
       ].filter(Boolean)
     ),
   ];
@@ -216,10 +216,8 @@ async function completeGemini(apiKey: string, messages: SagunMessage[]): Promise
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (response.ok && text) return String(text).trim();
     lastError = data.error?.message || `Gemini ${response.status} for ${geminiModel}`;
+    console.warn(`[Sagun] Model ${geminiModel} failed (${response.status}): ${lastError}. Trying fallback model...`);
     if (String(lastError).toLowerCase().includes('api key not valid')) {
-      throw new Error(lastError);
-    }
-    if (!shouldRetryModel(response.status, lastError) && response.status !== 404 && response.status !== 400 && response.status !== 503) {
       throw new Error(lastError);
     }
   }
