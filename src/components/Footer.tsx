@@ -38,8 +38,8 @@ export default function Footer() {
           <div className="footer-links-col">
             <h4 className="col-heading">Support</h4>
             <ul className="footer-link-list">
-              <li><Link href="#" className="footer-link">Help Center</Link></li>
-              <li><Link href="#" className="footer-link">Contact Us</Link></li>
+              <li><a href="tel:8650559698" className="footer-link">Help Center: 8650559698</a></li>
+              <li><a href="tel:8650559698" className="footer-link">Contact Us: 8650559698</a></li>
               <li><a href="mailto:primepixelgmb@gmail.com" className="footer-link">primepixelgmb@gmail.com</a></li>
               <li><Link href="#" className="footer-link">Terms & Conditions</Link></li>
               <li><Link href="#" className="footer-link">Privacy Policy</Link></li>
@@ -155,6 +155,14 @@ export default function Footer() {
           font-size: 12.5px;
           color: #e5c158;
           font-weight: 600;
+        }
+
+        .footer-call-link {
+          color: #e5c158 !important;
+          font-weight: 700 !important;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
         }
 
         .col-heading {

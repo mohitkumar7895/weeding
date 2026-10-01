@@ -229,8 +229,8 @@ export default function AboutPage() {
                   <div className="c-item">
                     <span className="c-icon">📞</span>
                     <div>
-                      <strong>Toll-Free Wedding Helpline</strong>
-                      <p>+91 (800) 425-9966 (Mon - Sat, 9am - 8pm IST)</p>
+                      <strong>Wedding Helpline / Support</strong>
+                      <p>+91 8650559698</p>
                     </div>
                   </div>
                   <div className="c-item">

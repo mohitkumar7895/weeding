@@ -27,17 +27,15 @@ export default function MobileBottomNav() {
       isActive: pathname === '/',
     },
     {
-      label: 'Reels',
-      href: '/reels',
+      label: 'Profile',
+      href: profileHref,
       icon: (active: boolean) => (
-        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={active ? '#ff2a73' : '#c5d8cf'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="5" width="14" height="16" rx="3" />
-          <path d="M7 5V3M13 5V3" />
-          <path d="M3 10h14" />
-          <polygon points="17 9 22 12 17 15 17 9" fill={active ? '#ff2a73' : 'none'} />
+        <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? '#ff2a73' : 'none'} stroke={active ? '#ff2a73' : '#c5d8cf'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
         </svg>
       ),
-      isActive: pathname.startsWith('/reels'),
+      isActive: pathname.startsWith('/dashboard') || pathname.startsWith('/vendor') || pathname.startsWith('/admin'),
     },
     {
       label: 'Matches',
@@ -75,15 +73,17 @@ export default function MobileBottomNav() {
       isActive: pathname.startsWith('/vendors'),
     },
     {
-      label: 'Profile',
-      href: profileHref,
+      label: 'Reels',
+      href: '/reels',
       icon: (active: boolean) => (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? '#ff2a73' : 'none'} stroke={active ? '#ff2a73' : '#c5d8cf'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={active ? '#ff2a73' : '#c5d8cf'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="5" width="14" height="16" rx="3" />
+          <path d="M7 5V3M13 5V3" />
+          <path d="M3 10h14" />
+          <polygon points="17 9 22 12 17 15 17 9" fill={active ? '#ff2a73' : 'none'} />
         </svg>
       ),
-      isActive: pathname.startsWith('/dashboard') || pathname.startsWith('/vendor') || pathname.startsWith('/admin'),
+      isActive: pathname.startsWith('/reels'),
     },
   ];
 
