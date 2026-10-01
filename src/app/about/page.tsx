@@ -230,7 +230,7 @@ export default function AboutPage() {
                     <span className="c-icon">📞</span>
                     <div>
                       <strong>Wedding Helpline / Support</strong>
-                      <p>+91 8650559698</p>
+                      <p><a href="tel:6399239252" style={{ color: 'inherit', textDecoration: 'none' }}>+91 6399239252</a></p>
                     </div>
                   </div>
                   <div className="c-item">

@@ -38,8 +38,8 @@ export default function Footer() {
           <div className="footer-links-col">
             <h4 className="col-heading">Support</h4>
             <ul className="footer-link-list">
-              <li><a href="tel:8650559698" className="footer-link">Help Center: 8650559698</a></li>
-              <li><a href="tel:8650559698" className="footer-link">Contact Us: 8650559698</a></li>
+              <li><a href="tel:6399239252" className="footer-link">Help Center: 6399239252</a></li>
+              <li><a href="tel:6399239252" className="footer-link">Contact Us: 6399239252</a></li>
               <li><a href="mailto:primepixelgmb@gmail.com" className="footer-link">primepixelgmb@gmail.com</a></li>
               <li><Link href="#" className="footer-link">Terms & Conditions</Link></li>
               <li><Link href="#" className="footer-link">Privacy Policy</Link></li>
