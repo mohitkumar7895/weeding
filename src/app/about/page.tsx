@@ -223,7 +223,7 @@ export default function AboutPage() {
                     <span className="c-icon">📍</span>
                     <div>
                       <strong>Headquarters</strong>
-                      <p>DLF CyberCity, Tower B, Gurugram, Delhi NCR, India</p>
+                      <p>Jebda Makkhanpur, Sadupur Shikohabad, Firozabad, Uttar Pradesh, India</p>
                     </div>
                   </div>
                   <div className="c-item">

@@ -167,41 +167,6 @@ export default function LegalPageLayout({
               )}
             </div>
 
-            {/* Luxury Metadata Bar */}
-            <div className="meta-card-luxury">
-              <div className="meta-tile">
-                <span className="tile-icon">🏛️</span>
-                <div className="tile-details">
-                  <span className="tile-label">Platform Entity</span>
-                  <strong className="tile-val">WedWithMe Platform Pvt. Ltd.</strong>
-                </div>
-              </div>
-
-              <div className="meta-tile">
-                <span className="tile-icon">📅</span>
-                <div className="tile-details">
-                  <span className="tile-label">Effective Date</span>
-                  <strong className="tile-val">{effectiveDate}</strong>
-                </div>
-              </div>
-
-              <div className="meta-tile">
-                <span className="tile-icon">🔄</span>
-                <div className="tile-details">
-                  <span className="tile-label">Last Updated</span>
-                  <strong className="tile-val">{lastUpdated}</strong>
-                </div>
-              </div>
-
-              <div className="meta-tile">
-                <span className="tile-icon">⚖️</span>
-                <div className="tile-details">
-                  <span className="tile-label">Applicable Law</span>
-                  <strong className="tile-val">Republic of India • DPDP Act</strong>
-                </div>
-              </div>
-            </div>
-
             {/* Interactive Policy Switcher Navigation */}
             <div className="policy-switch-wrapper">
               <div className="policy-switch-header">
@@ -351,8 +316,8 @@ export default function LegalPageLayout({
                       <a href="tel:6399239252" className="nodal-contact-btn">
                         <span>📞</span> +91 6399239252
                       </a>
-                      <a href="mailto:primepixelgmb@gmail.com" className="nodal-contact-btn mail">
-                        <span>✉️</span> primepixelgmb@gmail.com
+                      <a href="mailto:support@wedwithme.com" className="nodal-contact-btn mail">
+                        <span>✉️</span> support@wedwithme.com
                       </a>
                     </div>
                   </div>
@@ -434,11 +399,11 @@ export default function LegalPageLayout({
                       and full statutory adherence to the Information Technology Act, 2000 and the Digital Personal Data Protection Act, 2023.
                     </p>
                     <div className="seal-footer-row">
+                      <span><strong>Headquarters:</strong> Jebda Makkhanpur, Sadupur Shikohabad, Firozabad, Uttar Pradesh, India</span>
+                      <span className="seal-sep">•</span>
                       <span><strong>Helpline:</strong> +91 6399239252</span>
                       <span className="seal-sep">•</span>
-                      <span><strong>Support:</strong> primepixelgmb@gmail.com</span>
-                      <span className="seal-sep">•</span>
-                      <span><strong>New Delhi / NCR, India</strong></span>
+                      <span><strong>Email:</strong> support@wedwithme.com • concierge@wedwithme.com</span>
                     </div>
                   </div>
                 </div>
@@ -610,60 +575,6 @@ export default function LegalPageLayout({
           max-width: 820px;
           line-height: 1.65;
           margin: 0;
-        }
-
-        /* Luxury Metadata Grid */
-        .meta-card-luxury {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 16px;
-          background: rgba(4, 28, 19, 0.65);
-          border: 1px solid rgba(229, 193, 88, 0.25);
-          border-radius: 14px;
-          padding: 16px 22px;
-          margin-bottom: 26px;
-          backdrop-filter: blur(12px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-        }
-
-        .meta-tile {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .tile-icon {
-          font-size: 20px;
-          background: rgba(229, 193, 88, 0.12);
-          width: 36px;
-          height: 36px;
-          border-radius: 9px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 1px solid rgba(229, 193, 88, 0.22);
-          flex-shrink: 0;
-        }
-
-        .tile-details {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .tile-label {
-          font-size: 10.5px;
-          text-transform: uppercase;
-          letter-spacing: 0.6px;
-          color: #8fa699;
-          font-weight: 700;
-        }
-
-        .tile-val {
-          font-size: 13px;
-          color: #ffffff;
-          font-weight: 600;
-          line-height: 1.3;
         }
 
         /* Policy Switcher */
@@ -1325,9 +1236,6 @@ export default function LegalPageLayout({
 
         /* Responsive Breakpoints */
         @media (max-width: 1080px) {
-          .meta-card-luxury {
-            grid-template-columns: repeat(2, 1fr);
-          }
           .legal-layout-grid {
             grid-template-columns: 1fr;
           }
@@ -1345,10 +1253,6 @@ export default function LegalPageLayout({
           }
           .legal-hero-title {
             font-size: 30px;
-          }
-          .meta-card-luxury {
-            grid-template-columns: 1fr;
-            padding: 14px 16px;
           }
           .policy-pill-btn {
             font-size: 12.5px;

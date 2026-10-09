@@ -205,9 +205,11 @@ export default function PaymentRefundPage() {
             <br />
             <strong>Company:</strong> WedWithMe Platform Private Limited
             <br />
-            <strong>Email:</strong> primepixelgmb@gmail.com
+            <strong>Headquarters:</strong> Jebda Makkhanpur, Sadupur Shikohabad, Firozabad, Uttar Pradesh, India
             <br />
-            <strong>Helpline:</strong> +91 6399239252
+            <strong>Wedding Helpline / Support:</strong> +91 6399239252
+            <br />
+            <strong>Email Support:</strong> support@wedwithme.com • concierge@wedwithme.com
             <br />
             <strong>Working Hours:</strong> Mon - Sat, 10:00 AM - 7:00 PM IST
           </div>

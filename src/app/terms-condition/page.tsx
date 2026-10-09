@@ -220,9 +220,11 @@ export default function TermsConditionPage() {
             <br />
             <strong>Company:</strong> WedWithMe Platform Private Limited
             <br />
-            <strong>Email:</strong> primepixelgmb@gmail.com
+            <strong>Headquarters:</strong> Jebda Makkhanpur, Sadupur Shikohabad, Firozabad, Uttar Pradesh, India
             <br />
-            <strong>Contact:</strong> +91 6399239252
+            <strong>Wedding Helpline / Support:</strong> +91 6399239252
+            <br />
+            <strong>Email Support:</strong> support@wedwithme.com • concierge@wedwithme.com
             <br />
             <strong>Jurisdiction:</strong> Courts having competent jurisdiction in India
           </div>

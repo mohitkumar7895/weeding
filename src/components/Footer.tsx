@@ -40,7 +40,7 @@ export default function Footer() {
             <ul className="footer-link-list">
               <li><a href="tel:6399239252" className="footer-link">Help Center: 6399239252</a></li>
               <li><a href="tel:6399239252" className="footer-link">Contact Us: 6399239252</a></li>
-              <li><a href="mailto:primepixelgmb@gmail.com" className="footer-link">primepixelgmb@gmail.com</a></li>
+              <li><a href="mailto:support@wedwithme.com" className="footer-link">support@wedwithme.com</a></li>
               <li><Link href="/privacy-policy" className="footer-link">Privacy Policy</Link></li>
               <li><Link href="/terms-condition" className="footer-link">Terms & Conditions</Link></li>
               <li><Link href="/payment-refund" className="footer-link">Payment & Refund Policy</Link></li>
