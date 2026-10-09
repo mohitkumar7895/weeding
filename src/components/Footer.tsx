@@ -292,12 +292,15 @@ export default function Footer() {
           color: #9cb1a6;
           text-decoration: none;
           font-size: 12px;
-          transition: color 0.2s ease;
+          padding: 3px 8px;
+          border-radius: 6px;
+          transition: all 0.2s ease;
         }
 
         .footer-legal-link:hover {
           color: #e5c158;
-          text-decoration: underline;
+          background: rgba(229, 193, 88, 0.1);
+          text-decoration: none;
         }
 
         .legal-dot {
@@ -378,12 +381,22 @@ export default function Footer() {
             font-size: 8px;
           }
           .footer-bottom-bar {
-            padding-top: 12px;
+            padding-top: 16px;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            gap: 4px;
-            font-size: 11px;
+            gap: 10px;
+            font-size: 11.5px;
+          }
+          .footer-bottom-legal-links {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+          }
+          .footer-legal-link {
+            font-size: 11.5px;
           }
           .market-tag {
             font-size: 10.5px;
