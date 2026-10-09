@@ -1045,8 +1045,8 @@ export default function AuthModal({ isOpen, initialMode = 'login', onClose }: Au
           Protected by <strong>WedWithMe Escrow & Privacy Shield</strong>
           <br />
           By continuing, you agree to our{' '}
-          <a href="#" className="terms-link">Terms</a> &amp;{' '}
-          <a href="#" className="terms-link">Privacy Policy</a>.
+          <a href="/terms-condition" target="_blank" rel="noreferrer" className="terms-link">Terms</a> &amp;{' '}
+          <a href="/privacy-policy" target="_blank" rel="noreferrer" className="terms-link">Privacy Policy</a>.
         </div>
       </div>
 

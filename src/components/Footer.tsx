@@ -41,8 +41,9 @@ export default function Footer() {
               <li><a href="tel:6399239252" className="footer-link">Help Center: 6399239252</a></li>
               <li><a href="tel:6399239252" className="footer-link">Contact Us: 6399239252</a></li>
               <li><a href="mailto:primepixelgmb@gmail.com" className="footer-link">primepixelgmb@gmail.com</a></li>
-              <li><Link href="#" className="footer-link">Terms & Conditions</Link></li>
-              <li><Link href="#" className="footer-link">Privacy Policy</Link></li>
+              <li><Link href="/privacy-policy" className="footer-link">Privacy Policy</Link></li>
+              <li><Link href="/terms-condition" className="footer-link">Terms & Conditions</Link></li>
+              <li><Link href="/payment-refund" className="footer-link">Payment & Refund Policy</Link></li>
               <li><Link href="#" className="footer-link">FAQs</Link></li>
             </ul>
           </div>
@@ -114,6 +115,13 @@ export default function Footer() {
         <div className="footer-bottom-bar">
           <div className="copyright-text">
             © 2026 WedWithMe Platform Pvt. Ltd. All rights reserved.
+          </div>
+          <div className="footer-bottom-legal-links">
+            <Link href="/privacy-policy" className="footer-legal-link">Privacy Policy</Link>
+            <span className="legal-dot">•</span>
+            <Link href="/terms-condition" className="footer-legal-link">Terms &amp; Conditions</Link>
+            <span className="legal-dot">•</span>
+            <Link href="/payment-refund" className="footer-legal-link">Payment &amp; Refund Policy</Link>
           </div>
           <div className="market-tag">
             Transforming India&apos;s $130B+ Wedding Market
@@ -269,6 +277,32 @@ export default function Footer() {
           justify-content: space-between;
           font-size: 12.5px;
           color: #9cb1a6;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+
+        .footer-bottom-legal-links {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .footer-legal-link {
+          color: #9cb1a6;
+          text-decoration: none;
+          font-size: 12px;
+          transition: color 0.2s ease;
+        }
+
+        .footer-legal-link:hover {
+          color: #e5c158;
+          text-decoration: underline;
+        }
+
+        .legal-dot {
+          color: rgba(229, 193, 88, 0.4);
+          font-size: 10px;
         }
 
         .market-tag {
